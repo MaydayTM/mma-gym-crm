@@ -1,58 +1,43 @@
-import type { ReactNode } from 'react'
+import React from 'react';
 
-interface CardProps {
-  children: ReactNode
-  className?: string
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+  className?: string;
+  noPadding?: boolean;
+  variant?: 'default' | 'elevated' | 'success';
 }
 
-export function Card({ children, className = '' }: CardProps) {
+export function Card({
+  children,
+  className = '',
+  noPadding = false,
+  variant = 'default',
+  style,
+  ...props
+}: CardProps) {
+  const variantClasses = {
+    default: 'bg-gradient-to-br from-white/5 to-white/0',
+    elevated: 'bg-gradient-to-br from-white/10 to-white/0',
+    success: 'bg-emerald-500/5',
+  };
+
   return (
-    <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
+    <div
+      className={`
+        ${variantClasses[variant]}
+        rounded-3xl
+        ${noPadding ? '' : 'p-6'}
+        ${className}
+      `}
+      style={{
+        position: 'relative',
+        '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
+        '--border-radius-before': '24px',
+        ...style,
+      } as React.CSSProperties}
+      {...props}
+    >
       {children}
     </div>
-  )
-}
-
-interface StatCardProps {
-  title: string
-  value: string | number | null | undefined
-  subtitle?: string
-  icon?: ReactNode
-  trend?: {
-    value: number
-    isPositive: boolean
-  }
-}
-
-export function StatCard({ title, value, subtitle, icon, trend }: StatCardProps) {
-  return (
-    <Card>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="mt-1 text-3xl font-semibold text-gray-900">
-            {value ?? '-'}
-          </p>
-          {subtitle && (
-            <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
-          )}
-          {trend && (
-            <p
-              className={`mt-1 text-sm ${
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
-              }`}
-            >
-              {trend.isPositive ? '+' : ''}
-              {trend.value}%
-            </p>
-          )}
-        </div>
-        {icon && (
-          <div className="p-3 bg-blue-50 rounded-lg text-blue-600">
-            {icon}
-          </div>
-        )}
-      </div>
-    </Card>
-  )
+  );
 }

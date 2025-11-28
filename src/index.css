@@ -1,6 +1,88 @@
 @import "tailwindcss";
 
+@theme {
+  /* Background colors */
+  --color-bg-primary: #0a0a0a;
+  --color-bg-surface: #171717;
+  --color-bg-elevated: #262626;
+  --color-bg-card: rgba(255, 255, 255, 0.05);
+  --color-bg-card-hover: rgba(255, 255, 255, 0.08);
+
+  /* Text colors */
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a3a3a3;
+  --color-text-muted: #737373;
+
+  /* Accent colors */
+  --color-accent-primary: #fcd34d;
+  --color-accent-primary-hover: #fde68a;
+  --color-accent-glow: rgba(251, 191, 36, 0.55);
+
+  /* Status colors */
+  --color-success: #34d399;
+  --color-warning: #fcd34d;
+  --color-error: #fda4af;
+  --color-info: #38bdf8;
+
+  /* Border colors */
+  --color-border-subtle: rgba(255, 255, 255, 0.1);
+  --color-border-card: rgba(255, 255, 255, 0.15);
+
+  /* Shadows */
+  --shadow-glow: 0 20px 45px rgba(251, 191, 36, 0.7);
+  --shadow-glow-subtle: 0 16px 40px rgba(251, 191, 36, 0.55);
+  --shadow-live: 0 0 12px rgba(52, 211, 153, 0.85);
+}
+
+:root {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
+  background-color: #0a0a0a;
+  color: #fafafa;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Border gradient utility for glassmorphism */
+[style*="--border-gradient"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: var(--border-radius-before, inherit);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  background: var(--border-gradient);
+  pointer-events: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid rgba(252, 211, 77, 0.5);
+  outline-offset: 2px;
 }

@@ -39,6 +39,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          description: string | null
+          id: string
+          lead_id: string | null
+          member_id: string | null
+          metadata: Json | null
+          performed_by: string | null
+          source: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          member_id?: string | null
+          metadata?: Json | null
+          performed_by?: string | null
+          source?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          member_id?: string | null
+          metadata?: Json | null
+          performed_by?: string | null
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkins: {
         Row: {
           checkin_at: string
@@ -128,6 +200,48 @@ export type Database = {
           source_system?: string
           target_field?: string
           transform_notes?: string | null
+        }
+        Relationships: []
+      }
+      integrations: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          description: string | null
+          display_name: string | null
+          enabled: boolean | null
+          health_status: string | null
+          id: string
+          last_health_check_at: string | null
+          last_synced_at: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string | null
+          enabled?: boolean | null
+          health_status?: string | null
+          id?: string
+          last_health_check_at?: string | null
+          last_synced_at?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string | null
+          enabled?: boolean | null
+          health_status?: string | null
+          id?: string
+          last_health_check_at?: string | null
+          last_synced_at?: string | null
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -515,6 +629,177 @@ export type Database = {
           },
         ]
       }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          lead_id: string | null
+          member_id: string | null
+          priority: string | null
+          result_notes: string | null
+          snoozed_until: string | null
+          status: string | null
+          subscription_id: string | null
+          task_type: string
+          title: string
+          triggered_by: string | null
+          updated_at: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string | null
+          member_id?: string | null
+          priority?: string | null
+          result_notes?: string | null
+          snoozed_until?: string | null
+          status?: string | null
+          subscription_id?: string | null
+          task_type: string
+          title: string
+          triggered_by?: string | null
+          updated_at?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          lead_id?: string | null
+          member_id?: string | null
+          priority?: string | null
+          result_notes?: string | null
+          snoozed_until?: string | null
+          status?: string | null
+          subscription_id?: string | null
+          task_type?: string
+          title?: string
+          triggered_by?: string | null
+          updated_at?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_events: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          last_attempt_at: string | null
+          max_attempts: number | null
+          next_retry_at: string | null
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number | null
+          next_retry_at?: string | null
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number | null
+          next_retry_at?: string | null
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       dashboard_stats: {
@@ -558,6 +843,48 @@ export type Database = {
           last_name?: string | null
           retention_status?: never
           status?: string | null
+        }
+        Relationships: []
+      }
+      pending_tasks_summary: {
+        Row: {
+          assigned_to: string | null
+          earliest_due: string | null
+          high_count: number | null
+          low_count: number | null
+          normal_count: number | null
+          total_count: number | null
+          urgent_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recent_activity: {
+        Row: {
+          action: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          metadata: Json | null
+          performed_by_name: string | null
+          source: string | null
+          subject_id: string | null
+          subject_name: string | null
+          subject_type: string | null
         }
         Relationships: []
       }

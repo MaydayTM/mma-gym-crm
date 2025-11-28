@@ -1,3 +1,4 @@
+import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Layout } from './components/layout'
@@ -19,22 +20,52 @@ const queryClient = new QueryClient({
   },
 })
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-black text-white p-8">
+          <h1 className="text-2xl font-bold text-red-500 mb-4">Something went wrong</h1>
+          <pre className="bg-zinc-900 p-4 rounded overflow-auto text-sm">
+            {this.state.error?.message}
+            {'\n'}
+            {this.state.error?.stack}
+          </pre>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="members" element={<Members />} />
-            <Route path="leads" element={<Leads />} />
-            <Route path="subscriptions" element={<Subscriptions />} />
-            <Route path="schedule" element={<Schedule />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter basename="/app">
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="members" element={<Members />} />
+              <Route path="leads" element={<Leads />} />
+              <Route path="subscriptions" element={<Subscriptions />} />
+              <Route path="schedule" element={<Schedule />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 
