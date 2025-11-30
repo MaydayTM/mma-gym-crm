@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { UserPlus, Upload, Search, Filter } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { NewMemberForm } from '../components/members/NewMemberForm'
@@ -6,6 +7,7 @@ import { ImportMembersModal } from '../components/members/ImportMembersModal'
 import { useMembers } from '../hooks/useMembers'
 
 export function Members() {
+  const navigate = useNavigate()
   const [isNewMemberModalOpen, setIsNewMemberModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -121,7 +123,7 @@ export function Members() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filteredMembers.map((member) => (
-                  <tr key={member.id} className="hover:bg-white/5 transition-colors cursor-pointer">
+                  <tr key={member.id} onClick={() => navigate(`/members/${member.id}`)} className="hover:bg-white/5 transition-colors cursor-pointer">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex text-[11px] font-medium text-neutral-200 bg-neutral-800 w-9 h-9 rounded-2xl items-center justify-center">

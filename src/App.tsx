@@ -5,6 +5,7 @@ import { Layout } from './components/layout'
 import {
   Dashboard,
   Members,
+  MemberDetail,
   Leads,
   Subscriptions,
   Schedule,
@@ -57,6 +58,7 @@ function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="members" element={<Members />} />
+              <Route path="members/:id" element={<MemberDetail />} />
               <Route path="leads" element={<Leads />} />
               <Route path="subscriptions" element={<Subscriptions />} />
               <Route path="schedule" element={<Schedule />} />

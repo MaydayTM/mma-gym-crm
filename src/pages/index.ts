@@ -1,5 +1,6 @@
 export { Dashboard } from './Dashboard'
 export { Members } from './Members'
+export { MemberDetail } from './MemberDetail'
 export { Leads } from './Leads'
 export { Subscriptions } from './Subscriptions'
 export { Schedule } from './Schedule'
