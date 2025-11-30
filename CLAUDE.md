@@ -294,15 +294,15 @@ CREATE POLICY "fighter_own_data" ON members
 
 ## 📈 MVP FEATURES (FASE 1)
 
-### Must Have (vandaag/morgen)
-- [ ] Dashboard met KPI cards (nieuwe leden, opzeggingen, actieve leden)
-- [ ] Members tabel met zoeken/filteren
-- [ ] Member detail pagina met abonnementen
+### Must Have
+- [x] Dashboard met KPI cards (nieuwe leden, opzeggingen, actieve leden)
+- [x] Members tabel met zoeken/filteren
+- [x] Member detail pagina met abonnementen en check-in historie
 - [ ] Simpele Lead pipeline (kanban of lijst)
-- [ ] CSV import voor 200 bestaande leden
-- [ ] Basis authenticatie (email/wachtwoord)
+- [x] CSV import voor 200 bestaande leden
+- [ ] Basis authenticatie (email/wachtwoord) ⬅️ **VOLGENDE STAP**
 
-### Should Have (deze week)
+### Should Have
 - [ ] Retentie score berekening
 - [ ] Check-in logging
 - [ ] Gordel tracking
@@ -313,6 +313,27 @@ CREATE POLICY "fighter_own_data" ON members
 - [ ] Fysieke toegangscontrole (ESP32)
 - [ ] Kaart visualisatie leden
 - [ ] Mobile app (PWA)
+- [ ] Fighter Profile Generator integratie
+
+---
+
+## 🚧 BLOKKERENDE TODO'S
+
+### Na authenticatie implementatie:
+1. **Profile picture uploads activeren**
+   - Storage bucket `profile-pictures` is aangemaakt
+   - RLS policies vereisen `auth.role() = 'authenticated'`
+   - Upload UI is klaar in EditMemberForm
+   - Voer RLS policies uit na auth implementatie:
+   ```sql
+   CREATE POLICY "Authenticated users can upload profile pictures"
+   ON storage.objects FOR INSERT
+   WITH CHECK (bucket_id = 'profile-pictures' AND auth.role() = 'authenticated');
+   ```
+
+2. **Fighter Profile Generator koppelen**
+   - Knop staat klaar in EditMemberForm (disabled)
+   - Wacht op externe app integratie
 
 ---
 
