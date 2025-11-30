@@ -1,15 +1,73 @@
-import { UserPlus, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import { UserPlus } from 'lucide-react'
+import { Modal } from '../components/ui'
+import { KanbanColumn } from '../components/leads/KanbanColumn'
+import { NewLeadForm } from '../components/leads/NewLeadForm'
+import { LeadDetailModal } from '../components/leads/LeadDetailModal'
+import { useLeadsByStatus, LEAD_STATUSES, type Lead, type LeadStatus } from '../hooks/useLeads'
+import { useUpdateLead } from '../hooks/useUpdateLead'
 
 export function Leads() {
+  const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false)
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+
+  const { data: leadsByStatus, leads, isLoading, error } = useLeadsByStatus()
+  const { mutate: updateLead } = useUpdateLead()
+
+  const handleDrop = (leadId: string, newStatus: LeadStatus) => {
+    updateLead({
+      id: leadId,
+      data: { status: newStatus },
+    })
+  }
+
+  const handleLeadClick = (lead: Lead) => {
+    setSelectedLead(lead)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="h-8 bg-white/5 rounded-xl w-32 animate-pulse" />
+          <div className="h-12 bg-white/5 rounded-full w-36 animate-pulse" />
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="min-w-[280px] h-[400px] bg-white/5 rounded-2xl animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-rose-500/10 border border-rose-500/40 rounded-2xl p-6">
+          <p className="text-rose-300 text-[14px]">
+            Fout bij laden: {(error as Error).message}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6 max-w-[1600px]">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-semibold text-neutral-50 tracking-tight">Leads</h1>
-          <p className="text-[14px] text-neutral-400 mt-1">Lead pipeline beheer</p>
+          <p className="text-[14px] text-neutral-400 mt-1">
+            {leads?.length ?? 0} leads in pipeline
+          </p>
         </div>
         <button
+          onClick={() => setIsNewLeadModalOpen(true)}
           className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
         >
           <UserPlus size={18} strokeWidth={1.5} />
@@ -17,27 +75,42 @@ export function Leads() {
         </button>
       </div>
 
-      {/* Coming Soon Card */}
-      <div
-        className="bg-gradient-to-br from-white/5 to-white/0 rounded-3xl p-12 text-center"
-        style={{
-          position: 'relative',
-          '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
-          '--border-radius-before': '24px',
-        } as React.CSSProperties}
-      >
-        <div className="w-16 h-16 mx-auto bg-amber-500/10 rounded-2xl flex items-center justify-center mb-4">
-          <TrendingUp className="text-amber-300" size={28} strokeWidth={1.5} />
-        </div>
-        <h3 className="text-[20px] font-medium text-neutral-50">Lead Pipeline</h3>
-        <p className="text-[14px] text-neutral-500 mt-2 max-w-md mx-auto">
-          Beheer je leads van eerste contact tot conversie. Kanban board, automatische follow-ups en conversie tracking.
-        </p>
-        <div className="inline-flex items-center gap-2 mt-6 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/40">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-300 animate-pulse"></span>
-          <span className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Komt binnenkort</span>
-        </div>
+      {/* Kanban Board */}
+      <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
+        {LEAD_STATUSES.map((status) => (
+          <KanbanColumn
+            key={status.value}
+            status={status.value}
+            label={status.label}
+            color={status.color}
+            leads={leadsByStatus?.[status.value] || []}
+            onLeadClick={handleLeadClick}
+            onDrop={handleDrop}
+          />
+        ))}
       </div>
+
+      {/* New Lead Modal */}
+      <Modal
+        isOpen={isNewLeadModalOpen}
+        onClose={() => setIsNewLeadModalOpen(false)}
+        title="Nieuwe Lead"
+        size="lg"
+      >
+        <NewLeadForm
+          onSuccess={() => setIsNewLeadModalOpen(false)}
+          onCancel={() => setIsNewLeadModalOpen(false)}
+        />
+      </Modal>
+
+      {/* Lead Detail Modal */}
+      {selectedLead && (
+        <LeadDetailModal
+          lead={selectedLead}
+          isOpen={!!selectedLead}
+          onClose={() => setSelectedLead(null)}
+        />
+      )}
     </div>
   )
 }
