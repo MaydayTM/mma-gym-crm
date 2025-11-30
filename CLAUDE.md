@@ -294,18 +294,18 @@ CREATE POLICY "fighter_own_data" ON members
 
 ## 📈 MVP FEATURES (FASE 1)
 
-### Must Have
+### Must Have - ALLE AFGEROND BEHALVE AUTH
 - [x] Dashboard met KPI cards (nieuwe leden, opzeggingen, actieve leden)
 - [x] Members tabel met zoeken/filteren
 - [x] Member detail pagina met abonnementen en check-in historie
-- [ ] Simpele Lead pipeline (kanban of lijst)
+- [x] Simpele Lead pipeline (Kanban board met drag & drop)
 - [x] CSV import voor 200 bestaande leden
-- [ ] Basis authenticatie (email/wachtwoord) ⬅️ **VOLGENDE STAP**
+- [ ] **Basis authenticatie (email/wachtwoord)** ⬅️ **VOLGENDE SESSIE**
 
 ### Should Have
 - [ ] Retentie score berekening
-- [ ] Check-in logging
-- [ ] Gordel tracking
+- [ ] Check-in logging (handmatig)
+- [ ] Gordel tracking (UI klaar, werkt al)
 - [ ] Basis rapportages
 
 ### Nice to Have (later)
@@ -317,11 +317,27 @@ CREATE POLICY "fighter_own_data" ON members
 
 ---
 
+## 🗓️ PLAN VOLGENDE SESSIE
+
+### Prioriteit 1: Authenticatie implementeren
+1. Supabase Auth configureren (email/wachtwoord)
+2. Login pagina bouwen
+3. Auth context/provider maken
+4. Protected routes implementeren
+5. Logout functionaliteit
+
+### Prioriteit 2: Na auth werkend
+1. Storage RLS policies activeren (profile picture uploads)
+2. Lead → Member conversie functie bouwen
+3. Check-in logging functie
+
+---
+
 ## 🚧 BLOKKERENDE TODO'S
 
 ### Na authenticatie implementatie:
 1. **Profile picture uploads activeren**
-   - Storage bucket `profile-pictures` is aangemaakt
+   - Storage bucket `profile-pictures` is aangemaakt in Supabase
    - RLS policies vereisen `auth.role() = 'authenticated'`
    - Upload UI is klaar in EditMemberForm
    - Voer RLS policies uit na auth implementatie:
@@ -333,7 +349,7 @@ CREATE POLICY "fighter_own_data" ON members
 
 2. **Fighter Profile Generator koppelen**
    - Knop staat klaar in EditMemberForm (disabled)
-   - Wacht op externe app integratie
+   - Wacht op externe app integratie (andere repo)
 
 ---
 
