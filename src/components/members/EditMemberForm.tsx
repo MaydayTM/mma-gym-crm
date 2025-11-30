@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Loader2, Upload, Sparkles, X } from 'lucide-react'
 import { useUpdateMember } from '../../hooks/useUpdateMember'
+import { useUploadProfilePicture } from '../../hooks/useUploadProfilePicture'
 import type { Member } from '../../hooks/useMembers'
 
 interface EditMemberFormProps {
@@ -38,6 +39,13 @@ const STATUSES = [
 
 export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormProps) {
   const { mutate: updateMember, isPending, error } = useUpdateMember()
+  const { upload: uploadPicture, isUploading, progress } = useUploadProfilePicture()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    member.profile_picture_url
+  )
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     first_name: member.first_name,
@@ -122,6 +130,47 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
     }))
   }
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Alleen JPG, PNG, WebP of GIF bestanden zijn toegestaan')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('Bestand is te groot (max 5MB)')
+      return
+    }
+
+    setUploadError(null)
+
+    try {
+      const result = await uploadPicture(member.id, file)
+      setProfilePictureUrl(result.url)
+
+      // Update member with new profile picture URL
+      updateMember({
+        id: member.id,
+        data: { profile_picture_url: result.url },
+      })
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload mislukt')
+    }
+  }
+
+  const handleRemovePicture = () => {
+    setProfilePictureUrl(null)
+    updateMember({
+      id: member.id,
+      data: { profile_picture_url: null },
+    })
+  }
+
   const inputClasses =
     'w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-neutral-50 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all text-[14px]'
   const labelClasses = 'block text-[11px] uppercase tracking-[0.22em] text-neutral-500 mb-2'
@@ -133,6 +182,93 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
           <p className="text-rose-300 text-[14px]">{(error as Error).message}</p>
         </div>
       )}
+
+      {/* Profile Picture Upload */}
+      <div className="space-y-4">
+        <h3 className="text-[11px] font-medium text-neutral-400 uppercase tracking-[0.22em]">
+          Profielfoto
+        </h3>
+
+        <div className="flex items-start gap-6">
+          {/* Current Picture / Upload Preview */}
+          <div className="relative">
+            {profilePictureUrl ? (
+              <div className="relative">
+                <img
+                  src={profilePictureUrl}
+                  alt={`${member.first_name} ${member.last_name}`}
+                  className="w-24 h-24 rounded-2xl object-cover border border-white/10"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemovePicture}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white hover:bg-rose-600 transition"
+                >
+                  <X size={14} strokeWidth={2} />
+                </button>
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-2xl bg-neutral-800 border border-white/10 flex items-center justify-center">
+                <span className="text-[24px] font-medium text-neutral-400">
+                  {member.first_name.charAt(0)}
+                  {member.last_name.charAt(0)}
+                </span>
+              </div>
+            )}
+
+            {/* Upload Progress Overlay */}
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center">
+                <div className="text-center">
+                  <Loader2 size={20} className="animate-spin text-amber-300 mx-auto" />
+                  <span className="text-[11px] text-neutral-300 mt-1 block">{progress}%</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Upload Buttons */}
+          <div className="flex-1 space-y-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-neutral-200 text-[13px] hover:bg-white/10 hover:border-amber-300/50 transition disabled:opacity-50"
+              >
+                <Upload size={16} strokeWidth={1.5} />
+                <span>Upload foto</span>
+              </button>
+
+              <button
+                type="button"
+                disabled
+                title="Binnenkort beschikbaar"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[13px] cursor-not-allowed opacity-60"
+              >
+                <Sparkles size={16} strokeWidth={1.5} />
+                <span>Fighter Profile</span>
+              </button>
+            </div>
+
+            <p className="text-[11px] text-neutral-500">
+              JPG, PNG, WebP of GIF. Max 5MB.
+            </p>
+
+            {uploadError && (
+              <p className="text-[12px] text-rose-400">{uploadError}</p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Status */}
       <div>

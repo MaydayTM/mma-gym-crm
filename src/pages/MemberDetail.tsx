@@ -132,10 +132,18 @@ export function MemberDetail() {
         <div className="flex flex-col md:flex-row gap-6">
           {/* Avatar */}
           <div className="flex-shrink-0">
-            <div className="flex text-[24px] font-medium text-neutral-200 bg-neutral-800 w-24 h-24 rounded-3xl items-center justify-center">
-              {member.first_name.charAt(0)}
-              {member.last_name.charAt(0)}
-            </div>
+            {member.profile_picture_url ? (
+              <img
+                src={member.profile_picture_url}
+                alt={`${member.first_name} ${member.last_name}`}
+                className="w-24 h-24 rounded-3xl object-cover border border-white/10"
+              />
+            ) : (
+              <div className="flex text-[24px] font-medium text-neutral-200 bg-neutral-800 w-24 h-24 rounded-3xl items-center justify-center">
+                {member.first_name.charAt(0)}
+                {member.last_name.charAt(0)}
+              </div>
+            )}
           </div>
 
           {/* Info Grid */}
