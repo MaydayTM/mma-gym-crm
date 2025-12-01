@@ -1,6 +1,8 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from './contexts/AuthContext'
+import { ProtectedRoute } from './components/auth'
 import { Layout } from './components/layout'
 import {
   Dashboard,
@@ -10,6 +12,7 @@ import {
   Subscriptions,
   Schedule,
   Settings,
+  Login,
 } from './pages'
 
 const queryClient = new QueryClient({
@@ -53,18 +56,31 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter basename="/app">
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="members" element={<Members />} />
-              <Route path="members/:id" element={<MemberDetail />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="subscriptions" element={<Subscriptions />} />
-              <Route path="schedule" element={<Schedule />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-          </Routes>
+        <BrowserRouter basename="/app.html">
+          <AuthProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+
+              {/* Protected routes */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="members" element={<Members />} />
+                <Route path="members/:id" element={<MemberDetail />} />
+                <Route path="leads" element={<Leads />} />
+                <Route path="subscriptions" element={<Subscriptions />} />
+                <Route path="schedule" element={<Schedule />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>

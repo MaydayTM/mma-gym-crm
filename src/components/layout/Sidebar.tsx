@@ -7,7 +7,9 @@ import {
   CreditCard,
   Calendar,
   CheckSquare,
+  LogOut,
 } from 'lucide-react'
+import { useAuth } from '../../hooks/useAuth'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -20,6 +22,12 @@ const navigation = [
 ]
 
 export function Sidebar() {
+  const { signOut, member, user } = useAuth()
+
+  const displayName = member
+    ? `${member.first_name} ${member.last_name}`
+    : user?.email?.split('@')[0] || 'Gebruiker'
+
   return (
     <aside className="w-64 bg-neutral-950 border-r border-white/10 min-h-screen flex flex-col">
       {/* Logo section */}
@@ -55,6 +63,26 @@ export function Sidebar() {
           ))}
         </ul>
       </nav>
+
+      {/* User section */}
+      <div className="p-4 border-t border-white/10">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-neutral-950 font-semibold text-sm">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-neutral-50 truncate">{displayName}</p>
+            <p className="text-xs text-neutral-500 truncate">{member?.role || 'member'}</p>
+          </div>
+        </div>
+        <button
+          onClick={signOut}
+          className="w-full flex items-center gap-3 px-4 py-3 mt-2 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-red-400 transition-all duration-200"
+        >
+          <LogOut className="w-5 h-5" strokeWidth={1.5} />
+          <span className="text-[14px] font-medium">Uitloggen</span>
+        </button>
+      </div>
 
       {/* Footer with live indicator */}
       <div className="p-6 border-t border-white/10">
