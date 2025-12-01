@@ -11,6 +11,8 @@ import {
   Clock,
   CreditCard,
   Activity,
+  LogIn,
+  Loader2,
 } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { EditMemberForm } from '../components/members/EditMemberForm'
@@ -18,6 +20,7 @@ import { useMember } from '../hooks/useMember'
 import { useMemberSubscriptions } from '../hooks/useMemberSubscriptions'
 import { useMemberCheckins } from '../hooks/useMemberCheckins'
 import { useDeleteMember } from '../hooks/useDeleteMember'
+import { useCheckin } from '../hooks/useCheckin'
 
 export function MemberDetail() {
   const { id } = useParams<{ id: string }>()
@@ -29,6 +32,7 @@ export function MemberDetail() {
   const { data: subscriptions } = useMemberSubscriptions(id)
   const { data: checkins } = useMemberCheckins(id, 20)
   const { mutate: deleteMember, isPending: isDeleting } = useDeleteMember()
+  const { mutate: checkin, isPending: isCheckingIn } = useCheckin()
 
   const handleDelete = () => {
     if (!id) return
@@ -111,10 +115,22 @@ export function MemberDetail() {
           </button>
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+            className="inline-flex items-center justify-center gap-2 text-[15px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-5 py-2.5 border border-white/10 hover:border-amber-300/70 transition"
           >
-            <Edit3 size={18} strokeWidth={1.5} />
+            <Edit3 size={16} strokeWidth={1.5} />
             <span>Bewerken</span>
+          </button>
+          <button
+            onClick={() => id && checkin({ memberId: id })}
+            disabled={isCheckingIn}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 text-white px-6 py-3 text-[15px] font-medium shadow-[0_16px_40px_rgba(52,211,153,0.5)] hover:bg-emerald-400 transition disabled:opacity-50"
+          >
+            {isCheckingIn ? (
+              <Loader2 size={18} strokeWidth={1.5} className="animate-spin" />
+            ) : (
+              <LogIn size={18} strokeWidth={1.5} />
+            )}
+            <span>{isCheckingIn ? 'Inchecken...' : 'Check-in'}</span>
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   X,
   Mail,
@@ -8,8 +9,10 @@ import {
   TrendingUp,
   Loader2,
   UserPlus,
+  CheckCircle,
 } from 'lucide-react'
 import { useUpdateLead } from '../../hooks/useUpdateLead'
+import { useConvertLead } from '../../hooks/useConvertLead'
 import { LEAD_STATUSES, LEAD_SOURCES, type Lead, type LeadStatus } from '../../hooks/useLeads'
 
 interface LeadDetailModalProps {
@@ -28,7 +31,9 @@ const DISCIPLINES = [
 ]
 
 export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps) {
+  const navigate = useNavigate()
   const { mutate: updateLead, isPending } = useUpdateLead()
+  const { mutate: convertLead, isPending: isConverting } = useConvertLead()
 
   const [formData, setFormData] = useState({
     first_name: lead.first_name || '',
@@ -372,18 +377,35 @@ export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps)
         {/* Footer Actions */}
         <div className="sticky bottom-0 bg-neutral-950 border-t border-neutral-800 px-6 py-4">
           <div className="flex justify-between gap-3">
-            {formData.status !== 'converted' && (
+            {formData.status !== 'converted' ? (
               <button
                 type="button"
+                disabled={isConverting}
                 onClick={() => {
-                  // TODO: Convert to member
-                  handleStatusChange('converted')
+                  convertLead(
+                    { lead },
+                    {
+                      onSuccess: (result) => {
+                        onClose()
+                        navigate(`/members/${result.memberId}`)
+                      },
+                    }
+                  )
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[13px] hover:bg-emerald-500/20 transition"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[13px] hover:bg-emerald-500/20 transition disabled:opacity-50"
               >
-                <UserPlus size={16} strokeWidth={1.5} />
-                <span>Converteer naar lid</span>
+                {isConverting ? (
+                  <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />
+                ) : (
+                  <UserPlus size={16} strokeWidth={1.5} />
+                )}
+                <span>{isConverting ? 'Converteren...' : 'Converteer naar lid'}</span>
               </button>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-4 py-2.5 text-emerald-300 text-[13px]">
+                <CheckCircle size={16} strokeWidth={1.5} />
+                <span>Geconverteerd naar lid</span>
+              </div>
             )}
 
             <div className="flex gap-3 ml-auto">
