@@ -11,6 +11,7 @@ import {
   Leads,
   Subscriptions,
   Schedule,
+  Team,
   Settings,
   Login,
 } from './pages'
@@ -77,6 +78,7 @@ function App() {
                 <Route path="leads" element={<Leads />} />
                 <Route path="subscriptions" element={<Subscriptions />} />
                 <Route path="schedule" element={<Schedule />} />
+                <Route path="team" element={<Team />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Routes>
