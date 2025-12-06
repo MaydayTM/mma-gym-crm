@@ -111,70 +111,359 @@ export type Database = {
           },
         ]
       }
-      checkins: {
+      belt_history: {
         Row: {
-          checkin_at: string
-          checkout_at: string | null
-          class_name: string | null
-          coach_id: string | null
           created_at: string | null
+          discipline_id: string
+          from_belt: string | null
+          from_stripes: number | null
           id: string
-          location: string | null
           member_id: string
-          method: string | null
+          notes: string | null
+          promoted_at: string | null
+          promoted_by: string | null
+          to_belt: string
+          to_dan: number | null
+          to_stripes: number | null
+          trainings_at_promotion: number
         }
         Insert: {
-          checkin_at?: string
-          checkout_at?: string | null
-          class_name?: string | null
-          coach_id?: string | null
           created_at?: string | null
+          discipline_id: string
+          from_belt?: string | null
+          from_stripes?: number | null
           id?: string
-          location?: string | null
           member_id: string
-          method?: string | null
+          notes?: string | null
+          promoted_at?: string | null
+          promoted_by?: string | null
+          to_belt: string
+          to_dan?: number | null
+          to_stripes?: number | null
+          trainings_at_promotion?: number
         }
         Update: {
-          checkin_at?: string
-          checkout_at?: string | null
-          class_name?: string | null
-          coach_id?: string | null
           created_at?: string | null
+          discipline_id?: string
+          from_belt?: string | null
+          from_stripes?: number | null
           id?: string
-          location?: string | null
           member_id?: string
-          method?: string | null
+          notes?: string | null
+          promoted_at?: string | null
+          promoted_by?: string | null
+          to_belt?: string
+          to_dan?: number | null
+          to_stripes?: number | null
+          trainings_at_promotion?: number
         }
         Relationships: [
           {
-            foreignKeyName: "checkins_coach_id_fkey"
-            columns: ["coach_id"]
+            foreignKeyName: "belt_history_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "belt_history_member_id_fkey"
+            columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "checkins_coach_id_fkey"
-            columns: ["coach_id"]
+            foreignKeyName: "belt_history_member_id_fkey"
+            columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "checkins_member_id_fkey"
-            columns: ["member_id"]
+            foreignKeyName: "belt_history_promoted_by_fkey"
+            columns: ["promoted_by"]
             isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "checkins_member_id_fkey"
-            columns: ["member_id"]
+            foreignKeyName: "belt_history_promoted_by_fkey"
+            columns: ["promoted_by"]
             isOneToOne: false
             referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
+      }
+      checkins: {
+        Row: {
+          checkin_at: string
+          checkout_at: string | null
+          class_id: string | null
+          class_name: string | null
+          coach_id: string | null
+          created_at: string | null
+          discipline_id: string | null
+          id: string
+          location: string | null
+          member_id: string
+          method: string | null
+          reservation_id: string | null
+        }
+        Insert: {
+          checkin_at?: string
+          checkout_at?: string | null
+          class_id?: string | null
+          class_name?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          discipline_id?: string | null
+          id?: string
+          location?: string | null
+          member_id: string
+          method?: string | null
+          reservation_id?: string | null
+        }
+        Update: {
+          checkin_at?: string
+          checkout_at?: string | null
+          class_id?: string | null
+          class_name?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          discipline_id?: string | null
+          id?: string
+          location?: string | null
+          member_id?: string
+          method?: string | null
+          reservation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          coach_id: string | null
+          created_at: string | null
+          day_of_week: number
+          discipline_id: string
+          end_time: string
+          id: string
+          is_active: boolean | null
+          max_capacity: number | null
+          name: string
+          room: string | null
+          start_time: string
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string | null
+          day_of_week: number
+          discipline_id: string
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          max_capacity?: number | null
+          name: string
+          room?: string | null
+          start_time: string
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string | null
+          day_of_week?: number
+          discipline_id?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          max_capacity?: number | null
+          name?: string
+          room?: string | null
+          start_time?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_fighter_characters: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          prompt: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          prompt?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          prompt?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      creative_fighter_photos: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          prompt: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          prompt?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          prompt?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      creative_fighter_videos: {
+        Row: {
+          created_at: string | null
+          id: string
+          prompt: string | null
+          user_id: string | null
+          video_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          prompt?: string | null
+          user_id?: string | null
+          video_url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          prompt?: string | null
+          user_id?: string | null
+          video_url?: string
+        }
+        Relationships: []
+      }
+      disciplines: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          has_belt_system: boolean | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          has_belt_system?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          has_belt_system?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       import_field_mapping: {
         Row: {
@@ -337,6 +626,61 @@ export type Database = {
           },
         ]
       }
+      member_belts: {
+        Row: {
+          belt_color: string
+          created_at: string | null
+          dan_grade: number | null
+          discipline_id: string
+          id: string
+          member_id: string
+          stripes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          belt_color: string
+          created_at?: string | null
+          dan_grade?: number | null
+          discipline_id: string
+          id?: string
+          member_id: string
+          stripes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          belt_color?: string
+          created_at?: string | null
+          dan_grade?: number | null
+          discipline_id?: string
+          id?: string
+          member_id?: string
+          stripes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_belts_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_belts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_belts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           access_card_id: string | null
@@ -364,6 +708,7 @@ export type Database = {
           last_checkin_at: string | null
           last_name: string
           latitude: number | null
+          legacy_checkin_count: number | null
           longitude: number | null
           loyalty_points: number | null
           member_since: string | null
@@ -409,6 +754,7 @@ export type Database = {
           last_checkin_at?: string | null
           last_name: string
           latitude?: number | null
+          legacy_checkin_count?: number | null
           longitude?: number | null
           loyalty_points?: number | null
           member_since?: string | null
@@ -454,6 +800,7 @@ export type Database = {
           last_checkin_at?: string | null
           last_name?: string
           latitude?: number | null
+          legacy_checkin_count?: number | null
           longitude?: number | null
           loyalty_points?: number | null
           member_since?: string | null
@@ -474,6 +821,61 @@ export type Database = {
           zip_code?: string | null
         }
         Relationships: []
+      }
+      reservations: {
+        Row: {
+          cancelled_at: string | null
+          checked_in_at: string | null
+          class_id: string
+          created_at: string | null
+          id: string
+          member_id: string
+          reservation_date: string
+          status: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          checked_in_at?: string | null
+          class_id: string
+          created_at?: string | null
+          id?: string
+          member_id: string
+          reservation_date: string
+          status?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          checked_in_at?: string | null
+          class_id?: string
+          created_at?: string | null
+          id?: string
+          member_id?: string
+          reservation_date?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       revenue: {
         Row: {
@@ -813,6 +1215,45 @@ export type Database = {
         }
         Relationships: []
       }
+      member_belt_summary: {
+        Row: {
+          belt_color: string | null
+          belt_updated_at: string | null
+          dan_grade: number | null
+          discipline_color: string | null
+          discipline_id: string | null
+          discipline_name: string | null
+          discipline_slug: string | null
+          has_belt_system: boolean | null
+          member_id: string | null
+          stripes: number | null
+          training_count: number | null
+          trainings_since_promotion: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_belts_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_belts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_belts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_retention_status: {
         Row: {
           days_since_visit: number | null
@@ -891,6 +1332,14 @@ export type Database = {
     }
     Functions: {
       get_my_role: { Args: never; Returns: string }
+      get_training_count: {
+        Args: { p_discipline_id?: string; p_member_id: string }
+        Returns: number
+      }
+      get_trainings_since_promotion: {
+        Args: { p_discipline_id: string; p_member_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
