@@ -74,13 +74,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       }
 
-      console.log('[Auth] Setting state from onAuthStateChange, isLoading: false')
+      console.log('[Auth] Setting state from onAuthStateChange, isLoading: false, hasSession:', !!session)
       setState({
         user: session?.user ?? null,
         session,
         member,
         isLoading: false,
       })
+      console.log('[Auth] State updated, isAuthenticated should now be:', !!session)
     })
 
     // Also call getSession as a fallback

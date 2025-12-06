@@ -18,8 +18,9 @@ export function Login() {
 
   // If already authenticated, redirect to dashboard
   useEffect(() => {
+    console.log('[Login] useEffect - isAuthenticated:', isAuthenticated)
     if (isAuthenticated) {
-      console.log('[Login] Already authenticated, redirecting to:', from)
+      console.log('[Login] Redirecting to:', from)
       navigate(from, { replace: true })
     }
   }, [isAuthenticated, navigate, from])
