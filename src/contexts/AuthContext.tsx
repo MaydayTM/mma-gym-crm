@@ -49,25 +49,69 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      let member = null
-      if (session?.user) {
-        member = await fetchMemberProfile(session.user.id)
-      }
+    let isMounted = true
 
-      setState({
-        user: session?.user ?? null,
-        session,
-        member,
-        isLoading: false,
-      })
-    })
+    // Get initial session with timeout
+    const initAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error) {
+          console.error('Error getting session:', error)
+        }
+
+        if (!isMounted) return
+
+        let member = null
+        if (session?.user) {
+          member = await fetchMemberProfile(session.user.id)
+        }
+
+        setState({
+          user: session?.user ?? null,
+          session: session ?? null,
+          member,
+          isLoading: false,
+        })
+      } catch (error) {
+        console.error('Auth initialization error:', error)
+        if (isMounted) {
+          setState({
+            user: null,
+            session: null,
+            member: null,
+            isLoading: false,
+          })
+        }
+      }
+    }
+
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isMounted) {
+        setState(prev => {
+          if (prev.isLoading) {
+            console.warn('Auth initialization timed out')
+            return {
+              user: null,
+              session: null,
+              member: null,
+              isLoading: false,
+            }
+          }
+          return prev
+        })
+      }
+    }, 5000)
+
+    initAuth()
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return
+
       let member = null
       if (session?.user) {
         member = await fetchMemberProfile(session.user.id)
@@ -81,7 +125,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      clearTimeout(timeoutId)
+      subscription.unsubscribe()
+    }
   }, [fetchMemberProfile])
 
   const signIn = useCallback(async (email: string, password: string) => {
