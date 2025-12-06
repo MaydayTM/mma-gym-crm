@@ -50,8 +50,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Initialize auth state
   useEffect(() => {
     let isMounted = true
+    let authInitialized = false
 
-    // Get initial session with timeout
+    // Listen for auth changes FIRST - this catches the session faster
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return
+
+      authInitialized = true
+
+      let member = null
+      if (session?.user) {
+        try {
+          member = await fetchMemberProfile(session.user.id)
+        } catch (err) {
+          console.error('Error fetching member in onAuthStateChange:', err)
+        }
+      }
+
+      setState({
+        user: session?.user ?? null,
+        session,
+        member,
+        isLoading: false,
+      })
+    })
+
+    // Also call getSession as a fallback
     const initAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
@@ -60,13 +86,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.error('Error getting session:', error)
         }
 
-        if (!isMounted) return
+        // Only update if onAuthStateChange hasn't fired yet
+        if (!isMounted || authInitialized) return
 
         let member = null
         if (session?.user) {
           member = await fetchMemberProfile(session.user.id)
         }
 
+        authInitialized = true
         setState({
           user: session?.user ?? null,
           session: session ?? null,
@@ -75,7 +103,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         })
       } catch (error) {
         console.error('Auth initialization error:', error)
-        if (isMounted) {
+        if (isMounted && !authInitialized) {
+          authInitialized = true
           setState({
             user: null,
             session: null,
@@ -86,44 +115,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
-    // Set a timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (isMounted) {
-        setState(prev => {
-          if (prev.isLoading) {
-            console.warn('Auth initialization timed out')
-            return {
-              user: null,
-              session: null,
-              member: null,
-              isLoading: false,
-            }
-          }
-          return prev
-        })
-      }
-    }, 5000)
-
     initAuth()
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!isMounted) return
-
-      let member = null
-      if (session?.user) {
-        member = await fetchMemberProfile(session.user.id)
+    // Fallback timeout - only if nothing else worked
+    const timeoutId = setTimeout(() => {
+      if (isMounted && !authInitialized) {
+        console.warn('Auth initialization timed out - redirecting to login')
+        authInitialized = true
+        setState({
+          user: null,
+          session: null,
+          member: null,
+          isLoading: false,
+        })
       }
-
-      setState({
-        user: session?.user ?? null,
-        session,
-        member,
-        isLoading: false,
-      })
-    })
+    }, 10000) // 10 seconds timeout
 
     return () => {
       isMounted = false
