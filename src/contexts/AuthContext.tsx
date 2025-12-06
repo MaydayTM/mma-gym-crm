@@ -54,13 +54,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     console.log('[Auth] Starting initialization...')
 
-    // Listen for auth changes FIRST - this catches the session faster
+    // Listen for auth changes - this handles login/logout events
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('[Auth] onAuthStateChange fired:', _event, !!session)
       if (!isMounted) return
 
+      // Always update state on auth changes, regardless of timeout
       authInitialized = true
 
       let member = null

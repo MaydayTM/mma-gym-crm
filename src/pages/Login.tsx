@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -9,12 +9,20 @@ export function Login() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { signIn } = useAuth()
+  const { signIn, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
   // Get the page they tried to visit before being redirected to login
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
+
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log('[Login] Already authenticated, redirecting to:', from)
+      navigate(from, { replace: true })
+    }
+  }, [isAuthenticated, navigate, from])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -28,12 +36,8 @@ export function Login() {
         console.error('Login error:', error)
         setError(error.message)
         setIsLoading(false)
-      } else {
-        // Small delay to allow auth state to update
-        setTimeout(() => {
-          navigate(from, { replace: true })
-        }, 100)
       }
+      // Don't navigate here - the useEffect above will handle it when isAuthenticated becomes true
     } catch (err) {
       console.error('Unexpected login error:', err)
       setError('Er ging iets mis bij het inloggen')
