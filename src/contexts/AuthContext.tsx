@@ -52,10 +52,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let isMounted = true
     let authInitialized = false
 
+    console.log('[Auth] Starting initialization...')
+
     // Listen for auth changes FIRST - this catches the session faster
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log('[Auth] onAuthStateChange fired:', _event, !!session)
       if (!isMounted) return
 
       authInitialized = true
@@ -64,11 +67,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (session?.user) {
         try {
           member = await fetchMemberProfile(session.user.id)
+          console.log('[Auth] Member profile fetched:', !!member)
         } catch (err) {
-          console.error('Error fetching member in onAuthStateChange:', err)
+          console.error('[Auth] Error fetching member in onAuthStateChange:', err)
         }
       }
 
+      console.log('[Auth] Setting state from onAuthStateChange, isLoading: false')
       setState({
         user: session?.user ?? null,
         session,
@@ -79,22 +84,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Also call getSession as a fallback
     const initAuth = async () => {
+      console.log('[Auth] Calling getSession...')
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
+        console.log('[Auth] getSession result:', !!session, error?.message)
 
         if (error) {
-          console.error('Error getting session:', error)
+          console.error('[Auth] Error getting session:', error)
         }
 
         // Only update if onAuthStateChange hasn't fired yet
-        if (!isMounted || authInitialized) return
+        if (!isMounted || authInitialized) {
+          console.log('[Auth] Skipping getSession update (already initialized)')
+          return
+        }
 
         let member = null
         if (session?.user) {
           member = await fetchMemberProfile(session.user.id)
+          console.log('[Auth] Member profile fetched from getSession:', !!member)
         }
 
         authInitialized = true
+        console.log('[Auth] Setting state from getSession, isLoading: false')
         setState({
           user: session?.user ?? null,
           session: session ?? null,
@@ -102,7 +114,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           isLoading: false,
         })
       } catch (error) {
-        console.error('Auth initialization error:', error)
+        console.error('[Auth] Auth initialization error:', error)
         if (isMounted && !authInitialized) {
           authInitialized = true
           setState({
@@ -119,8 +131,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Fallback timeout - only if nothing else worked
     const timeoutId = setTimeout(() => {
+      console.log('[Auth] Timeout check - authInitialized:', authInitialized)
       if (isMounted && !authInitialized) {
-        console.warn('Auth initialization timed out - redirecting to login')
+        console.warn('[Auth] Timeout reached - forcing redirect to login')
         authInitialized = true
         setState({
           user: null,
