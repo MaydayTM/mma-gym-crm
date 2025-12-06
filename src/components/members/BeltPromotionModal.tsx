@@ -13,7 +13,7 @@ interface BeltPromotionModalProps {
     discipline_id: string
     disciplines: { name: string; color: string | null } | null
     belt_color: string
-    stripes: number
+    stripes: number | null
     dan_grade: number | null
     training_count?: number
   }
@@ -38,7 +38,7 @@ export function BeltPromotionModal({
   currentBelt,
 }: BeltPromotionModalProps) {
   const [toBelt, setToBelt] = useState(currentBelt.belt_color)
-  const [toStripes, setToStripes] = useState(currentBelt.stripes)
+  const [toStripes, setToStripes] = useState(currentBelt.stripes || 0)
   const [toDan, setToDan] = useState<number | undefined>(currentBelt.dan_grade || undefined)
   const [promotedBy, setPromotedBy] = useState<string>('')
   const [notes, setNotes] = useState('')
@@ -59,7 +59,7 @@ export function BeltPromotionModal({
         memberId,
         disciplineId: currentBelt.discipline_id,
         fromBelt: currentBelt.belt_color,
-        fromStripes: currentBelt.stripes,
+        fromStripes: currentBelt.stripes || 0,
         toBelt,
         toStripes,
         toDan: toBelt === 'black' ? toDan : undefined,
@@ -94,7 +94,7 @@ export function BeltPromotionModal({
           </p>
           <p className="text-[14px] text-neutral-300 mt-1">
             <span className="text-neutral-500">Huidige gordel:</span>{' '}
-            {BELT_LABELS[currentBelt.belt_color]} {currentBelt.stripes} stripes
+            {BELT_LABELS[currentBelt.belt_color]} {currentBelt.stripes || 0} stripes
           </p>
           <p className="text-[14px] text-neutral-300 mt-1">
             <span className="text-neutral-500">Trainingen:</span>{' '}
