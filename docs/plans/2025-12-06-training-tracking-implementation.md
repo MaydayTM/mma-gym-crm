@@ -2141,6 +2141,80 @@ git commit -m "docs: update CLAUDE.md with training tracking progress"
 
 ---
 
+---
+
+## Task 18: Schedule - Edit Class Modal
+
+**Files:**
+- Modify: `src/pages/Schedule.tsx`
+
+**Step 1: Add EditClassModal component**
+
+Create modal to edit existing class details:
+- Name, discipline, coach
+- Day of week, start/end time
+- Max capacity, room
+- Delete class option
+
+**Step 2: Add click handler to class cards**
+
+When clicking a class in the schedule, open EditClassModal.
+
+**Step 3: Add useUpdateClass and useDeleteClass mutations**
+
+Add to `useClasses.ts` hook.
+
+**Step 4: Commit**
+
+```bash
+git add src/pages/Schedule.tsx src/hooks/useClasses.ts
+git commit -m "feat: add edit/delete functionality to schedule classes"
+```
+
+---
+
+## Task 19: Schedule - Recurring Classes (Bulk Create)
+
+**Files:**
+- Modify: `src/pages/Schedule.tsx`
+- Create: `supabase/migrations/013_class_instances.sql`
+
+**Step 1: Database - Class instances table**
+
+```sql
+-- Classes worden templates, instances zijn de daadwerkelijke lessen
+CREATE TABLE IF NOT EXISTS class_instances (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  coach_id UUID REFERENCES members(id) ON DELETE SET NULL,
+  is_cancelled BOOLEAN DEFAULT false,
+  cancellation_reason TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+**Step 2: Add recurrence options to NewClassModal**
+
+- Checkbox: "Wekelijks herhalen"
+- Date picker: "Herhalen tot en met"
+- Generate instances for each week
+
+**Step 3: Add useCreateRecurringClasses mutation**
+
+Creates class template + all instances until end date.
+
+**Step 4: Commit**
+
+```bash
+git add supabase/migrations/013_class_instances.sql src/pages/Schedule.tsx src/hooks/useClasses.ts
+git commit -m "feat: add recurring class creation with bulk instances"
+```
+
+---
+
 ## Summary
 
 This plan implements:
@@ -2149,6 +2223,10 @@ This plan implements:
 3. **3 new components** - BeltProgressCard, BeltPromotionModal, AddBeltModal
 4. **1 page update** - MemberDetail with belt progress
 5. **1 page implementation** - Schedule with class management
+
+**Added tasks:**
+- Task 18: Edit/delete classes in schedule
+- Task 19: Recurring classes (bulk create with end date)
 
 **Not included (future tasks):**
 - Reservations page (leden inschrijven)
