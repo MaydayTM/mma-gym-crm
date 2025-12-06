@@ -21,13 +21,23 @@ export function Login() {
     setError(null)
     setIsLoading(true)
 
-    const { error } = await signIn(email, password)
+    try {
+      const { error } = await signIn(email, password)
 
-    if (error) {
-      setError(error.message)
+      if (error) {
+        console.error('Login error:', error)
+        setError(error.message)
+        setIsLoading(false)
+      } else {
+        // Small delay to allow auth state to update
+        setTimeout(() => {
+          navigate(from, { replace: true })
+        }, 100)
+      }
+    } catch (err) {
+      console.error('Unexpected login error:', err)
+      setError('Er ging iets mis bij het inloggen')
       setIsLoading(false)
-    } else {
-      navigate(from, { replace: true })
     }
   }
 
