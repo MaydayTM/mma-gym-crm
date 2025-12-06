@@ -306,7 +306,8 @@ CREATE POLICY "fighter_own_data" ON members
 - [ ] Retentie score berekening
 - [x] Check-in logging (handmatig)
 - [x] Lead → Member conversie
-- [ ] Gordel tracking (UI klaar, werkt al)
+- [x] Gordel tracking (multi-discipline met promotie historie)
+- [x] Lesrooster beheer (Schedule pagina)
 - [ ] Basis rapportages
 
 ### Nice to Have (later)
@@ -318,7 +319,7 @@ CREATE POLICY "fighter_own_data" ON members
 
 ---
 
-## 🗓️ AFGEROND DEZE SESSIE (1 december 2025)
+## 🗓️ AFGEROND SESSIE 1 december 2025
 
 ### Authenticatie (DONE)
 - [x] Supabase Auth configureren (email/wachtwoord)
@@ -335,14 +336,46 @@ CREATE POLICY "fighter_own_data" ON members
 
 ---
 
+## 🗓️ AFGEROND SESSIE 6 december 2025
+
+### Database Uitbreiding (DONE)
+- [x] disciplines tabel met seed data (BJJ, Judo, Karate, etc.)
+- [x] classes tabel voor lesrooster
+- [x] reservations tabel voor inschrijvingen
+- [x] member_belts tabel (gordel per discipline)
+- [x] belt_history tabel (promotie historie met trainingscount)
+- [x] Training count SQL functies (get_training_count, get_trainings_since_promotion)
+
+### Hooks (DONE)
+- [x] useDisciplines hook
+- [x] useClasses hook (CRUD)
+- [x] useReservations hook (CRUD + check-in)
+- [x] useMemberBelts hook (met promotie functie)
+- [x] useMembers uitgebreid met role/status filter
+
+### Components (DONE)
+- [x] BeltProgressCard - gordel overzicht per discipline
+- [x] BeltPromotionModal - nieuwe promotie registreren
+- [x] AddBeltModal - gordel toevoegen voor discipline
+- [x] Schedule pagina - weekrooster met class management
+
+### Integratie (DONE)
+- [x] BeltProgressCard toegevoegd aan MemberDetail pagina
+
+---
+
 ## 🗓️ PLAN VOLGENDE SESSIE
 
-### Prioriteit 1: Polish & Testen
-1. Gordel tracking UI verbeteren
-2. Retentie score berekening
-3. Basis rapportages
+### Prioriteit 1: Reservaties & Check-in
+1. Reservaties pagina (leden kunnen inschrijven voor lessen)
+2. Check-in validatie scherm (QR scanner)
+3. CSV import met legacy training count
 
-### Prioriteit 2: Nice to have
+### Prioriteit 2: Polish & Testen
+1. Retentie score berekening
+2. Basis rapportages
+
+### Prioriteit 3: Nice to have
 1. Fighter Profile Generator koppelen (externe repo)
 2. Stripe integratie voorbereiden
 

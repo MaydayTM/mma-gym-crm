@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { EditMemberForm } from '../components/members/EditMemberForm'
+import { BeltProgressCard } from '../components/members/BeltProgressCard'
 import { useMember } from '../hooks/useMember'
 import { useMemberSubscriptions } from '../hooks/useMemberSubscriptions'
 import { useMemberCheckins } from '../hooks/useMemberCheckins'
@@ -267,6 +268,12 @@ export function MemberDetail() {
           icon={CreditCard}
         />
       </div>
+
+      {/* Belt Progress */}
+      <BeltProgressCard
+        memberId={member.id}
+        memberName={`${member.first_name} ${member.last_name}`}
+      />
 
       {/* Subscriptions */}
       <div

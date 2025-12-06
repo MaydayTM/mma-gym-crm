@@ -32,11 +32,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   })
 
   // Fetch member profile from members table
-  const fetchMemberProfile = useCallback(async (userId: string) => {
+  const fetchMemberProfile = useCallback(async (authUserId: string) => {
     const { data, error } = await supabase
       .from('members')
       .select('*')
-      .eq('id', userId)
+      .eq('auth_user_id', authUserId)
       .single()
 
     if (error) {
