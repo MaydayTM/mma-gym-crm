@@ -29,16 +29,28 @@ export function useLeads() {
   return useQuery({
     queryKey: ['leads'],
     queryFn: async (): Promise<Lead[]> => {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .order('created_at', { ascending: false })
+      console.log('[useLeads] Starting query...')
+      const startTime = Date.now()
 
-      if (error) {
-        throw new Error(error.message)
+      try {
+        const { data, error } = await supabase
+          .from('leads')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        console.log('[useLeads] Query completed in', Date.now() - startTime, 'ms')
+        console.log('[useLeads] Data count:', data?.length ?? 0, 'Error:', error?.message)
+
+        if (error) {
+          console.error('[useLeads] Query error:', error)
+          throw new Error(error.message)
+        }
+
+        return data || []
+      } catch (err) {
+        console.error('[useLeads] Exception:', err)
+        throw err
       }
-
-      return data || []
     },
   })
 }

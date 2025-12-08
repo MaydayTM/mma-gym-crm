@@ -4,11 +4,25 @@ import type { Database } from '../types/database.types'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+// Debug logging for production issues
+console.log('[Supabase] Initializing with URL:', supabaseUrl?.substring(0, 30) + '...')
+console.log('[Supabase] Anon key present:', !!supabaseAnonKey)
+
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+})
+
+// Test connection on init
+supabase.auth.getSession().then(({ data, error }) => {
+  console.log('[Supabase] Connection test - Session:', !!data.session, 'Error:', error?.message)
+})
 
 // Type helpers voor gebruik in de app
 export type Tables<T extends keyof Database['public']['Tables']> =

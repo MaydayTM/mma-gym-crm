@@ -5,13 +5,27 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async (): Promise<DashboardStats | null> => {
-      const { data, error } = await supabase
-        .from('dashboard_stats')
-        .select('*')
-        .single()
+      console.log('[useDashboardStats] Starting query...')
+      const startTime = Date.now()
 
-      if (error) throw error
-      return data
+      try {
+        const { data, error } = await supabase
+          .from('dashboard_stats')
+          .select('*')
+          .single()
+
+        console.log('[useDashboardStats] Query completed in', Date.now() - startTime, 'ms')
+        console.log('[useDashboardStats] Data:', data ? 'received' : 'null', 'Error:', error?.message)
+
+        if (error) {
+          console.error('[useDashboardStats] Query error:', error)
+          throw error
+        }
+        return data
+      } catch (err) {
+        console.error('[useDashboardStats] Exception:', err)
+        throw err
+      }
     },
   })
 }
