@@ -290,6 +290,64 @@ export type Database = {
           },
         ]
       }
+      class_instances: {
+        Row: {
+          cancellation_reason: string | null
+          class_id: string
+          coach_id: string | null
+          created_at: string | null
+          date: string
+          end_time: string
+          id: string
+          is_cancelled: boolean | null
+          start_time: string
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          class_id: string
+          coach_id?: string | null
+          created_at?: string | null
+          date: string
+          end_time: string
+          id?: string
+          is_cancelled?: boolean | null
+          start_time: string
+        }
+        Update: {
+          cancellation_reason?: string | null
+          class_id?: string
+          coach_id?: string | null
+          created_at?: string | null
+          date?: string
+          end_time?: string
+          id?: string
+          is_cancelled?: boolean | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_instances_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_instances_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_instances_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           coach_id: string | null
@@ -299,8 +357,10 @@ export type Database = {
           end_time: string
           id: string
           is_active: boolean | null
+          is_recurring: boolean | null
           max_capacity: number | null
           name: string
+          recurrence_end_date: string | null
           room: string | null
           start_time: string
           updated_at: string | null
@@ -313,8 +373,10 @@ export type Database = {
           end_time: string
           id?: string
           is_active?: boolean | null
+          is_recurring?: boolean | null
           max_capacity?: number | null
           name: string
+          recurrence_end_date?: string | null
           room?: string | null
           start_time: string
           updated_at?: string | null
@@ -327,8 +389,10 @@ export type Database = {
           end_time?: string
           id?: string
           is_active?: boolean | null
+          is_recurring?: boolean | null
           max_capacity?: number | null
           name?: string
+          recurrence_end_date?: string | null
           room?: string | null
           start_time?: string
           updated_at?: string | null
@@ -359,6 +423,7 @@ export type Database = {
       }
       creative_fighter_characters: {
         Row: {
+          character_type: string | null
           created_at: string | null
           id: string
           image_url: string
@@ -366,6 +431,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          character_type?: string | null
           created_at?: string | null
           id?: string
           image_url: string
@@ -373,6 +439,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          character_type?: string | null
           created_at?: string | null
           id?: string
           image_url?: string
@@ -464,6 +531,59 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      discount_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_order_amount: number | null
+          tenant_id: string
+          times_used: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order_amount?: number | null
+          tenant_id: string
+          times_used?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order_amount?: number | null
+          tenant_id?: string
+          times_used?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_codes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       import_field_mapping: {
         Row: {
@@ -822,6 +942,201 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          product_name: string
+          product_variant_id: string | null
+          quantity: number
+          sku: string | null
+          tenant_id: string
+          total_price: number
+          unit_price: number
+          variant_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          product_name: string
+          product_variant_id?: string | null
+          quantity: number
+          sku?: string | null
+          tenant_id: string
+          total_price: number
+          unit_price: number
+          variant_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          product_name?: string
+          product_variant_id?: string | null
+          quantity?: number
+          sku?: string | null
+          tenant_id?: string
+          total_price?: number
+          unit_price?: number
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variants: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          low_stock_alert: number | null
+          name: string
+          price_adjustment: number | null
+          product_id: string
+          size: string | null
+          sku: string | null
+          stock_quantity: number
+          tenant_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          low_stock_alert?: number | null
+          name: string
+          price_adjustment?: number | null
+          product_id: string
+          size?: string | null
+          sku?: string | null
+          stock_quantity?: number
+          tenant_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          low_stock_alert?: number | null
+          name?: string
+          price_adjustment?: number | null
+          product_id?: string
+          size?: string | null
+          sku?: string | null
+          stock_quantity?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          availability_status: string
+          base_price: number
+          category: string
+          created_at: string | null
+          description: string
+          featured: boolean | null
+          featured_image: string | null
+          id: string
+          images: string[]
+          is_active: boolean | null
+          name: string
+          presale_ends_at: string | null
+          presale_price: number | null
+          seo_slug: string
+          tenant_id: string
+          updated_at: string | null
+          video_thumbnail: string | null
+          video_url: string | null
+        }
+        Insert: {
+          availability_status?: string
+          base_price: number
+          category: string
+          created_at?: string | null
+          description: string
+          featured?: boolean | null
+          featured_image?: string | null
+          id?: string
+          images?: string[]
+          is_active?: boolean | null
+          name: string
+          presale_ends_at?: string | null
+          presale_price?: number | null
+          seo_slug: string
+          tenant_id: string
+          updated_at?: string | null
+          video_thumbnail?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          availability_status?: string
+          base_price?: number
+          category?: string
+          created_at?: string | null
+          description?: string
+          featured?: boolean | null
+          featured_image?: string | null
+          id?: string
+          images?: string[]
+          is_active?: boolean | null
+          name?: string
+          presale_ends_at?: string | null
+          presale_price?: number | null
+          seo_slug?: string
+          tenant_id?: string
+          updated_at?: string | null
+          video_thumbnail?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           cancelled_at: string | null
@@ -946,6 +1261,163 @@ export type Database = {
             columns: ["subscription_id"]
             isOneToOne: false
             referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_orders: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          delivered_at: string | null
+          discount_amount: number | null
+          discount_code_id: string | null
+          id: string
+          notes: string | null
+          order_number: string
+          paid_at: string | null
+          payment_id: string | null
+          payment_provider: string | null
+          payment_session_id: string | null
+          shipped_at: string | null
+          shipping_address: Json
+          shipping_amount: number | null
+          status: string
+          subtotal_amount: number
+          tenant_id: string
+          total_amount: number
+          tracking_number: string | null
+          tracking_url: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          delivered_at?: string | null
+          discount_amount?: number | null
+          discount_code_id?: string | null
+          id?: string
+          notes?: string | null
+          order_number: string
+          paid_at?: string | null
+          payment_id?: string | null
+          payment_provider?: string | null
+          payment_session_id?: string | null
+          shipped_at?: string | null
+          shipping_address: Json
+          shipping_amount?: number | null
+          status?: string
+          subtotal_amount: number
+          tenant_id: string
+          total_amount: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string | null
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          delivered_at?: string | null
+          discount_amount?: number | null
+          discount_code_id?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: string
+          paid_at?: string | null
+          payment_id?: string | null
+          payment_provider?: string | null
+          payment_session_id?: string | null
+          shipped_at?: string | null
+          shipping_address?: Json
+          shipping_amount?: number | null
+          status?: string
+          subtotal_amount?: number
+          tenant_id?: string
+          total_amount?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_orders_discount_code_id_fkey"
+            columns: ["discount_code_id"]
+            isOneToOne: false
+            referencedRelation: "discount_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_adjustments: {
+        Row: {
+          adjusted_by_email: string | null
+          adjustment_reason: string | null
+          created_at: string | null
+          id: string
+          new_quantity: number
+          notes: string | null
+          old_quantity: number
+          order_id: string | null
+          product_variant_id: string
+          tenant_id: string
+        }
+        Insert: {
+          adjusted_by_email?: string | null
+          adjustment_reason?: string | null
+          created_at?: string | null
+          id?: string
+          new_quantity: number
+          notes?: string | null
+          old_quantity: number
+          order_id?: string | null
+          product_variant_id: string
+          tenant_id: string
+        }
+        Update: {
+          adjusted_by_email?: string | null
+          adjustment_reason?: string | null
+          created_at?: string | null
+          id?: string
+          new_quantity?: number
+          notes?: string | null
+          old_quantity?: number
+          order_id?: string | null
+          product_variant_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_adjustments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1154,6 +1626,145 @@ export type Database = {
           },
         ]
       }
+      tenant_admins: {
+        Row: {
+          accepted_at: string | null
+          email: string
+          id: string
+          invited_at: string | null
+          is_active: boolean | null
+          name: string | null
+          role: string
+          tenant_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          email: string
+          id?: string
+          invited_at?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          role?: string
+          tenant_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          email?: string
+          id?: string
+          invited_at?: string | null
+          is_active?: boolean | null
+          name?: string | null
+          role?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_admins_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_payment_configs: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          id: string
+          is_active: boolean | null
+          is_test_mode: boolean | null
+          mollie_api_key: string | null
+          mollie_profile_id: string | null
+          provider: string
+          stripe_publishable_key: string | null
+          stripe_secret_key: string | null
+          stripe_webhook_secret: string | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_test_mode?: boolean | null
+          mollie_api_key?: string | null
+          mollie_profile_id?: string | null
+          provider: string
+          stripe_publishable_key?: string | null
+          stripe_secret_key?: string | null
+          stripe_webhook_secret?: string | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_test_mode?: boolean | null
+          mollie_api_key?: string | null
+          mollie_profile_id?: string | null
+          provider?: string
+          stripe_publishable_key?: string | null
+          stripe_secret_key?: string | null
+          stripe_webhook_secret?: string | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_payment_configs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          contact_email: string
+          contact_phone: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          primary_color: string | null
+          slug: string
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          contact_email: string
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          primary_color?: string | null
+          slug: string
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          contact_email?: string
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          primary_color?: string | null
+          slug?: string
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       webhook_events: {
         Row: {
           attempts: number | null
@@ -1331,6 +1942,7 @@ export type Database = {
       }
     }
     Functions: {
+      generate_order_number: { Args: { p_tenant_id: string }; Returns: string }
       get_my_role: { Args: never; Returns: string }
       get_training_count: {
         Args: { p_discipline_id?: string; p_member_id: string }

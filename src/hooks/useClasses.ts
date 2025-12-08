@@ -106,3 +106,163 @@ export function useDeleteClass() {
     },
   })
 }
+
+// Helper: genereer datums voor recurring classes
+function generateRecurringDates(
+  startDate: Date,
+  endDate: Date,
+  dayOfWeek: number
+): Date[] {
+  const dates: Date[] = []
+  const current = new Date(startDate)
+
+  // Vind eerste dag die overeenkomt met dayOfWeek
+  while (current.getDay() !== dayOfWeek) {
+    current.setDate(current.getDate() + 1)
+  }
+
+  // Genereer alle datums tot en met endDate
+  while (current <= endDate) {
+    dates.push(new Date(current))
+    current.setDate(current.getDate() + 7) // Volgende week
+  }
+
+  return dates
+}
+
+export function useCreateRecurringClass() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      classData,
+      recurrenceEndDate,
+    }: {
+      classData: ClassInsert
+      recurrenceEndDate: string
+    }) => {
+      // 1. Maak de class template aan met recurrence info
+      const { data: newClass, error: classError } = await supabase
+        .from('classes')
+        .insert({
+          ...classData,
+          is_recurring: true,
+          recurrence_end_date: recurrenceEndDate,
+        })
+        .select()
+        .single()
+
+      if (classError) {
+        throw new Error(classError.message)
+      }
+
+      // 2. Genereer alle instances
+      const startDate = new Date()
+      const endDate = new Date(recurrenceEndDate)
+      const dates = generateRecurringDates(
+        startDate,
+        endDate,
+        classData.day_of_week
+      )
+
+      if (dates.length > 0) {
+        const instances = dates.map((date) => ({
+          class_id: newClass.id,
+          date: date.toISOString().split('T')[0],
+          start_time: classData.start_time,
+          end_time: classData.end_time,
+          coach_id: classData.coach_id,
+        }))
+
+        const { error: instancesError } = await supabase
+          .from('class_instances')
+          .insert(instances)
+
+        if (instancesError) {
+          // Rollback: verwijder de class als instances falen
+          await supabase.from('classes').delete().eq('id', newClass.id)
+          throw new Error(instancesError.message)
+        }
+      }
+
+      return { class: newClass, instanceCount: dates.length }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] })
+      queryClient.invalidateQueries({ queryKey: ['class-instances'] })
+    },
+  })
+}
+
+// Hook voor class instances (voor een specifieke week of periode)
+export function useClassInstances(startDate?: string, endDate?: string) {
+  return useQuery({
+    queryKey: ['class-instances', { startDate, endDate }],
+    queryFn: async () => {
+      let query = supabase
+        .from('class_instances')
+        .select(`
+          *,
+          classes:class_id (
+            id,
+            name,
+            discipline_id,
+            max_capacity,
+            room,
+            disciplines:discipline_id (name, color, slug)
+          ),
+          coach:coach_id (first_name, last_name)
+        `)
+        .eq('is_cancelled', false)
+        .order('date')
+        .order('start_time')
+
+      if (startDate) {
+        query = query.gte('date', startDate)
+      }
+
+      if (endDate) {
+        query = query.lte('date', endDate)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return data
+    },
+    enabled: !!startDate || !!endDate,
+  })
+}
+
+// Hook om een specifieke instance te annuleren
+export function useCancelClassInstance() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      instanceId,
+      reason,
+    }: {
+      instanceId: string
+      reason?: string
+    }) => {
+      const { error } = await supabase
+        .from('class_instances')
+        .update({
+          is_cancelled: true,
+          cancellation_reason: reason,
+        })
+        .eq('id', instanceId)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['class-instances'] })
+    },
+  })
+}

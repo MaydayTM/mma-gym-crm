@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus, Loader2, Trash2 } from 'lucide-react'
 import { Modal } from '../components/ui'
-import { useClasses, useCreateClass, useUpdateClass, useDeleteClass } from '../hooks/useClasses'
+import { useClasses, useCreateClass, useCreateRecurringClass, useUpdateClass, useDeleteClass } from '../hooks/useClasses'
 import { useDisciplines } from '../hooks/useDisciplines'
 import { useMembers } from '../hooks/useMembers'
 
@@ -167,40 +167,57 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
   const [endTime, setEndTime] = useState('20:00')
   const [maxCapacity, setMaxCapacity] = useState('')
   const [room, setRoom] = useState('')
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState('')
 
   const { data: disciplines } = useDisciplines()
   const { data: coaches } = useMembers({ role: 'coach' })
-  const { mutate: createClass, isPending } = useCreateClass()
+  const { mutate: createClass, isPending: isCreating } = useCreateClass()
+  const { mutate: createRecurringClass, isPending: isCreatingRecurring } = useCreateRecurringClass()
+
+  const isPending = isCreating || isCreatingRecurring
+
+  // Bereken minimum en default einddatum (3 maanden vanaf nu)
+  const today = new Date()
+  const minEndDate = today.toISOString().split('T')[0]
+  const defaultEndDate = new Date(today.setMonth(today.getMonth() + 3)).toISOString().split('T')[0]
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    createClass(
-      {
-        name,
-        discipline_id: disciplineId,
-        coach_id: coachId || null,
-        day_of_week: dayOfWeek,
-        start_time: startTime,
-        end_time: endTime,
-        max_capacity: maxCapacity ? parseInt(maxCapacity) : null,
-        room: room || null,
-      },
-      {
-        onSuccess: () => {
-          // Reset form
-          setName('')
-          setDisciplineId('')
-          setCoachId('')
-          setDayOfWeek(1)
-          setStartTime('19:00')
-          setEndTime('20:00')
-          setMaxCapacity('')
-          setRoom('')
-          onClose()
-        },
-      }
-    )
+    const classData = {
+      name,
+      discipline_id: disciplineId,
+      coach_id: coachId || null,
+      day_of_week: dayOfWeek,
+      start_time: startTime,
+      end_time: endTime,
+      max_capacity: maxCapacity ? parseInt(maxCapacity) : null,
+      room: room || null,
+    }
+
+    const resetForm = () => {
+      setName('')
+      setDisciplineId('')
+      setCoachId('')
+      setDayOfWeek(1)
+      setStartTime('19:00')
+      setEndTime('20:00')
+      setMaxCapacity('')
+      setRoom('')
+      setIsRecurring(false)
+      setRecurrenceEndDate('')
+      onClose()
+    }
+
+    if (isRecurring && recurrenceEndDate) {
+      createRecurringClass(
+        { classData, recurrenceEndDate },
+        { onSuccess: resetForm }
+      )
+    } else {
+      createClass(classData, { onSuccess: resetForm })
+    }
   }
 
   return (
@@ -331,6 +348,52 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           </div>
         </div>
 
+        {/* Recurring options */}
+        <div className="p-4 bg-white/5 rounded-xl space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isRecurring}
+              onChange={(e) => {
+                setIsRecurring(e.target.checked)
+                if (e.target.checked && !recurrenceEndDate) {
+                  setRecurrenceEndDate(defaultEndDate)
+                }
+              }}
+              className="w-5 h-5 rounded border-neutral-600 bg-neutral-900 text-amber-300 focus:ring-amber-300/50 focus:ring-offset-0"
+            />
+            <div>
+              <span className="text-[14px] text-neutral-200">Wekelijks herhalen</span>
+              <p className="text-[12px] text-neutral-500 mt-0.5">
+                Maak automatisch les-instances aan tot de einddatum
+              </p>
+            </div>
+          </label>
+
+          {isRecurring && (
+            <div>
+              <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+                Herhalen tot en met
+              </label>
+              <input
+                type="date"
+                value={recurrenceEndDate}
+                onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                min={minEndDate}
+                required={isRecurring}
+                className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+              />
+              {recurrenceEndDate && (
+                <p className="text-[11px] text-neutral-500 mt-2">
+                  Dit genereert ongeveer {Math.ceil(
+                    (new Date(recurrenceEndDate).getTime() - new Date().getTime()) / (7 * 24 * 60 * 60 * 1000)
+                  )} les-instances
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-end gap-3 pt-4">
           <button
             type="button"
@@ -342,11 +405,14 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           </button>
           <button
             type="submit"
-            disabled={isPending || !name || !disciplineId}
+            disabled={isPending || !name || !disciplineId || (isRecurring && !recurrenceEndDate)}
             className="inline-flex items-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium hover:bg-amber-200 transition disabled:opacity-50"
           >
             {isPending && <Loader2 size={18} className="animate-spin" />}
-            {isPending ? 'Opslaan...' : 'Aanmaken'}
+            {isPending
+              ? (isRecurring ? 'Aanmaken...' : 'Opslaan...')
+              : (isRecurring ? 'Recurring Les Aanmaken' : 'Aanmaken')
+            }
           </button>
         </div>
       </form>
