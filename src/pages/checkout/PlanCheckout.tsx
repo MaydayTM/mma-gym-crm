@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Loader2, ArrowLeft, Check, Users, Shield } from 'lucide-react'
+import { Loader2, ArrowLeft, Check, Users, Shield, User, Mail, Phone, Calendar } from 'lucide-react'
 import { useCheckoutData, useFamilyDiscounts } from '../../hooks/usePlans'
 import { useDisciplines } from '../../hooks/useDisciplines'
+import { supabase } from '../../lib/supabase'
 
 export function PlanCheckout() {
   const { ageGroup: ageGroupSlug } = useParams<{ ageGroup: string }>()
@@ -17,12 +18,21 @@ export function PlanCheckout() {
   const { data: familyDiscounts } = useFamilyDiscounts()
   const { data: disciplines } = useDisciplines()
 
-  // Form state
+  // Form state - Plan selection
   const [selectedPlanType, setSelectedPlanType] = useState<string | null>(null)
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null)
   const [selectedDiscipline, setSelectedDiscipline] = useState<string | null>(null)
   const [hasFamilyMember, setHasFamilyMember] = useState(false)
   const [wantsInsurance, setWantsInsurance] = useState(false)
+
+  // Form state - Customer details
+  const [showDetailsForm, setShowDetailsForm] = useState(false)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Get pricing for selected plan type
   const planPricing = useMemo(() => {
@@ -401,19 +411,189 @@ export function PlanCheckout() {
               </div>
             </div>
 
-            {/* CTA Button */}
-            <button
-              onClick={() => {
-                // TODO: Navigate to payment or details step
-                alert('Betaling wordt binnenkort geïmplementeerd!')
-              }}
-              className="w-full mt-6 py-4 rounded-full bg-amber-300 text-neutral-950 font-medium text-[16px] hover:bg-amber-200 transition shadow-[0_20px_45px_rgba(251,191,36,0.3)]"
-            >
-              Ga naar betaling
-            </button>
+            {/* CTA Button - Show form or continue */}
+            {!showDetailsForm ? (
+              <button
+                onClick={() => setShowDetailsForm(true)}
+                className="w-full mt-6 py-4 rounded-full bg-amber-300 text-neutral-950 font-medium text-[16px] hover:bg-amber-200 transition shadow-[0_20px_45px_rgba(251,191,36,0.3)]"
+              >
+                Doorgaan
+              </button>
+            ) : null}
+          </div>
+        )}
+
+        {/* Step 4: Customer Details Form */}
+        {showDetailsForm && selectedPrice && (
+          <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-3xl p-6 border border-white/10 mb-8">
+            <h2 className="text-[18px] font-medium text-neutral-200 mb-6">
+              4. Je gegevens
+            </h2>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* First Name */}
+                <div>
+                  <label className="block text-[13px] text-neutral-400 mb-2">
+                    Voornaam *
+                  </label>
+                  <div className="relative">
+                    <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-neutral-50 placeholder-neutral-500 focus:outline-none focus:border-amber-300/50 transition"
+                      placeholder="Jouw voornaam"
+                    />
+                  </div>
+                </div>
+
+                {/* Last Name */}
+                <div>
+                  <label className="block text-[13px] text-neutral-400 mb-2">
+                    Achternaam *
+                  </label>
+                  <div className="relative">
+                    <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                      className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-neutral-50 placeholder-neutral-500 focus:outline-none focus:border-amber-300/50 transition"
+                      placeholder="Jouw achternaam"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-[13px] text-neutral-400 mb-2">
+                  E-mailadres *
+                </label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-neutral-50 placeholder-neutral-500 focus:outline-none focus:border-amber-300/50 transition"
+                    placeholder="jouw@email.be"
+                  />
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-[13px] text-neutral-400 mb-2">
+                  Telefoonnummer
+                </label>
+                <div className="relative">
+                  <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-neutral-50 placeholder-neutral-500 focus:outline-none focus:border-amber-300/50 transition"
+                    placeholder="+32 123 45 67 89"
+                  />
+                </div>
+              </div>
+
+              {/* Birth Date */}
+              <div>
+                <label className="block text-[13px] text-neutral-400 mb-2">
+                  Geboortedatum *
+                </label>
+                <div className="relative">
+                  <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    required
+                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-neutral-50 placeholder-neutral-500 focus:outline-none focus:border-amber-300/50 transition"
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full mt-6 py-4 rounded-full bg-amber-300 text-neutral-950 font-medium text-[16px] hover:bg-amber-200 transition shadow-[0_20px_45px_rgba(251,191,36,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Bezig met verwerken...
+                  </>
+                ) : (
+                  'Ga naar betaling'
+                )}
+              </button>
+
+              <p className="text-[12px] text-neutral-500 text-center mt-4">
+                Je wordt doorgestuurd naar onze beveiligde betaalpagina.
+              </p>
+            </form>
           </div>
         )}
       </div>
     </div>
   )
+
+  // Handle form submission
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!selectedAgeGroup || !selectedPlanType || !selectedDuration || !selectedPrice) return
+
+    setIsSubmitting(true)
+
+    try {
+      // Create checkout session in database
+      const { data: session, error } = await supabase
+        .from('checkout_sessions')
+        .insert({
+          checkout_type: 'subscription',
+          age_group_id: selectedAgeGroup.id,
+          plan_type_id: selectedPlanType,
+          duration_months: selectedDuration,
+          selected_discipline_id: selectedDiscipline,
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone || null,
+          birth_date: birthDate,
+          selected_addons: wantsInsurance ? ['insurance'] : [],
+          family_discount: hasFamilyMember ? familyDiscount : 0,
+          subtotal,
+          discount_total: totalDiscount,
+          addon_total: insuranceCost,
+          final_total: total,
+          payment_status: 'pending',
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // For now, show success message
+      // TODO: Redirect to Stripe/Mollie payment
+      alert(`Checkout sessie aangemaakt! ID: ${session.id}\n\nBetaling integratie komt binnenkort.`)
+
+      // Navigate to success page (placeholder)
+      // navigate(`/checkout/payment/${session.id}`)
+
+    } catch (error) {
+      console.error('Checkout error:', error)
+      alert('Er ging iets mis. Probeer het opnieuw.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 }
