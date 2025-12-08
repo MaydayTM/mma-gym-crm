@@ -111,6 +111,45 @@ export type Database = {
           },
         ]
       }
+      age_groups: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          max_age: number | null
+          min_age: number | null
+          name: string
+          slug: string
+          sort_order: number | null
+          starting_price: number | null
+          subtitle: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_age?: number | null
+          min_age?: number | null
+          name: string
+          slug: string
+          sort_order?: number | null
+          starting_price?: number | null
+          subtitle?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_age?: number | null
+          min_age?: number | null
+          name?: string
+          slug?: string
+          sort_order?: number | null
+          starting_price?: number | null
+          subtitle?: string | null
+        }
+        Relationships: []
+      }
       belt_history: {
         Row: {
           created_at: string | null
@@ -286,6 +325,168 @@ export type Database = {
             columns: ["reservation_id"]
             isOneToOne: false
             referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkout_sessions: {
+        Row: {
+          addon_total: number | null
+          age_group_id: string | null
+          birth_date: string | null
+          checkout_type: string
+          completed_at: string | null
+          created_at: string | null
+          created_member_id: string | null
+          created_subscription_id: string | null
+          discount_total: number | null
+          duration_months: number | null
+          email: string | null
+          expires_at: string | null
+          external_checkout_id: string | null
+          family_discount: number | null
+          family_group_id: string | null
+          family_position: number | null
+          final_total: number | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          one_time_product_id: string | null
+          payment_provider: string | null
+          payment_status: string | null
+          phone: string | null
+          plan_type_id: string | null
+          referrer_url: string | null
+          selected_addons: Json | null
+          selected_discipline_id: string | null
+          subtotal: number | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          addon_total?: number | null
+          age_group_id?: string | null
+          birth_date?: string | null
+          checkout_type: string
+          completed_at?: string | null
+          created_at?: string | null
+          created_member_id?: string | null
+          created_subscription_id?: string | null
+          discount_total?: number | null
+          duration_months?: number | null
+          email?: string | null
+          expires_at?: string | null
+          external_checkout_id?: string | null
+          family_discount?: number | null
+          family_group_id?: string | null
+          family_position?: number | null
+          final_total?: number | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          one_time_product_id?: string | null
+          payment_provider?: string | null
+          payment_status?: string | null
+          phone?: string | null
+          plan_type_id?: string | null
+          referrer_url?: string | null
+          selected_addons?: Json | null
+          selected_discipline_id?: string | null
+          subtotal?: number | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          addon_total?: number | null
+          age_group_id?: string | null
+          birth_date?: string | null
+          checkout_type?: string
+          completed_at?: string | null
+          created_at?: string | null
+          created_member_id?: string | null
+          created_subscription_id?: string | null
+          discount_total?: number | null
+          duration_months?: number | null
+          email?: string | null
+          expires_at?: string | null
+          external_checkout_id?: string | null
+          family_discount?: number | null
+          family_group_id?: string | null
+          family_position?: number | null
+          final_total?: number | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          one_time_product_id?: string | null
+          payment_provider?: string | null
+          payment_status?: string | null
+          phone?: string | null
+          plan_type_id?: string | null
+          referrer_url?: string | null
+          selected_addons?: Json | null
+          selected_discipline_id?: string | null
+          subtotal?: number | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_sessions_age_group_id_fkey"
+            columns: ["age_group_id"]
+            isOneToOne: false
+            referencedRelation: "age_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_created_member_id_fkey"
+            columns: ["created_member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_created_member_id_fkey"
+            columns: ["created_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_created_subscription_id_fkey"
+            columns: ["created_subscription_id"]
+            isOneToOne: false
+            referencedRelation: "member_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_one_time_product_id_fkey"
+            columns: ["one_time_product_id"]
+            isOneToOne: false
+            referencedRelation: "one_time_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_plan_type_id_fkey"
+            columns: ["plan_type_id"]
+            isOneToOne: false
+            referencedRelation: "plan_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_selected_discipline_id_fkey"
+            columns: ["selected_discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
             referencedColumns: ["id"]
           },
         ]
@@ -585,6 +786,97 @@ export type Database = {
           },
         ]
       }
+      family_discounts: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          discount_amount: number
+          id: string
+          position: number
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          discount_amount: number
+          id?: string
+          position: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          discount_amount?: number
+          id?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      family_groups: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      family_members: {
+        Row: {
+          created_at: string | null
+          family_group_id: string
+          id: string
+          member_id: string
+          position: number
+        }
+        Insert: {
+          created_at?: string | null
+          family_group_id: string
+          id?: string
+          member_id: string
+          position: number
+        }
+        Update: {
+          created_at?: string | null
+          family_group_id?: string
+          id?: string
+          member_id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_members_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_field_mapping: {
         Row: {
           created_at: string | null
@@ -801,6 +1093,127 @@ export type Database = {
           },
         ]
       }
+      member_subscriptions: {
+        Row: {
+          addon_total: number | null
+          age_group_id: string | null
+          auto_renew: boolean | null
+          base_price: number
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string | null
+          duration_months: number | null
+          end_date: string | null
+          external_subscription_id: string | null
+          family_discount: number | null
+          final_price: number
+          frozen_until: string | null
+          id: string
+          member_id: string
+          one_time_product_id: string | null
+          payment_provider: string | null
+          plan_type_id: string | null
+          selected_discipline_id: string | null
+          sessions_remaining: number | null
+          start_date: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          addon_total?: number | null
+          age_group_id?: string | null
+          auto_renew?: boolean | null
+          base_price: number
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          duration_months?: number | null
+          end_date?: string | null
+          external_subscription_id?: string | null
+          family_discount?: number | null
+          final_price: number
+          frozen_until?: string | null
+          id?: string
+          member_id: string
+          one_time_product_id?: string | null
+          payment_provider?: string | null
+          plan_type_id?: string | null
+          selected_discipline_id?: string | null
+          sessions_remaining?: number | null
+          start_date: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          addon_total?: number | null
+          age_group_id?: string | null
+          auto_renew?: boolean | null
+          base_price?: number
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string | null
+          duration_months?: number | null
+          end_date?: string | null
+          external_subscription_id?: string | null
+          family_discount?: number | null
+          final_price?: number
+          frozen_until?: string | null
+          id?: string
+          member_id?: string
+          one_time_product_id?: string | null
+          payment_provider?: string | null
+          plan_type_id?: string | null
+          selected_discipline_id?: string | null
+          sessions_remaining?: number | null
+          start_date?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_subscriptions_age_group_id_fkey"
+            columns: ["age_group_id"]
+            isOneToOne: false
+            referencedRelation: "age_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscriptions_one_time_product_id_fkey"
+            columns: ["one_time_product_id"]
+            isOneToOne: false
+            referencedRelation: "one_time_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscriptions_plan_type_id_fkey"
+            columns: ["plan_type_id"]
+            isOneToOne: false
+            referencedRelation: "plan_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscriptions_selected_discipline_id_fkey"
+            columns: ["selected_discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           access_card_id: string | null
@@ -942,6 +1355,54 @@ export type Database = {
         }
         Relationships: []
       }
+      one_time_products: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          mollie_payment_id: string | null
+          name: string
+          price: number
+          product_type: string
+          sessions: number | null
+          slug: string
+          sort_order: number | null
+          stripe_price_id: string | null
+          validity_days: number
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          mollie_payment_id?: string | null
+          name: string
+          price: number
+          product_type: string
+          sessions?: number | null
+          slug: string
+          sort_order?: number | null
+          stripe_price_id?: string | null
+          validity_days: number
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          mollie_payment_id?: string | null
+          name?: string
+          price?: number
+          product_type?: string
+          sessions?: number | null
+          slug?: string
+          sort_order?: number | null
+          stripe_price_id?: string | null
+          validity_days?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -1002,6 +1463,144 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_addons: {
+        Row: {
+          applicable_to: Json | null
+          billing_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          name: string
+          price: number
+          slug: string
+          sort_order: number | null
+        }
+        Insert: {
+          applicable_to?: Json | null
+          billing_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          name: string
+          price: number
+          slug: string
+          sort_order?: number | null
+        }
+        Update: {
+          applicable_to?: Json | null
+          billing_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          name?: string
+          price?: number
+          slug?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      plan_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          highlight_text: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          highlight_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          highlight_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      pricing_matrix: {
+        Row: {
+          age_group_id: string
+          created_at: string | null
+          duration_months: number
+          id: string
+          includes_insurance: boolean | null
+          is_active: boolean | null
+          mollie_plan_id: string | null
+          plan_type_id: string
+          price: number
+          price_per_month: number | null
+          savings: number | null
+          stripe_price_id: string | null
+        }
+        Insert: {
+          age_group_id: string
+          created_at?: string | null
+          duration_months: number
+          id?: string
+          includes_insurance?: boolean | null
+          is_active?: boolean | null
+          mollie_plan_id?: string | null
+          plan_type_id: string
+          price: number
+          price_per_month?: number | null
+          savings?: number | null
+          stripe_price_id?: string | null
+        }
+        Update: {
+          age_group_id?: string
+          created_at?: string | null
+          duration_months?: number
+          id?: string
+          includes_insurance?: boolean | null
+          is_active?: boolean | null
+          mollie_plan_id?: string | null
+          plan_type_id?: string
+          price?: number
+          price_per_month?: number | null
+          savings?: number | null
+          stripe_price_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_matrix_age_group_id_fkey"
+            columns: ["age_group_id"]
+            isOneToOne: false
+            referencedRelation: "age_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_matrix_plan_type_id_fkey"
+            columns: ["plan_type_id"]
+            isOneToOne: false
+            referencedRelation: "plan_types"
             referencedColumns: ["id"]
           },
         ]
@@ -1418,6 +2017,51 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_addons: {
+        Row: {
+          addon_id: string
+          created_at: string | null
+          end_date: string | null
+          id: string
+          price_paid: number
+          start_date: string
+          subscription_id: string
+        }
+        Insert: {
+          addon_id: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          price_paid: number
+          start_date: string
+          subscription_id: string
+        }
+        Update: {
+          addon_id?: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          price_paid?: number
+          start_date?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_addons_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "plan_addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_addons_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "member_subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -1952,6 +2596,8 @@ export type Database = {
         Args: { p_discipline_id: string; p_member_id: string }
         Returns: number
       }
+      get_user_tenant_ids: { Args: never; Returns: string[] }
+      is_tenant_owner: { Args: { check_tenant_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

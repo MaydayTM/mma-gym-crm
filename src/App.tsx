@@ -18,6 +18,7 @@ import {
   Settings,
   Login,
 } from './pages'
+import { PlansOverview, PlanCheckout } from './pages/checkout'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +66,10 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
+
+              {/* Public checkout routes */}
+              <Route path="/checkout/plans" element={<PlansOverview />} />
+              <Route path="/checkout/plans/:ageGroup" element={<PlanCheckout />} />
 
               {/* Protected routes */}
               <Route
