@@ -364,20 +364,36 @@ CREATE POLICY "fighter_own_data" ON members
 
 ---
 
+## 🗓️ AFGEROND SESSIE 8 december 2025
+
+### Schedule Uitbreiden (DONE)
+- [x] Edit Class Modal - Lessen bewerken/verwijderen via klik op rooster
+- [x] Recurring Classes - Wekelijks herhalen tot einddatum (bulk create)
+- [x] Team pagina - coaches toevoegen en toewijzen aan lessen
+
+### Reservaties & Check-in (DONE)
+- [x] Reservaties pagina - leden kunnen inschrijven voor lessen (weekoverzicht)
+- [x] Check-in validatie scherm (handmatig, QR placeholder)
+- [x] CSV import uitgebreid met legacy_checkin_count
+
+### Polish & Testen (DONE)
+- [x] Retentie score berekening (dashboard widget + useRetentionStats hook)
+- [x] Basis rapportages (Reports pagina met stats en grafieken)
+
+---
+
 ## 🗓️ PLAN VOLGENDE SESSIE
 
-### Prioriteit 1: Reservaties & Check-in
-1. Reservaties pagina (leden kunnen inschrijven voor lessen)
-2. Check-in validatie scherm (QR scanner)
-3. CSV import met legacy training count
-
-### Prioriteit 2: Polish & Testen
-1. Retentie score berekening
-2. Basis rapportages
-
-### Prioriteit 3: Nice to have
-1. Fighter Profile Generator koppelen (externe repo)
+### Prioriteit 1: Nice to have
+1. Fighter Profile Generator koppelen (externe repo - wacht op integratie)
 2. Stripe integratie voorbereiden
+
+### Prioriteit 2: Uitbreiding
+1. QR scanner voor check-in (camera integratie)
+2. Push notifications voor retentie alerts
+3. Export functies voor rapportages
+
+> **Implementatie plan:** Zie `docs/plans/2025-12-06-training-tracking-implementation.md` voor details
 
 ---
 
