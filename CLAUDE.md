@@ -302,13 +302,13 @@ CREATE POLICY "fighter_own_data" ON members
 - [x] CSV import voor 200 bestaande leden
 - [x] Basis authenticatie (email/wachtwoord)
 
-### Should Have
-- [ ] Retentie score berekening
+### Should Have - ALLE AFGEROND
+- [x] Retentie score berekening
 - [x] Check-in logging (handmatig)
 - [x] Lead → Member conversie
 - [x] Gordel tracking (multi-discipline met promotie historie)
 - [x] Lesrooster beheer (Schedule pagina)
-- [ ] Basis rapportages
+- [x] Basis rapportages
 
 ### Nice to Have (later)
 - [ ] Stripe integratie
