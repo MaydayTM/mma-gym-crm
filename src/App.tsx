@@ -11,6 +11,7 @@ import {
   Leads,
   Subscriptions,
   Schedule,
+  Reservations,
   Team,
   Settings,
   Login,
@@ -78,6 +79,7 @@ function App() {
                 <Route path="leads" element={<Leads />} />
                 <Route path="subscriptions" element={<Subscriptions />} />
                 <Route path="schedule" element={<Schedule />} />
+                <Route path="reservations" element={<Reservations />} />
                 <Route path="team" element={<Team />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
