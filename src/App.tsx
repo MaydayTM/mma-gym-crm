@@ -12,6 +12,7 @@ import {
   Subscriptions,
   Schedule,
   Reservations,
+  CheckIn,
   Team,
   Settings,
   Login,
@@ -80,6 +81,7 @@ function App() {
                 <Route path="subscriptions" element={<Subscriptions />} />
                 <Route path="schedule" element={<Schedule />} />
                 <Route path="reservations" element={<Reservations />} />
+                <Route path="checkin" element={<CheckIn />} />
                 <Route path="team" element={<Team />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
