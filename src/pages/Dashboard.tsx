@@ -5,14 +5,17 @@ import {
   Calendar,
   TrendingUp,
   Euro,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle,
+  Heart,
 } from 'lucide-react'
 import { StatCard, Card, Modal } from '../components/ui'
 import { NewMemberForm } from '../components/members/NewMemberForm'
-import { useDashboardStats } from '../hooks/useDashboardStats'
+import { useDashboardStats, useRetentionStats } from '../hooks/useDashboardStats'
 
 export function Dashboard() {
   const { data: stats, isLoading, error } = useDashboardStats()
+  const { data: retentionStats } = useRetentionStats()
   const [isNewMemberModalOpen, setIsNewMemberModalOpen] = useState(false)
 
   if (isLoading) {
@@ -95,6 +98,56 @@ export function Dashboard() {
           icon={Euro}
         />
       </div>
+
+      {/* Retention Overview */}
+      {retentionStats && (
+        <Card variant="elevated">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-amber-500/10 rounded-xl">
+              <Heart className="text-amber-300" size={20} strokeWidth={1.5} />
+            </div>
+            <div>
+              <h3 className="text-[18px] font-medium text-neutral-50">Retentie Overzicht</h3>
+              <p className="text-[12px] text-neutral-500">Gebaseerd op laatste check-in</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-5 gap-3">
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/40 rounded-xl text-center">
+              <p className="text-[24px] font-bold text-emerald-300">{retentionStats.healthy}</p>
+              <p className="text-[11px] text-emerald-300/70 mt-1">Gezond</p>
+              <p className="text-[10px] text-neutral-500">&lt;7 dagen</p>
+            </div>
+            <div className="p-3 bg-amber-500/10 border border-amber-500/40 rounded-xl text-center">
+              <p className="text-[24px] font-bold text-amber-300">{retentionStats.at_risk}</p>
+              <p className="text-[11px] text-amber-300/70 mt-1">At Risk</p>
+              <p className="text-[10px] text-neutral-500">7-14 dagen</p>
+            </div>
+            <div className="p-3 bg-orange-500/10 border border-orange-500/40 rounded-xl text-center">
+              <p className="text-[24px] font-bold text-orange-300">{retentionStats.critical}</p>
+              <p className="text-[11px] text-orange-300/70 mt-1">Kritiek</p>
+              <p className="text-[10px] text-neutral-500">14-30 dagen</p>
+            </div>
+            <div className="p-3 bg-rose-500/10 border border-rose-500/40 rounded-xl text-center">
+              <p className="text-[24px] font-bold text-rose-300">{retentionStats.churned}</p>
+              <p className="text-[11px] text-rose-300/70 mt-1">Churned</p>
+              <p className="text-[10px] text-neutral-500">&gt;30 dagen</p>
+            </div>
+            <div className="p-3 bg-neutral-500/10 border border-neutral-500/40 rounded-xl text-center">
+              <p className="text-[24px] font-bold text-neutral-300">{retentionStats.never_visited}</p>
+              <p className="text-[11px] text-neutral-300/70 mt-1">Nooit</p>
+              <p className="text-[10px] text-neutral-500">Geen check-in</p>
+            </div>
+          </div>
+          {(retentionStats.at_risk > 0 || retentionStats.critical > 0) && (
+            <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/40 rounded-xl flex items-center gap-3">
+              <AlertTriangle className="text-amber-300 shrink-0" size={18} strokeWidth={1.5} />
+              <p className="text-[13px] text-amber-300/90">
+                {retentionStats.at_risk + retentionStats.critical} leden hebben aandacht nodig - neem contact op!
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

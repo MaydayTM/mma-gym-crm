@@ -21,6 +21,7 @@ interface ParsedMember {
   disciplines?: string[]
   belt_color?: string
   belt_stripes?: number
+  legacy_checkin_count?: number
   notes?: string
 }
 
@@ -74,6 +75,9 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
       'disciplines': 'disciplines',
       'gordel_kleur': 'belt_color',
       'gordel_strepen': 'belt_stripes',
+      'trainingen': 'legacy_checkin_count',
+      'training_count': 'legacy_checkin_count',
+      'legacy_checkin_count': 'legacy_checkin_count',
       'notities': 'notes',
     }
 
@@ -110,6 +114,9 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
             value = value.split(',').map(d => d.trim().toLowerCase())
           }
           if (field === 'belt_stripes' && typeof value === 'string') {
+            value = parseInt(value, 10) || 0
+          }
+          if (field === 'legacy_checkin_count' && typeof value === 'string') {
             value = parseInt(value, 10) || 0
           }
           if (field === 'gender' && typeof value === 'string') {
@@ -150,6 +157,7 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
           disciplines: row.disciplines as string[] | undefined,
           belt_color: row.belt_color as string | undefined,
           belt_stripes: row.belt_stripes as number | undefined,
+          legacy_checkin_count: row.legacy_checkin_count as number | undefined,
           notes: row.notes as string | undefined,
         })
       }
@@ -193,6 +201,7 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
       disciplines: member.disciplines || null,
       belt_color: member.belt_color || null,
       belt_stripes: member.belt_stripes || 0,
+      legacy_checkin_count: member.legacy_checkin_count || 0,
       notes: member.notes || null,
       status: 'active' as const,
       role: 'fighter' as const,
@@ -325,6 +334,7 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
                     <th className="text-left text-[11px] font-medium text-neutral-500 uppercase tracking-[0.22em] px-4 py-3">Email</th>
                     <th className="text-left text-[11px] font-medium text-neutral-500 uppercase tracking-[0.22em] px-4 py-3">Disciplines</th>
                     <th className="text-left text-[11px] font-medium text-neutral-500 uppercase tracking-[0.22em] px-4 py-3">Gordel</th>
+                    <th className="text-right text-[11px] font-medium text-neutral-500 uppercase tracking-[0.22em] px-4 py-3">Trainingen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -339,6 +349,9 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
                       </td>
                       <td className="px-4 py-3 text-[14px] text-neutral-400">
                         {member.belt_color || '-'}
+                      </td>
+                      <td className="px-4 py-3 text-[14px] text-neutral-400 text-right">
+                        {member.legacy_checkin_count || 0}
                       </td>
                     </tr>
                   ))}
