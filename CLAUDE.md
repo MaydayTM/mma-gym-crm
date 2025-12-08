@@ -382,18 +382,37 @@ CREATE POLICY "fighter_own_data" ON members
 
 ---
 
+## 🗓️ AFGEROND SESSIE 8 december 2025 (avond)
+
+### Subscription Plans Module (DONE)
+- [x] Brainstorm & Design document (`docs/plans/2025-12-08-subscription-plans-design.md`)
+- [x] Database: 10 nieuwe tabellen (age_groups, plan_types, pricing_matrix, etc.)
+- [x] Seed data: Reconnect Academy prijsstructuur 2026
+- [x] Checkout UI: PlansOverview + PlanCheckout pages
+- [x] Checkout flow: Plan selectie → Details form → Database opslag
+- [x] Public URLs: `/checkout/plans`, `/checkout/plans/:ageGroup`
+
+---
+
 ## 🗓️ PLAN VOLGENDE SESSIE
 
-### Prioriteit 1: Nice to have
-1. Fighter Profile Generator koppelen (externe repo - wacht op integratie)
-2. Stripe integratie voorbereiden
+### Prioriteit 1: Payment Integratie
+1. Mollie of Stripe kiezen en implementeren
+2. Webhook handlers voor payment confirmatie
+3. Automatisch member aanmaken na succesvolle betaling
+4. Success/Cancel pagina's
 
-### Prioriteit 2: Uitbreiding
-1. QR scanner voor check-in (camera integratie)
-2. Push notifications voor retentie alerts
+### Prioriteit 2: Checkout Afronding
+1. Welkomstmail na inschrijving
+2. Dagpas & Beurtenkaart checkout flows
+3. Admin beheer van plannen en prijzen
+
+### Prioriteit 3: Nice to have
+1. Fighter Profile Generator koppelen (externe repo)
+2. QR scanner voor check-in
 3. Export functies voor rapportages
 
-> **Implementatie plan:** Zie `docs/plans/2025-12-06-training-tracking-implementation.md` voor details
+> **Design document:** Zie `docs/plans/2025-12-08-subscription-plans-design.md` voor subscription module details
 
 ---
 
