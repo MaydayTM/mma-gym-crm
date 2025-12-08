@@ -13,6 +13,7 @@ import {
   Schedule,
   Reservations,
   CheckIn,
+  Reports,
   Team,
   Settings,
   Login,
@@ -82,6 +83,7 @@ function App() {
                 <Route path="schedule" element={<Schedule />} />
                 <Route path="reservations" element={<Reservations />} />
                 <Route path="checkin" element={<CheckIn />} />
+                <Route path="reports" element={<Reports />} />
                 <Route path="team" element={<Team />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
