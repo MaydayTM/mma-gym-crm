@@ -394,25 +394,52 @@ CREATE POLICY "fighter_own_data" ON members
 
 ---
 
+## 🗓️ AFGEROND SESSIE 9 december 2025
+
+### Shop Module Integratie (DONE)
+- [x] Database migratie: `017_tenant_modules.sql`
+  - `modules` tabel met alle CRM modules (core + premium)
+  - `tenant_module_subscriptions` tabel voor tenant-module koppeling
+  - Helper functies: `has_module_access()`, `get_tenant_modules()`
+  - Seed data: 4 core modules + 4 premium modules (Shop €29, Marketing €19, etc.)
+- [x] useModules hook: Module toegang checken, trial info ophalen
+- [x] Shop pagina: Dashboard met tabs (Overzicht, Producten, Bestellingen, Instellingen)
+- [x] Sidebar: Shop menu-item met trial badge (paars, toont resterende dagen)
+- [x] Route: `/shop` toegevoegd aan protected routes
+
+### Multi-tenant Architectuur
+- Reconnect krijgt automatisch 30-dagen trial voor Shop module
+- Shop linkt naar externe webshop op `mmagym.be/shop`
+- Toekomstige gyms kunnen modules activeren via tenant_module_subscriptions
+
+---
+
 ## 🗓️ PLAN VOLGENDE SESSIE
 
-### Prioriteit 1: Payment Integratie
+### Prioriteit 1: Shop Module Afronden
+1. Test Shop module in browser (login nodig)
+2. Regenereer database types: `npx supabase gen types typescript`
+3. Koppel Shop admin functies aan mmagym.be/admin/shop
+
+### Prioriteit 2: Payment Integratie
 1. Mollie of Stripe kiezen en implementeren
 2. Webhook handlers voor payment confirmatie
 3. Automatisch member aanmaken na succesvolle betaling
 4. Success/Cancel pagina's
 
-### Prioriteit 2: Checkout Afronding
+### Prioriteit 3: Checkout Afronding
 1. Welkomstmail na inschrijving
 2. Dagpas & Beurtenkaart checkout flows
 3. Admin beheer van plannen en prijzen
 
-### Prioriteit 3: Nice to have
+### Prioriteit 4: Nice to have
 1. Fighter Profile Generator koppelen (externe repo)
 2. QR scanner voor check-in
 3. Export functies voor rapportages
 
-> **Design document:** Zie `docs/plans/2025-12-08-subscription-plans-design.md` voor subscription module details
+> **Design documents:**
+> - Subscription module: `docs/plans/2025-12-08-subscription-plans-design.md`
+> - Shop integratie: Zie `reconnect-site` repo voor webshop code
 
 ---
 
