@@ -17,6 +17,7 @@ import {
   Team,
   Settings,
   Login,
+  Shop,
 } from './pages'
 import { PlansOverview, PlanCheckout } from './pages/checkout'
 
@@ -91,6 +92,7 @@ function App() {
                 <Route path="reports" element={<Reports />} />
                 <Route path="team" element={<Team />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="shop" element={<Shop />} />
               </Route>
             </Routes>
           </AuthProvider>

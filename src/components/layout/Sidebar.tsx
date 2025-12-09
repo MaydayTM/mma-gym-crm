@@ -12,10 +12,25 @@ import {
   CheckSquare,
   Shield,
   LogOut,
+  ShoppingBag,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { useModules } from '../../hooks/useModules'
 
-const navigation = [
+// Navigation item type
+interface NavItem {
+  name: string
+  href: string
+  icon: LucideIcon
+  badge?: number
+  adminOnly?: boolean
+  trialBadge?: number | null
+  moduleSlug?: string
+}
+
+// Core navigation items - always visible
+const coreNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Leden', href: '/members', icon: Users },
   { name: 'Leads', href: '/leads', icon: UserPlus },
@@ -29,12 +44,32 @@ const navigation = [
   { name: 'Instellingen', href: '/settings', icon: Settings },
 ]
 
+// Premium module navigation items
+const premiumModules: Record<string, NavItem> = {
+  shop: { name: 'Shop', href: '/shop', icon: ShoppingBag, moduleSlug: 'shop' },
+}
+
 export function Sidebar() {
   const { signOut, member, user } = useAuth()
+  const { hasAccess, getTrialInfo } = useModules()
 
   const displayName = member
     ? `${member.first_name} ${member.last_name}`
     : user?.email?.split('@')[0] || 'Gebruiker'
+
+  // Build navigation including active premium modules
+  const navigation = [
+    ...coreNavigation,
+    // Add Shop if tenant has access
+    ...(hasAccess('shop')
+      ? [
+          {
+            ...premiumModules.shop,
+            trialBadge: getTrialInfo('shop').isTrialing ? getTrialInfo('shop').daysLeft : null,
+          },
+        ]
+      : []),
+  ]
 
   return (
     <aside className="w-64 bg-neutral-950 border-r border-white/10 min-h-screen flex flex-col">
@@ -66,6 +101,11 @@ export function Sidebar() {
                   {item.badge && (
                     <span className="ml-auto bg-amber-300 text-neutral-950 text-[11px] font-medium px-2 py-0.5 rounded-full">
                       {item.badge}
+                    </span>
+                  )}
+                  {item.trialBadge && (
+                    <span className="ml-auto bg-purple-500/20 text-purple-300 text-[10px] font-medium px-2 py-0.5 rounded-full border border-purple-500/30">
+                      {item.trialBadge}d trial
                     </span>
                   )}
                 </NavLink>
