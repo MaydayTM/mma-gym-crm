@@ -1,4 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
+
+// Tenant ID - later configureerbaar per gym
+const TENANT_ID = 'reconnect'
 
 export type ModuleStatus = 'active' | 'trial' | 'available' | 'expired' | 'cancelled'
 
@@ -13,39 +17,76 @@ export interface TenantModule {
   trial_ends_at: string | null
 }
 
-// Default modules until database migration is run
-// Tenant ID will be 'reconnect' - configurable later per gym
+// Default modules als fallback
 const DEFAULT_MODULES: TenantModule[] = [
   {
     module_id: 'shop',
     slug: 'shop',
     name: 'Shop',
     icon: 'ShoppingBag',
-    external_url: null,
+    external_url: 'https://www.mmagym.be/shop',
     status: 'trial',
     is_core: false,
     trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ]
 
+async function fetchModules(): Promise<TenantModule[]> {
+  try {
+    // Call the database function via REST API
+    // Using fetch to bypass TypeScript type issues until types are regenerated
+    const { data: sessionData } = await supabase.auth.getSession()
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_tenant_modules`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${sessionData?.session?.access_token || supabaseKey}`,
+      },
+      body: JSON.stringify({ p_tenant_id: TENANT_ID }),
+    })
+
+    if (!response.ok) {
+      console.warn('[useModules] API call failed, using defaults')
+      return DEFAULT_MODULES
+    }
+
+    const data = await response.json()
+
+    if (!data || data.length === 0) {
+      return DEFAULT_MODULES
+    }
+
+    return data.map((m: Record<string, unknown>) => ({
+      module_id: m.module_id as string,
+      slug: m.slug as string,
+      name: m.name as string,
+      icon: m.icon as string | null,
+      external_url: m.external_url as string | null,
+      status: (m.status as ModuleStatus) || 'available',
+      is_core: m.is_core as boolean,
+      trial_ends_at: (m.trial_ends_at as string) || null,
+    }))
+  } catch (error) {
+    console.error('[useModules] Error fetching modules:', error)
+    return DEFAULT_MODULES
+  }
+}
+
 export function useModules() {
-  // For now, use default modules until the migration is run
-  // Once the database tables exist, we'll fetch from Supabase
-  const [modules, setModules] = useState<TenantModule[]>(DEFAULT_MODULES)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-
-  const fetchModules = useCallback(async () => {
-    // TODO: Enable database fetch once migration 017_tenant_modules.sql is run
-    // For now, use default modules
-    setModules(DEFAULT_MODULES)
-    setLoading(false)
-    setError(null)
-  }, [])
-
-  useEffect(() => {
-    fetchModules()
-  }, [fetchModules])
+  const {
+    data: modules = DEFAULT_MODULES,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['tenant-modules', TENANT_ID],
+    queryFn: fetchModules,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
 
   // Check of een specifieke module actief is
   function hasAccess(moduleSlug: string): boolean {
@@ -58,15 +99,38 @@ export function useModules() {
     // Check status
     if (module.status !== 'active' && module.status !== 'trial') return false
 
-    // Check trial expiration
-    if (module.trial_ends_at && new Date(module.trial_ends_at) < new Date()) {
-      return false
+    // Check trial expiry
+    if (module.status === 'trial' && module.trial_ends_at) {
+      const trialEnd = new Date(module.trial_ends_at)
+      if (trialEnd < new Date()) return false
     }
 
     return true
   }
 
-  // Get alle premium modules (niet-core)
+  // Get trial info voor een module
+  function getTrialInfo(moduleSlug: string): {
+    isTrialing: boolean
+    daysLeft: number | null
+  } {
+    const module = modules.find((m) => m.slug === moduleSlug)
+    if (!module || module.status !== 'trial' || !module.trial_ends_at) {
+      return { isTrialing: false, daysLeft: null }
+    }
+
+    const trialEnd = new Date(module.trial_ends_at)
+    const now = new Date()
+    const daysLeft = Math.ceil(
+      (trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    )
+
+    return {
+      isTrialing: daysLeft > 0,
+      daysLeft: daysLeft > 0 ? daysLeft : 0,
+    }
+  }
+
+  // Get alle premium modules (voor upsell)
   function getPremiumModules(): TenantModule[] {
     return modules.filter((m) => !m.is_core)
   }
@@ -78,32 +142,20 @@ export function useModules() {
     )
   }
 
-  // Get trial info voor een module
-  function getTrialInfo(moduleSlug: string): { isTrialing: boolean; daysLeft: number | null } {
-    const module = modules.find((m) => m.slug === moduleSlug)
-
-    if (!module || module.status !== 'trial' || !module.trial_ends_at) {
-      return { isTrialing: false, daysLeft: null }
-    }
-
-    const trialEnd = new Date(module.trial_ends_at)
-    const now = new Date()
-    const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-
-    return {
-      isTrialing: daysLeft > 0,
-      daysLeft: Math.max(0, daysLeft),
-    }
+  // Get module by slug
+  function getModule(slug: string): TenantModule | undefined {
+    return modules.find((m) => m.slug === slug)
   }
 
   return {
     modules,
     loading,
     error,
+    refetch,
     hasAccess,
+    getTrialInfo,
     getPremiumModules,
     getActiveModules,
-    getTrialInfo,
-    refetch: fetchModules,
+    getModule,
   }
 }
