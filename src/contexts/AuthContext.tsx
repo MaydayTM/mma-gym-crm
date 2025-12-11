@@ -31,21 +31,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading: true,
   })
 
-  // Fetch member profile from members table
+  // Fetch member profile from members table with timeout
   // Note: members.id IS the auth user id (same UUID)
-  const fetchMemberProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase
-      .from('members')
-      .select('*')
-      .eq('id', userId)
-      .single()
+  const fetchMemberProfile = useCallback(async (userId: string): Promise<Member | null> => {
+    try {
+      // Add timeout using Promise.race
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      )
 
-    if (error) {
-      console.error('Error fetching member profile:', error)
+      const queryPromise = supabase
+        .from('members')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      const result = await Promise.race([queryPromise, timeoutPromise])
+
+      // If timeout won, result is null
+      if (result === null) {
+        console.warn('[Auth] Member profile fetch timed out')
+        return null
+      }
+
+      const { data, error } = result
+
+      if (error) {
+        // PGRST116 = no rows found, which is OK for new users
+        if (error.code !== 'PGRST116') {
+          console.error('[Auth] Error fetching member profile:', error.message)
+        }
+        return null
+      }
+
+      return data
+    } catch (err) {
+      if (err instanceof Error && err.message === 'Timeout') {
+        console.warn('[Auth] Member profile fetch timed out')
+      } else {
+        console.error('[Auth] Error fetching member profile:', err)
+      }
       return null
     }
-
-    return data
   }, [])
 
   // Initialize auth state
@@ -65,24 +92,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Always update state on auth changes, regardless of timeout
       authInitialized = true
 
-      let member = null
-      if (session?.user) {
+      // IMPORTANT: Set loading to false immediately with session info
+      // Member profile is fetched separately to prevent blocking
+      setState(prev => ({
+        ...prev,
+        user: session?.user ?? null,
+        session,
+        isLoading: false,
+      }))
+      console.log('[Auth] Auth state set, isAuthenticated:', !!session)
+
+      // Fetch member profile in background (non-blocking)
+      if (session?.user && isMounted) {
         try {
-          member = await fetchMemberProfile(session.user.id)
+          const member = await fetchMemberProfile(session.user.id)
           console.log('[Auth] Member profile fetched:', !!member)
+          if (isMounted) {
+            setState(prev => ({ ...prev, member }))
+          }
         } catch (err) {
           console.error('[Auth] Error fetching member in onAuthStateChange:', err)
         }
+      } else if (!session && isMounted) {
+        setState(prev => ({ ...prev, member: null }))
       }
-
-      console.log('[Auth] Setting state from onAuthStateChange, isLoading: false, hasSession:', !!session)
-      setState({
-        user: session?.user ?? null,
-        session,
-        member,
-        isLoading: false,
-      })
-      console.log('[Auth] State updated, isAuthenticated should now be:', !!session)
     })
 
     // Also call getSession as a fallback
@@ -102,20 +135,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return
         }
 
-        let member = null
-        if (session?.user) {
-          member = await fetchMemberProfile(session.user.id)
-          console.log('[Auth] Member profile fetched from getSession:', !!member)
-        }
-
         authInitialized = true
+
+        // IMPORTANT: Set loading to false immediately with session info
         console.log('[Auth] Setting state from getSession, isLoading: false')
-        setState({
+        setState(prev => ({
+          ...prev,
           user: session?.user ?? null,
           session: session ?? null,
-          member,
           isLoading: false,
-        })
+        }))
+
+        // Fetch member profile in background (non-blocking)
+        if (session?.user && isMounted) {
+          const member = await fetchMemberProfile(session.user.id)
+          console.log('[Auth] Member profile fetched from getSession:', !!member)
+          if (isMounted) {
+            setState(prev => ({ ...prev, member }))
+          }
+        }
       } catch (error) {
         console.error('[Auth] Auth initialization error:', error)
         if (isMounted && !authInitialized) {
@@ -136,7 +174,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const timeoutId = setTimeout(() => {
       console.log('[Auth] Timeout check - authInitialized:', authInitialized)
       if (isMounted && !authInitialized) {
-        console.warn('[Auth] Timeout reached - forcing redirect to login')
+        console.warn('[Auth] Timeout reached - forcing state update')
         authInitialized = true
         setState({
           user: null,
@@ -145,7 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           isLoading: false,
         })
       }
-    }, 10000) // 10 seconds timeout
+    }, 5000) // 5 seconds timeout (reduced from 10)
 
     return () => {
       isMounted = false
