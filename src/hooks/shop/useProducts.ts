@@ -1,0 +1,67 @@
+import { useQuery } from '@tanstack/react-query';
+import { shopSupabase, getShopTenantId, isShopConfigured } from '../../lib/shopSupabase';
+import type { ProductWithVariants } from '../../types/shop';
+
+type ProductFilters = {
+  category?: string;
+  search?: string;
+  featured?: boolean;
+  includeInactive?: boolean;
+};
+
+export const useProducts = (filters: ProductFilters = {}) => {
+  return useQuery({
+    queryKey: ['products', filters],
+    queryFn: async () => {
+      if (!isShopConfigured() || !shopSupabase) {
+        return [];
+      }
+
+      const tenantId = getShopTenantId();
+
+      let query = shopSupabase
+        .from('products')
+        .select(`
+          *,
+          variants:product_variants(*)
+        `)
+        .eq('tenant_id', tenantId)
+        .order('featured', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      // Only filter by is_active when includeInactive is false
+      if (!filters.includeInactive) {
+        query = query.eq('is_active', true);
+      }
+
+      if (filters.category) {
+        query = query.eq('category', filters.category);
+      }
+
+      if (filters.featured !== undefined) {
+        query = query.eq('featured', filters.featured);
+      }
+
+      if (filters.search) {
+        // Escape SQL wildcards to prevent unintended pattern matching
+        const escapedSearch = filters.search.replace(/[%_]/g, '\\$&');
+        query = query.or(`name.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Filter active variants for all products (unless including inactive)
+      const products = data as ProductWithVariants[];
+      if (!filters.includeInactive) {
+        products.forEach(product => {
+          product.variants = product.variants.filter(v => v.is_active);
+        });
+      }
+
+      return products;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
