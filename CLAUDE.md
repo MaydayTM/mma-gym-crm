@@ -546,6 +546,7 @@ vercel --prod
 3. **Geen mock data** - gebruik Supabase direct
 4. **Geen inline styles** - alleen Tailwind classes
 5. **Wijzig NOOIT `database.types.ts` handmatig** - dit is auto-generated
+6. **TOON NOOIT API keys, tokens, of secrets in chat output** - ook niet gedeeltelijk. Verwijs naar .env bestanden zonder de waarden te tonen. Dit is een KRITIEKE security regel.
 
 ### Bij twijfel:
 - Vraag Mehdi voor verduidelijking
