@@ -39,7 +39,7 @@ const coreNavigation: NavItem[] = [
   { name: 'Reservaties', href: '/reservations', icon: CalendarCheck },
   { name: 'Check-in', href: '/checkin', icon: ScanLine },
   { name: 'Rapportages', href: '/reports', icon: BarChart3 },
-  { name: 'Taken', href: '/tasks', icon: CheckSquare, badge: 12 },
+  { name: 'Taken', href: '/tasks', icon: CheckSquare },
   { name: 'Team', href: '/team', icon: Shield, adminOnly: true },
   { name: 'Instellingen', href: '/settings', icon: Settings },
 ]

@@ -14,6 +14,7 @@ import {
   Reservations,
   CheckIn,
   Reports,
+  Tasks,
   Team,
   Settings,
   Login,
@@ -90,6 +91,7 @@ function App() {
                 <Route path="reservations" element={<Reservations />} />
                 <Route path="checkin" element={<CheckIn />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="tasks" element={<Tasks />} />
                 <Route path="team" element={<Team />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="shop" element={<Shop />} />
