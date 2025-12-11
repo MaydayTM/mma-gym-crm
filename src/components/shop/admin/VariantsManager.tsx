@@ -94,7 +94,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
                 <select
                   value={variant.size || ''}
                   onChange={(e) => updateVariant(index, { size: e.target.value })}
-                  className="px-2 py-1 border rounded text-sm"
+                  className="px-2 py-1 border rounded text-sm text-gray-900"
                 >
                   <option value="">Maat</option>
                   {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -103,7 +103,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
                 <select
                   value={variant.color || ''}
                   onChange={(e) => updateVariant(index, { color: e.target.value })}
-                  className="px-2 py-1 border rounded text-sm"
+                  className="px-2 py-1 border rounded text-sm text-gray-900"
                 >
                   <option value="">Kleur</option>
                   {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -114,7 +114,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
                   value={variant.sku || ''}
                   onChange={(e) => updateVariant(index, { sku: e.target.value })}
                   placeholder="SKU"
-                  className="px-2 py-1 border rounded text-sm"
+                  className="px-2 py-1 border rounded text-sm text-gray-900"
                 />
 
                 <div className="flex items-center gap-1">
@@ -162,7 +162,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
           <select
             value={newVariant.size || ''}
             onChange={(e) => setNewVariant({ ...newVariant, size: e.target.value })}
-            className="px-2 py-1 border rounded text-sm"
+            className="px-2 py-1 border rounded text-sm text-gray-900"
           >
             <option value="">Maat</option>
             {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -171,7 +171,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
           <select
             value={newVariant.color || ''}
             onChange={(e) => setNewVariant({ ...newVariant, color: e.target.value })}
-            className="px-2 py-1 border rounded text-sm"
+            className="px-2 py-1 border rounded text-sm text-gray-900"
           >
             <option value="">Kleur</option>
             {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -183,7 +183,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
             onChange={(e) => setNewVariant({ ...newVariant, stock_quantity: parseInt(e.target.value) || 0 })}
             placeholder="Voorraad"
             min="0"
-            className="px-2 py-1 border rounded text-sm"
+            className="px-2 py-1 border rounded text-sm text-gray-900"
           />
 
           <input
@@ -191,7 +191,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
             value={newVariant.sku || ''}
             onChange={(e) => setNewVariant({ ...newVariant, sku: e.target.value })}
             placeholder="SKU (optioneel)"
-            className="px-2 py-1 border rounded text-sm"
+            className="px-2 py-1 border rounded text-sm text-gray-900"
           />
         </div>
 

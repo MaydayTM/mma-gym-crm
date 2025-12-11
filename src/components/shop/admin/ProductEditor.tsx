@@ -186,7 +186,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
               <label className="block text-sm font-medium mb-1 text-gray-700">Naam *</label>
               <input
                 {...register('name')}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+                className="w-full px-4 py-2 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
               />
               {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>}
             </div>
@@ -195,7 +195,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
               <label className="block text-sm font-medium mb-1 text-gray-700">URL Slug *</label>
               <input
                 {...register('seo_slug')}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+                className="w-full px-4 py-2 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
                 placeholder="reconnect-t-shirt-zwart"
               />
               {errors.seo_slug && <p className="text-red-600 text-sm mt-1">{errors.seo_slug.message}</p>}
@@ -207,7 +207,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
             <textarea
               {...register('description')}
               rows={4}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+              className="w-full px-4 py-2 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
             />
             {errors.description && <p className="text-red-600 text-sm mt-1">{errors.description.message}</p>}
           </div>
@@ -221,7 +221,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
                 <label className="block text-sm font-medium mb-1 text-gray-700">Status *</label>
                 <select
                   {...register('availability_status')}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+                  className="w-full px-4 py-2 border rounded-lg text-gray-900 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
                 >
                   <option value="presale">Pre-sale</option>
                   <option value="in_stock">Op voorraad</option>
@@ -236,7 +236,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
                   {...register('base_price', { valueAsNumber: true })}
                   type="number"
                   step="0.01"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+                  className="w-full px-4 py-2 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
                 />
               </div>
 
@@ -248,7 +248,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
                       {...register('presale_price', { valueAsNumber: true })}
                       type="number"
                       step="0.01"
-                      className="w-full px-4 py-2 border rounded-lg bg-amber-50 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+                      className="w-full px-4 py-2 border rounded-lg bg-amber-50 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
                     />
                   </div>
 
@@ -257,7 +257,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
                     <input
                       {...register('presale_ends_at')}
                       type="date"
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+                      className="w-full px-4 py-2 border rounded-lg text-gray-900 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
                     />
                   </div>
                 </>
@@ -268,7 +268,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
               <label className="block text-sm font-medium mb-1 text-gray-700">Categorie *</label>
               <select
                 {...register('category')}
-                className="w-full px-4 py-2 border rounded-lg md:w-1/3 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
+                className="w-full px-4 py-2 border rounded-lg md:w-1/3 text-gray-900 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
               >
                 <option value="clothing">Kleding</option>
                 <option value="gear">Fight Gear</option>
