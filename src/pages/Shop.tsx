@@ -13,6 +13,7 @@ import { useProducts } from '../hooks/shop/useProducts'
 import { useOrders } from '../hooks/shop/useOrders'
 import { ProductsManager } from '../components/shop/admin/ProductsManager'
 import { OrdersManager } from '../components/shop/admin/OrdersManager'
+import { ShopDocumentation } from '../components/shop/admin/ShopDocumentation'
 import { isShopConfigured } from '../lib/shopSupabase'
 
 // Shop frontend URL for public shop
@@ -20,7 +21,7 @@ const SHOP_FRONTEND_URL = import.meta.env.VITE_SHOP_URL || 'https://www.mmagym.b
 
 export function Shop() {
   const { hasAccess, getTrialInfo } = useModules()
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'settings' | 'guidelines'>('overview')
   const trialInfo = getTrialInfo('shop')
 
   // Fetch real data for stats
@@ -145,16 +146,16 @@ export function Shop() {
             { id: 'overview', label: 'Overzicht' },
             { id: 'products', label: 'Producten' },
             { id: 'orders', label: 'Bestellingen' },
+            { id: 'guidelines', label: 'Richtlijnen' },
             { id: 'settings', label: 'Instellingen' },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`pb-3 text-sm font-medium transition-colors relative ${
-                activeTab === tab.id
-                  ? 'text-amber-400'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
+              className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === tab.id
+                ? 'text-amber-400'
+                : 'text-neutral-400 hover:text-white'
+                }`}
             >
               {tab.label}
               {activeTab === tab.id && (
@@ -170,6 +171,7 @@ export function Shop() {
         {activeTab === 'overview' && <ShopOverview products={products} orders={orders} />}
         {activeTab === 'products' && <ProductsManager />}
         {activeTab === 'orders' && <OrdersManager />}
+        {activeTab === 'guidelines' && <ShopDocumentation />}
         {activeTab === 'settings' && <ShopSettings />}
       </div>
     </div>
@@ -193,9 +195,8 @@ function StatCard({
     <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
       <div className="flex items-center gap-3 mb-3">
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            alert ? 'bg-red-500/10' : 'bg-amber-400/10'
-          }`}
+          className={`w-10 h-10 rounded-xl flex items-center justify-center ${alert ? 'bg-red-500/10' : 'bg-amber-400/10'
+            }`}
         >
           <Icon className={`w-5 h-5 ${alert ? 'text-red-400' : 'text-amber-400'}`} />
         </div>
@@ -233,16 +234,15 @@ function ShopOverview({ products, orders }: ShopOverviewProps) {
                 </div>
                 <div className="text-right">
                   <p className="font-medium text-white">€{order.total_amount.toFixed(2)}</p>
-                  <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
-                    order.status === 'paid' ? 'bg-green-500/20 text-green-400' :
+                  <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${order.status === 'paid' ? 'bg-green-500/20 text-green-400' :
                     order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
-                    order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
-                    'bg-amber-500/20 text-amber-400'
-                  }`}>
+                      order.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                        'bg-amber-500/20 text-amber-400'
+                    }`}>
                     {order.status === 'paid' ? 'Betaald' :
-                     order.status === 'shipped' ? 'Verzonden' :
-                     order.status === 'cancelled' ? 'Geannuleerd' :
-                     'In afwachting'}
+                      order.status === 'shipped' ? 'Verzonden' :
+                        order.status === 'cancelled' ? 'Geannuleerd' :
+                          'In afwachting'}
                   </span>
                 </div>
               </div>

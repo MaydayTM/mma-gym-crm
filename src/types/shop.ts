@@ -142,3 +142,33 @@ export interface DiscountCode {
   is_active: boolean;
   created_at: string;
 }
+
+// Payment Configuration Types
+export type PaymentProvider = 'stripe' | 'mollie';
+
+export interface PaymentConfig {
+  id: string;
+  tenant_id: string;
+  provider: PaymentProvider;
+  stripe_publishable_key: string | null;
+  stripe_secret_key: string | null;
+  stripe_webhook_secret: string | null;
+  mollie_api_key: string | null;
+  mollie_profile_id: string | null;
+  currency: string;
+  is_active: boolean;
+  is_test_mode: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentConfigFormData {
+  provider: PaymentProvider;
+  stripe_publishable_key: string;
+  stripe_secret_key: string;
+  stripe_webhook_secret: string;
+  mollie_api_key: string;
+  mollie_profile_id: string;
+  currency: string;
+  is_test_mode: boolean;
+}
