@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
@@ -9,10 +10,13 @@ import {
   CalendarCheck,
   ScanLine,
   BarChart3,
-  CheckSquare,
+  Sparkles,
   Shield,
   LogOut,
   ShoppingBag,
+  ChevronDown,
+  ExternalLink,
+  Palette,
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
@@ -26,49 +30,153 @@ interface NavItem {
   badge?: number
   adminOnly?: boolean
   trialBadge?: number | null
-  moduleSlug?: string
+  external?: boolean
 }
 
-// Core navigation items - always visible
-const coreNavigation: NavItem[] = [
+// Navigation group type
+interface NavGroup {
+  id: string
+  name: string
+  icon: LucideIcon
+  items: NavItem[]
+}
+
+// Standalone items (no group)
+const standaloneItems: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Leden', href: '/members', icon: Users },
-  { name: 'Leads', href: '/leads', icon: UserPlus },
-  { name: 'Abonnementen', href: '/subscriptions', icon: CreditCard },
-  { name: 'Rooster', href: '/schedule', icon: Calendar },
-  { name: 'Reservaties', href: '/reservations', icon: CalendarCheck },
-  { name: 'Check-in', href: '/checkin', icon: ScanLine },
-  { name: 'Rapportages', href: '/reports', icon: BarChart3 },
-  { name: 'Taken', href: '/tasks', icon: CheckSquare },
-  { name: 'Team', href: '/team', icon: Shield, adminOnly: true },
-  { name: 'Instellingen', href: '/settings', icon: Settings },
 ]
 
-// Premium module navigation items
-const premiumModules: Record<string, NavItem> = {
-  shop: { name: 'Shop', href: '/shop', icon: ShoppingBag, moduleSlug: 'shop' },
+// Grouped navigation
+const navigationGroups: NavGroup[] = [
+  {
+    id: 'leden-sales',
+    name: 'Leden & Sales',
+    icon: Users,
+    items: [
+      { name: 'Leden', href: '/members', icon: Users },
+      { name: 'Leads', href: '/leads', icon: UserPlus },
+      { name: 'Abonnementen', href: '/subscriptions', icon: CreditCard },
+    ],
+  },
+  {
+    id: 'planning',
+    name: 'Planning',
+    icon: Calendar,
+    items: [
+      { name: 'Rooster', href: '/schedule', icon: Calendar },
+      { name: 'Reservaties', href: '/reservations', icon: CalendarCheck },
+      { name: 'Check-in', href: '/checkin', icon: ScanLine },
+    ],
+  },
+  {
+    id: 'inzichten',
+    name: 'Inzichten',
+    icon: BarChart3,
+    items: [
+      { name: 'Rapportages', href: '/reports', icon: BarChart3 },
+      { name: 'Taken', href: '/tasks', icon: Sparkles },
+    ],
+  },
+]
+
+// Modules group (premium add-ons) - built dynamically
+const modulesGroupBase: NavGroup = {
+  id: 'modules',
+  name: 'Modules',
+  icon: ShoppingBag,
+  items: [],
 }
+
+// Beheer group
+const beheerGroup: NavGroup = {
+  id: 'beheer',
+  name: 'Beheer',
+  icon: Settings,
+  items: [
+    { name: 'Team', href: '/team', icon: Shield, adminOnly: true },
+    { name: 'Instellingen', href: '/settings', icon: Settings },
+  ],
+}
+
+// LocalStorage key for persisting open/closed state
+const SIDEBAR_STATE_KEY = 'rcn-sidebar-groups'
 
 export function Sidebar() {
   const { signOut, member, user } = useAuth()
   const { hasAccess, getTrialInfo } = useModules()
+  const location = useLocation()
+
+  // Load initial state from localStorage
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(SIDEBAR_STATE_KEY)
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    } catch {
+      // Ignore parse errors
+    }
+    // Default: first group open
+    return { 'leden-sales': true }
+  })
+
+  // Save to localStorage when state changes
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(openGroups))
+  }, [openGroups])
+
+  // Auto-open group when navigating to a route within it
+  useEffect(() => {
+    const allGroups = [...navigationGroups, modulesGroup, beheerGroup]
+    for (const group of allGroups) {
+      const hasActiveRoute = group.items.some(
+        (item) => item.href === location.pathname || location.pathname.startsWith(item.href + '/')
+      )
+      if (hasActiveRoute && !openGroups[group.id]) {
+        setOpenGroups((prev) => ({ ...prev, [group.id]: true }))
+        break
+      }
+    }
+  }, [location.pathname])
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }))
+  }
 
   const displayName = member
     ? `${member.first_name} ${member.last_name}`
     : user?.email?.split('@')[0] || 'Gebruiker'
 
-  // Build navigation including active premium modules
-  const navigation = [
-    ...coreNavigation,
-    // Add Shop if tenant has access
-    ...(hasAccess('shop')
-      ? [
-          {
-            ...premiumModules.shop,
-            trialBadge: getTrialInfo('shop').isTrialing ? getTrialInfo('shop').daysLeft : null,
-          },
-        ]
-      : []),
+  // Build modules group dynamically based on access
+  const modulesGroup: NavGroup = {
+    ...modulesGroupBase,
+    items: [
+      // Shop (if access)
+      ...(hasAccess('shop')
+        ? [
+            {
+              name: 'Shop',
+              href: '/shop',
+              icon: ShoppingBag,
+              trialBadge: getTrialInfo('shop').isTrialing ? getTrialInfo('shop').daysLeft : null,
+            },
+          ]
+        : []),
+      // Creative Fighter Studio (external link - always visible)
+      {
+        name: 'Fighter Studio',
+        href: 'https://fighter.reconnect.academy',
+        icon: Palette,
+        external: true,
+      },
+    ],
+  }
+
+  // All groups for rendering
+  const allGroups = [
+    ...navigationGroups,
+    modulesGroup,
+    beheerGroup,
   ]
 
   return (
@@ -80,38 +188,133 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
+        {/* Standalone items (Dashboard) */}
         <ul className="space-y-1">
-          {navigation
-            .filter((item) => !item.adminOnly || member?.role === 'admin')
-            .map((item) => (
-              <li key={item.name}>
-                <NavLink
-                  to={item.href}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? 'bg-gradient-to-br from-white/10 to-white/0 text-amber-300 border border-white/10'
-                        : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-50 border border-transparent'
-                    }`
-                  }
-                >
-                  <item.icon className="w-5 h-5" strokeWidth={1.5} />
-                  <span className="text-[14px] font-medium">{item.name}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-amber-300 text-neutral-950 text-[11px] font-medium px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                  {item.trialBadge && (
-                    <span className="ml-auto bg-purple-500/20 text-purple-300 text-[10px] font-medium px-2 py-0.5 rounded-full border border-purple-500/30">
-                      {item.trialBadge}d trial
-                    </span>
-                  )}
-                </NavLink>
-              </li>
-            ))}
+          {standaloneItems.map((item) => (
+            <li key={item.name}>
+              <NavLink
+                to={item.href}
+                end
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? 'bg-gradient-to-br from-white/10 to-white/0 text-amber-300 border border-white/10'
+                      : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-50 border border-transparent'
+                  }`
+                }
+              >
+                <item.icon className="w-5 h-5" strokeWidth={1.5} />
+                <span className="text-[14px] font-medium">{item.name}</span>
+              </NavLink>
+            </li>
+          ))}
         </ul>
+
+        {/* Separator */}
+        <div className="my-4 border-t border-white/10" />
+
+        {/* Collapsible groups */}
+        <div className="space-y-2">
+          {allGroups.map((group) => {
+            // Filter out admin-only items if not admin
+            const visibleItems = group.items.filter(
+              (item) => !item.adminOnly || member?.role === 'admin'
+            )
+
+            // Skip empty groups
+            if (visibleItems.length === 0) return null
+
+            const isOpen = openGroups[group.id]
+            const hasActiveItem = visibleItems.some(
+              (item) =>
+                !item.external &&
+                (item.href === location.pathname || location.pathname.startsWith(item.href + '/'))
+            )
+
+            // Add separator before Modules group
+            const showSeparator = group.id === 'modules'
+
+            return (
+              <div key={group.id}>
+                {showSeparator && <div className="my-4 border-t border-white/10" />}
+
+                {/* Group header */}
+                <button
+                  onClick={() => toggleGroup(group.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+                    hasActiveItem
+                      ? 'text-amber-300'
+                      : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
+                  }`}
+                >
+                  <group.icon className="w-4 h-4" strokeWidth={1.5} />
+                  <span className="text-[12px] font-semibold uppercase tracking-wider flex-1 text-left">
+                    {group.name}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      isOpen ? 'rotate-180' : ''
+                    }`}
+                    strokeWidth={1.5}
+                  />
+                </button>
+
+                {/* Group items */}
+                <div
+                  className={`overflow-hidden transition-all duration-200 ${
+                    isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <ul className="mt-1 ml-4 space-y-1 border-l border-white/10 pl-2">
+                    {visibleItems.map((item) => (
+                      <li key={item.name}>
+                        {item.external ? (
+                          // External link
+                          <a
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-neutral-400 hover:bg-white/5 hover:text-neutral-50 transition-all duration-200"
+                          >
+                            <item.icon className="w-4 h-4" strokeWidth={1.5} />
+                            <span className="text-[13px] font-medium flex-1">{item.name}</span>
+                            <ExternalLink className="w-3 h-3 opacity-50" />
+                          </a>
+                        ) : (
+                          // Internal link
+                          <NavLink
+                            to={item.href}
+                            className={({ isActive }) =>
+                              `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
+                                isActive
+                                  ? 'bg-gradient-to-br from-white/10 to-white/0 text-amber-300 border border-white/10'
+                                  : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-50 border border-transparent'
+                              }`
+                            }
+                          >
+                            <item.icon className="w-4 h-4" strokeWidth={1.5} />
+                            <span className="text-[13px] font-medium">{item.name}</span>
+                            {item.badge && (
+                              <span className="ml-auto bg-amber-300 text-neutral-950 text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+                                {item.badge}
+                              </span>
+                            )}
+                            {item.trialBadge && (
+                              <span className="ml-auto bg-purple-500/20 text-purple-300 text-[9px] font-medium px-1.5 py-0.5 rounded-full border border-purple-500/30">
+                                {item.trialBadge}d
+                              </span>
+                            )}
+                          </NavLink>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </nav>
 
       {/* User section */}
