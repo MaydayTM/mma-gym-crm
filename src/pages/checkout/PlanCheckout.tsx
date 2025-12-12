@@ -582,17 +582,32 @@ export function PlanCheckout() {
 
       if (error) throw error
 
-      // For now, show success message
-      // TODO: Redirect to Stripe/Mollie payment
-      alert(`Checkout sessie aangemaakt! ID: ${session.id}\n\nBetaling integratie komt binnenkort.`)
+      // Call Mollie Edge Function to create payment
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-mollie-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          checkout_session_id: session.id,
+          redirect_url: `${window.location.origin}/checkout/success`,
+        }),
+      })
 
-      // Navigate to success page (placeholder)
-      // navigate(`/checkout/payment/${session.id}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Kon betaling niet aanmaken')
+      }
+
+      const { checkout_url } = await response.json()
+
+      // Redirect to Mollie checkout
+      window.location.href = checkout_url
 
     } catch (error) {
       console.error('Checkout error:', error)
       alert('Er ging iets mis. Probeer het opnieuw.')
-    } finally {
       setIsSubmitting(false)
     }
   }
