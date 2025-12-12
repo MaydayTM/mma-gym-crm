@@ -154,18 +154,18 @@ export function Sidebar() {
       // Shop (if access)
       ...(hasAccess('shop')
         ? [
-            {
-              name: 'Shop',
-              href: '/shop',
-              icon: ShoppingBag,
-              trialBadge: getTrialInfo('shop').isTrialing ? getTrialInfo('shop').daysLeft : null,
-            },
-          ]
+          {
+            name: 'Shop',
+            href: '/shop',
+            icon: ShoppingBag,
+            trialBadge: getTrialInfo('shop').isTrialing ? getTrialInfo('shop').daysLeft : null,
+          },
+        ]
         : []),
       // Creative Fighter Studio (external link - always visible)
       {
         name: 'Fighter Studio',
-        href: 'https://fighter.reconnect.academy',
+        href: 'https://creative.mmagym.be',
         icon: Palette,
         external: true,
       },
@@ -197,10 +197,9 @@ export function Sidebar() {
                 to={item.href}
                 end
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                    isActive
-                      ? 'bg-gradient-to-br from-white/10 to-white/0 text-amber-300 border border-white/10'
-                      : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-50 border border-transparent'
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
+                    ? 'bg-gradient-to-br from-white/10 to-white/0 text-amber-300 border border-white/10'
+                    : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-50 border border-transparent'
                   }`
                 }
               >
@@ -242,29 +241,26 @@ export function Sidebar() {
                 {/* Group header */}
                 <button
                   onClick={() => toggleGroup(group.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
-                    hasActiveItem
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${hasActiveItem
                       ? 'text-amber-300'
                       : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   <group.icon className="w-4 h-4" strokeWidth={1.5} />
                   <span className="text-[12px] font-semibold uppercase tracking-wider flex-1 text-left">
                     {group.name}
                   </span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ${
-                      isOpen ? 'rotate-180' : ''
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''
+                      }`}
                     strokeWidth={1.5}
                   />
                 </button>
 
                 {/* Group items */}
                 <div
-                  className={`overflow-hidden transition-all duration-200 ${
-                    isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                  }`}
+                  className={`overflow-hidden transition-all duration-200 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                    }`}
                 >
                   <ul className="mt-1 ml-4 space-y-1 border-l border-white/10 pl-2">
                     {visibleItems.map((item) => (
@@ -286,10 +282,9 @@ export function Sidebar() {
                           <NavLink
                             to={item.href}
                             className={({ isActive }) =>
-                              `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
-                                isActive
-                                  ? 'bg-gradient-to-br from-white/10 to-white/0 text-amber-300 border border-white/10'
-                                  : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-50 border border-transparent'
+                              `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${isActive
+                                ? 'bg-gradient-to-br from-white/10 to-white/0 text-amber-300 border border-white/10'
+                                : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-50 border border-transparent'
                               }`
                             }
                           >
