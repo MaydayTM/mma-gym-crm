@@ -5,12 +5,12 @@ import { supabase } from '../../lib/supabase'
 
 interface CheckoutSession {
   id: string
-  first_name: string
-  last_name: string
-  email: string
-  payment_status: string
-  final_total: number
-  duration_months: number
+  first_name: string | null
+  last_name: string | null
+  email: string | null
+  payment_status: string | null
+  final_total: number | null
+  duration_months: number | null
   plan_types: { name: string } | null
   age_groups: { name: string } | null
 }
@@ -90,7 +90,7 @@ export function CheckoutSuccess() {
     )
   }
 
-  if (session.payment_status !== 'completed') {
+  if (session.payment_status !== 'completed' && session.payment_status !== null) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
         <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-8 max-w-md text-center">
@@ -105,7 +105,8 @@ export function CheckoutSuccess() {
   }
 
   const durationLabel = session.duration_months === 1 ? '1 maand' :
-                        session.duration_months === 3 ? '3 maanden' : '12 maanden'
+                        session.duration_months === 3 ? '3 maanden' :
+                        session.duration_months === 12 ? '12 maanden' : `${session.duration_months || 1} maanden`
 
   return (
     <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
@@ -120,7 +121,7 @@ export function CheckoutSuccess() {
             Welkom bij Reconnect Academy!
           </h1>
           <p className="text-neutral-400 mb-8">
-            Bedankt voor je inschrijving, {session.first_name}!
+            Bedankt voor je inschrijving{session.first_name ? `, ${session.first_name}` : ''}!
           </p>
 
           {/* Order Summary */}
@@ -141,7 +142,7 @@ export function CheckoutSuccess() {
               </div>
               <div className="flex justify-between border-t border-white/10 pt-3 mt-3">
                 <span className="text-neutral-300 font-medium">Betaald</span>
-                <span className="text-amber-300 font-bold">€{session.final_total.toFixed(2)}</span>
+                <span className="text-amber-300 font-bold">€{(session.final_total || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -154,7 +155,7 @@ export function CheckoutSuccess() {
                 <p className="text-neutral-200 text-[14px]">
                   Bevestigingsmail verzonden naar
                 </p>
-                <p className="text-amber-300 text-[14px]">{session.email}</p>
+                <p className="text-amber-300 text-[14px]">{session.email || ''}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">

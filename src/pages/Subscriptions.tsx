@@ -188,7 +188,7 @@ export function Subscriptions() {
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-[14px] font-medium text-amber-300">
-                      €{sub.final_price.toFixed(2)}
+                      €{(sub.final_price || 0).toFixed(2)}
                     </p>
                     {sub.duration_months && (
                       <p className="text-[12px] text-neutral-500">

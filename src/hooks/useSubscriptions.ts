@@ -9,19 +9,19 @@ export interface MemberSubscription {
   plan_type_id: string | null
   duration_months: number | null
   base_price: number
-  family_discount: number
-  addon_total: number
+  family_discount: number | null
+  addon_total: number | null
   final_price: number
   start_date: string
   end_date: string | null
-  status: string
+  status: string | null
   payment_provider: string | null
-  created_at: string
+  created_at: string | null
   members: {
     id: string
-    first_name: string
-    last_name: string
-    email: string
+    first_name: string | null
+    last_name: string | null
+    email: string | null
     profile_picture_url: string | null
   } | null
   age_groups: {
