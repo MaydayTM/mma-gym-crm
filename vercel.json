@@ -7,6 +7,14 @@
     {
       "source": "/app/:path*",
       "destination": "/app.html"
+    },
+    {
+      "source": "/checkout/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/subscriptions",
+      "destination": "/index.html"
     }
   ],
   "headers": [

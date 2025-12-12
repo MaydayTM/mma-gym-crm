@@ -584,6 +584,8 @@ export function PlanCheckout() {
 
       // Call Mollie Edge Function to create payment
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      console.log('Supabase URL:', supabaseUrl)
+      console.log('Calling:', `${supabaseUrl}/functions/v1/create-mollie-payment`)
       const response = await fetch(`${supabaseUrl}/functions/v1/create-mollie-payment`, {
         method: 'POST',
         headers: {
