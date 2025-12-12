@@ -20,7 +20,7 @@ import {
   Login,
   Shop,
 } from './pages'
-import { PlansOverview, PlanCheckout } from './pages/checkout'
+import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +72,8 @@ function App() {
               {/* Public checkout routes */}
               <Route path="/checkout/plans" element={<PlansOverview />} />
               <Route path="/checkout/plans/:ageGroup" element={<PlanCheckout />} />
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
 
               {/* Protected routes */}
               <Route
