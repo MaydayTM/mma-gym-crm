@@ -63,21 +63,48 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter basename="/app.html">
+        <BrowserRouter>
           <AuthProvider>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
+              <Route path="/app.html/login" element={<Login />} />
 
-              {/* Public checkout routes */}
+              {/* Public checkout routes - both /checkout and /app.html/checkout work */}
               <Route path="/checkout/plans" element={<PlansOverview />} />
               <Route path="/checkout/plans/:ageGroup" element={<PlanCheckout />} />
               <Route path="/checkout/success" element={<CheckoutSuccess />} />
               <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+              <Route path="/app.html/checkout/plans" element={<PlansOverview />} />
+              <Route path="/app.html/checkout/plans/:ageGroup" element={<PlanCheckout />} />
+              <Route path="/app.html/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/app.html/checkout/cancel" element={<CheckoutCancel />} />
 
-              {/* Protected routes */}
+              {/* Protected routes - support both / and /app.html */}
               <Route
                 path="/"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="members" element={<Members />} />
+                <Route path="members/:id" element={<MemberDetail />} />
+                <Route path="leads" element={<Leads />} />
+                <Route path="subscriptions" element={<Subscriptions />} />
+                <Route path="schedule" element={<Schedule />} />
+                <Route path="reservations" element={<Reservations />} />
+                <Route path="checkin" element={<CheckIn />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="tasks" element={<Tasks />} />
+                <Route path="team" element={<Team />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="shop" element={<Shop />} />
+              </Route>
+              <Route
+                path="/app.html"
                 element={
                   <ProtectedRoute>
                     <Layout />

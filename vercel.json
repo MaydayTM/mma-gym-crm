@@ -10,11 +10,7 @@
     },
     {
       "source": "/checkout/:path*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/subscriptions",
-      "destination": "/index.html"
+      "destination": "/app.html"
     }
   ],
   "headers": [
