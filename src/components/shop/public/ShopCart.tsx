@@ -1,9 +1,47 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { X, Plus, Minus, Trash2, ShoppingBag, Truck, Store, Clock } from 'lucide-react'
 import type { Cart, CartItem, DeliveryMethod, ShippingConfig } from '../../../types/shop'
 import { DEFAULT_SHIPPING_CONFIG, calculateShipping } from '../../../types/shop'
+import { useShopCart } from '../../../hooks/shop'
 
-interface ShopCartProps {
+// Standalone version that uses the hook internally
+interface ShopCartStandaloneProps {
+  isOpen: boolean
+  onClose: () => void
+  shippingConfig?: ShippingConfig
+}
+
+export const ShopCart: React.FC<ShopCartStandaloneProps> = ({
+  isOpen,
+  onClose,
+  shippingConfig = DEFAULT_SHIPPING_CONFIG,
+}) => {
+  const navigate = useNavigate()
+  const { cart, updateQuantity, removeItem, setDeliveryMethod } = useShopCart()
+
+  const handleCheckout = () => {
+    onClose()
+    navigate('/shop/checkout')
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <ShopCartContent
+      cart={cart}
+      shippingConfig={shippingConfig}
+      onUpdateQuantity={updateQuantity}
+      onRemoveItem={removeItem}
+      onDeliveryMethodChange={setDeliveryMethod}
+      onCheckout={handleCheckout}
+      onClose={onClose}
+    />
+  )
+}
+
+// Controlled version for custom implementations
+interface ShopCartControlledProps {
   cart: Cart
   shippingConfig?: ShippingConfig
   onUpdateQuantity: (variantId: string, quantity: number) => void
@@ -13,7 +51,12 @@ interface ShopCartProps {
   onClose: () => void
 }
 
-export const ShopCart: React.FC<ShopCartProps> = ({
+export const ShopCartControlled: React.FC<ShopCartControlledProps> = (props) => {
+  return <ShopCartContent {...props} />
+}
+
+// Internal content component
+const ShopCartContent: React.FC<ShopCartControlledProps> = ({
   cart,
   shippingConfig = DEFAULT_SHIPPING_CONFIG,
   onUpdateQuantity,

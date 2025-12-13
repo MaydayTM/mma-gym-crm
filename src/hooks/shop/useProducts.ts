@@ -9,6 +9,47 @@ type ProductFilters = {
   includeInactive?: boolean;
 };
 
+// Hook to fetch a single product by slug
+export const useProduct = (slug: string | undefined) => {
+  return useQuery({
+    queryKey: ['product', slug],
+    queryFn: async () => {
+      if (!slug || !isShopConfigured() || !shopSupabase) {
+        return null;
+      }
+
+      const tenantId = getShopTenantId();
+
+      const { data, error } = await shopSupabase
+        .from('products')
+        .select(`
+          *,
+          variants:product_variants(*)
+        `)
+        .eq('tenant_id', tenantId)
+        .eq('seo_slug', slug)
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Not found
+          return null;
+        }
+        throw error;
+      }
+
+      // Filter active variants
+      const product = data as ProductWithVariants;
+      product.variants = product.variants.filter(v => v.is_active);
+
+      return product;
+    },
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
 export const useProducts = (filters: ProductFilters = {}) => {
   return useQuery({
     queryKey: ['products', filters],
