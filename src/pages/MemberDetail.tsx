@@ -13,10 +13,12 @@ import {
   Activity,
   LogIn,
   Loader2,
+  Plus,
 } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { EditMemberForm } from '../components/members/EditMemberForm'
 import { BeltProgressCard } from '../components/members/BeltProgressCard'
+import { AssignSubscriptionModal } from '../components/members/AssignSubscriptionModal'
 import { useMember } from '../hooks/useMember'
 import { useMemberSubscriptions } from '../hooks/useMemberSubscriptions'
 import { useMemberCheckins } from '../hooks/useMemberCheckins'
@@ -28,6 +30,7 @@ export function MemberDetail() {
   const navigate = useNavigate()
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false)
 
   const { data: member, isLoading, error } = useMember(id)
   const { data: subscriptions } = useMemberSubscriptions(id)
@@ -285,8 +288,15 @@ export function MemberDetail() {
           '--border-radius-before': '24px',
         } as React.CSSProperties}
       >
-        <div className="p-6 border-b border-white/5">
+        <div className="p-6 border-b border-white/5 flex items-center justify-between">
           <h2 className="text-[20px] font-medium text-neutral-50">Abonnementen</h2>
+          <button
+            onClick={() => setIsSubscriptionModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-300 text-neutral-950 text-[13px] font-medium hover:bg-amber-200 transition"
+          >
+            <Plus size={16} />
+            Nieuw abonnement
+          </button>
         </div>
         {subscriptions && subscriptions.length > 0 ? (
           <div className="divide-y divide-white/5">
@@ -438,6 +448,15 @@ export function MemberDetail() {
           </div>
         </div>
       </Modal>
+
+      {/* Assign Subscription Modal */}
+      {isSubscriptionModalOpen && (
+        <AssignSubscriptionModal
+          memberId={member.id}
+          memberName={`${member.first_name} ${member.last_name}`}
+          onClose={() => setIsSubscriptionModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
