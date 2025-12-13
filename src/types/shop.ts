@@ -1,5 +1,23 @@
 export type ProductCategory = 'clothing' | 'gear' | 'accessories';
 export type AvailabilityStatus = 'in_stock' | 'presale' | 'out_of_stock' | 'discontinued';
+export type DeliveryMethod = 'pickup' | 'shipping';
+
+// Shipping configuration
+export interface ShippingConfig {
+  pickup_enabled: boolean;
+  pickup_location: string;
+  shipping_enabled: boolean;
+  shipping_cost: number;
+  free_shipping_threshold: number; // 0 = no free shipping
+}
+
+export const DEFAULT_SHIPPING_CONFIG: ShippingConfig = {
+  pickup_enabled: true,
+  pickup_location: 'Reconnect Academy, Aalst',
+  shipping_enabled: true,
+  shipping_cost: 6.95,
+  free_shipping_threshold: 200,
+};
 
 export interface Product {
   id: string;
@@ -9,6 +27,10 @@ export interface Product {
   presale_price: number | null;
   presale_ends_at: string | null;
   availability_status: AvailabilityStatus;
+  // New: allow preorder even when in stock
+  allow_preorder: boolean;
+  preorder_discount_percent: number | null; // e.g., 10 for 10% off
+  preorder_note: string | null; // e.g., "Levering binnen 3 weken"
   category: ProductCategory;
   images: string[];
   featured_image: string | null;
@@ -21,7 +43,7 @@ export interface Product {
   updated_at: string;
 }
 
-// Helper to get current effective price
+// Helper to get current effective price (for stock items)
 export function getEffectivePrice(product: Product): number {
   if (product.availability_status === 'presale' && product.presale_price !== null) {
     // Check if presale is still active
@@ -32,11 +54,44 @@ export function getEffectivePrice(product: Product): number {
   return product.base_price;
 }
 
+// Get preorder price (with discount)
+export function getPreorderPrice(product: Product): number {
+  if (!product.allow_preorder || !product.preorder_discount_percent) {
+    return product.base_price;
+  }
+  const discount = product.base_price * (product.preorder_discount_percent / 100);
+  return product.base_price - discount;
+}
+
 // Check if product is in presale period
 export function isInPresale(product: Product): boolean {
   if (product.availability_status !== 'presale') return false;
   if (!product.presale_ends_at) return true;
   return new Date(product.presale_ends_at) > new Date();
+}
+
+// Check if product has stock available
+export function hasStock(product: Product, variants: ProductVariant[]): boolean {
+  if (product.availability_status === 'out_of_stock' || product.availability_status === 'discontinued') {
+    return false;
+  }
+  return variants.some(v => v.is_active && v.stock_quantity > 0);
+}
+
+// Check if preorder is available
+export function canPreorder(product: Product): boolean {
+  return product.allow_preorder && product.is_active;
+}
+
+// Calculate shipping cost
+export function calculateShipping(
+  subtotal: number,
+  deliveryMethod: DeliveryMethod,
+  config: ShippingConfig = DEFAULT_SHIPPING_CONFIG
+): number {
+  if (deliveryMethod === 'pickup') return 0;
+  if (config.free_shipping_threshold > 0 && subtotal >= config.free_shipping_threshold) return 0;
+  return config.shipping_cost;
 }
 
 export interface ProductVariant {
@@ -72,7 +127,8 @@ export interface ShopOrder {
   customer_email: string;
   customer_name: string;
   customer_phone: string | null;
-  shipping_address: ShippingAddress;
+  shipping_address: ShippingAddress | null; // null for pickup
+  delivery_method: DeliveryMethod;
   total_amount: number;
   subtotal_amount: number;
   shipping_amount: number;
@@ -81,6 +137,7 @@ export interface ShopOrder {
   status: OrderStatus;
   stripe_payment_intent_id: string | null;
   stripe_session_id: string | null;
+  mollie_payment_id: string | null;
   tracking_number: string | null;
   tracking_url: string | null;
   notes: string | null;
@@ -89,6 +146,7 @@ export interface ShopOrder {
   shipped_at: string | null;
   delivered_at: string | null;
   cancelled_at: string | null;
+  ready_for_pickup_at: string | null; // for pickup orders
 }
 
 export interface OrderItem {
@@ -101,6 +159,8 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  is_preorder: boolean;
+  preorder_note: string | null;
   created_at: string;
 }
 
@@ -115,15 +175,20 @@ export interface CartItem {
   variant_id: string;
   variant_name: string;
   price: number;
+  original_price: number; // for showing discount
   quantity: number;
   image_url: string | null;
   stock_available: number;
+  is_preorder: boolean;
+  preorder_note: string | null;
 }
 
 export interface Cart {
   items: CartItem[];
   subtotal: number;
   discount_amount: number;
+  shipping_amount: number;
+  delivery_method: DeliveryMethod;
   total: number;
 }
 

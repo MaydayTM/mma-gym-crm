@@ -14,6 +14,10 @@ const productSchema = z.object({
   presale_price: z.number().min(0).nullable(),
   presale_ends_at: z.string().nullable(),
   availability_status: z.enum(['in_stock', 'presale', 'out_of_stock', 'discontinued']),
+  // Preorder options
+  allow_preorder: z.boolean(),
+  preorder_discount_percent: z.number().min(0).max(100).nullable(),
+  preorder_note: z.string().nullable(),
   category: z.enum(['clothing', 'gear', 'accessories']),
   seo_slug: z.string().min(2, 'URL slug is verplicht'),
   is_active: z.boolean(),
@@ -45,6 +49,9 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
       presale_price: product.presale_price,
       presale_ends_at: product.presale_ends_at ? product.presale_ends_at.split('T')[0] : null,
       availability_status: product.availability_status,
+      allow_preorder: product.allow_preorder ?? false,
+      preorder_discount_percent: product.preorder_discount_percent,
+      preorder_note: product.preorder_note,
       category: product.category,
       seo_slug: product.seo_slug,
       is_active: product.is_active,
@@ -55,7 +62,10 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
     } : {
       is_active: true,
       featured: false,
-      availability_status: 'presale' as AvailabilityStatus,
+      availability_status: 'in_stock' as AvailabilityStatus,
+      allow_preorder: true, // Default: allow preorder
+      preorder_discount_percent: 10, // Default: 10% discount
+      preorder_note: 'Levering binnen 2-3 weken',
       images: [],
       featured_image: null,
       video_url: null,
@@ -70,9 +80,17 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
   });
 
   const availabilityStatus = watch('availability_status');
+  const allowPreorder = watch('allow_preorder');
+  const preorderDiscount = watch('preorder_discount_percent');
+  const basePrice = watch('base_price');
   const images = watch('images');
   const featuredImage = watch('featured_image');
   const videoUrl = watch('video_url');
+
+  // Calculate preorder price for display
+  const preorderPrice = allowPreorder && preorderDiscount
+    ? basePrice - (basePrice * (preorderDiscount / 100))
+    : basePrice;
 
   const onSubmit = async (data: ProductFormData) => {
     if (!shopSupabase) {
@@ -97,6 +115,9 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
         presale_price: data.presale_price,
         presale_ends_at: data.presale_ends_at ? new Date(data.presale_ends_at).toISOString() : null,
         availability_status: data.availability_status,
+        allow_preorder: data.allow_preorder,
+        preorder_discount_percent: data.allow_preorder ? data.preorder_discount_percent : null,
+        preorder_note: data.allow_preorder ? data.preorder_note : null,
         category: data.category,
         seo_slug: data.seo_slug,
         is_active: data.is_active,
@@ -275,6 +296,65 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
                 <option value="accessories">Accessoires</option>
               </select>
             </div>
+          </div>
+
+          {/* Preorder Section */}
+          <div className="bg-blue-50 p-4 rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-gray-900">Pre-order Optie</h3>
+                <p className="text-sm text-gray-600">
+                  Klanten kunnen vooraf bestellen met korting (naast stock verkoop)
+                </p>
+              </div>
+              <label className="flex items-center gap-2">
+                <input
+                  {...register('allow_preorder')}
+                  type="checkbox"
+                  className="w-5 h-5 text-blue-500 focus:ring-blue-400 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Inschakelen</span>
+              </label>
+            </div>
+
+            {allowPreorder && (
+              <div className="grid md:grid-cols-3 gap-4 pt-2 border-t border-blue-200">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-700">Korting (%)</label>
+                  <input
+                    {...register('preorder_discount_percent', { valueAsNumber: true })}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    placeholder="bijv. 10"
+                    className="w-full px-4 py-2 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-700">Pre-order Prijs</label>
+                  <div className="px-4 py-2 border rounded-lg bg-blue-100 text-blue-800 font-medium">
+                    €{preorderPrice.toFixed(2)}
+                    {preorderDiscount && preorderDiscount > 0 && (
+                      <span className="ml-2 text-sm text-blue-600">
+                        (-{preorderDiscount}%)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-700">Notitie (zichtbaar voor klant)</label>
+                  <input
+                    {...register('preorder_note')}
+                    type="text"
+                    placeholder="bijv. Levering binnen 2-3 weken"
+                    className="w-full px-4 py-2 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Media Upload */}
