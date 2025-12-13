@@ -129,9 +129,9 @@ export function PricingMatrixTab() {
                           €{item.price_per_month?.toFixed(2) || '-'}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {item.savings > 0 ? (
+                          {(item.savings ?? 0) > 0 ? (
                             <span className="text-[13px] text-emerald-400">
-                              -€{item.savings.toFixed(0)}
+                              -€{(item.savings ?? 0).toFixed(0)}
                             </span>
                           ) : (
                             <span className="text-[13px] text-neutral-600">-</span>

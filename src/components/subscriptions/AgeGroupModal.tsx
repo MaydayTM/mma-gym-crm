@@ -34,8 +34,8 @@ export function AgeGroupModal({ itemId, onClose }: AgeGroupModalProps) {
         min_age: existingItem.min_age,
         max_age: existingItem.max_age,
         starting_price: existingItem.starting_price || 0,
-        sort_order: existingItem.sort_order,
-        is_active: existingItem.is_active
+        sort_order: existingItem.sort_order ?? 0,
+        is_active: existingItem.is_active ?? true
       })
     }
   }, [existingItem])

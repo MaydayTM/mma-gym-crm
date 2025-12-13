@@ -38,18 +38,18 @@ export function DiscountModal({ itemId, onClose }: DiscountModalProps) {
         slug: existingItem.slug,
         name: existingItem.name,
         description: existingItem.description || '',
-        discount_type: existingItem.discount_type,
+        discount_type: (existingItem.discount_type as 'fixed' | 'percentage') || 'fixed',
         amount: existingItem.amount || 0,
         percentage: existingItem.percentage || 0,
-        is_exclusive: existingItem.is_exclusive,
-        requires_verification: existingItem.requires_verification,
+        is_exclusive: existingItem.is_exclusive ?? false,
+        requires_verification: existingItem.requires_verification ?? false,
         valid_from: existingItem.valid_from || '',
         valid_until: existingItem.valid_until || '',
         max_uses: existingItem.max_uses,
-        show_on_checkout: existingItem.show_on_checkout,
+        show_on_checkout: existingItem.show_on_checkout ?? true,
         checkout_code: existingItem.checkout_code || '',
-        is_active: existingItem.is_active,
-        sort_order: existingItem.sort_order
+        is_active: existingItem.is_active ?? true,
+        sort_order: existingItem.sort_order ?? 0
       })
     }
   }, [existingItem])

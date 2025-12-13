@@ -128,7 +128,7 @@ export function AddonsTab() {
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-neutral-500">Beschikbaar voor</span>
                   <span className="text-neutral-200">
-                    {getApplicableLabel(addon.applicable_to)}
+                    {getApplicableLabel(Array.isArray(addon.applicable_to) ? addon.applicable_to : null)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[13px]">

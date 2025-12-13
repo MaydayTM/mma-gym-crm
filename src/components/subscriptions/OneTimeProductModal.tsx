@@ -32,12 +32,12 @@ export function OneTimeProductModal({ itemId, onClose }: OneTimeProductModalProp
         slug: existingItem.slug,
         name: existingItem.name,
         description: existingItem.description || '',
-        product_type: existingItem.product_type,
+        product_type: (existingItem.product_type as 'daypass' | 'punch_card') || 'daypass',
         price: existingItem.price,
         sessions: existingItem.sessions || 1,
         validity_days: existingItem.validity_days,
         show_on_checkout: existingItem.show_on_checkout !== false,
-        sort_order: existingItem.sort_order
+        sort_order: existingItem.sort_order ?? 0
       })
     }
   }, [existingItem])

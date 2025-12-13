@@ -32,10 +32,10 @@ export function AddonModal({ itemId, onClose }: AddonModalProps) {
         name: existingItem.name,
         description: existingItem.description || '',
         price: existingItem.price,
-        billing_type: existingItem.billing_type,
-        applicable_to: existingItem.applicable_to || [],
-        is_required: existingItem.is_required,
-        sort_order: existingItem.sort_order
+        billing_type: (existingItem.billing_type as 'yearly' | 'monthly' | 'once') || 'yearly',
+        applicable_to: Array.isArray(existingItem.applicable_to) ? existingItem.applicable_to : [],
+        is_required: existingItem.is_required ?? false,
+        sort_order: existingItem.sort_order ?? 0
       })
     }
   }, [existingItem])

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Ticket, CreditCard } from 'lucide-react'
-import { useOneTimeProducts, useDeleteOneTimeProduct, OneTimeProduct } from '../../hooks/useSubscriptionAdmin'
+import { useOneTimeProducts, useDeleteOneTimeProduct } from '../../hooks/useSubscriptionAdmin'
+import type { OneTimeProduct } from '../../hooks/useSubscriptionAdmin'
 import { OneTimeProductModal } from './OneTimeProductModal'
 
 export function OneTimeProductsTab() {
