@@ -124,7 +124,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
                     value={variant.price_adjustment || 0}
                     onChange={(e) => updateVariant(index, { price_adjustment: parseFloat(e.target.value) || 0 })}
                     step="0.01"
-                    className="w-20 px-2 py-1 border rounded text-sm"
+                    className="w-20 px-2 py-1 border rounded text-sm text-gray-900"
                   />
                 </div>
 
@@ -135,7 +135,7 @@ export const VariantsManager: React.FC<VariantsManagerProps> = ({
                     value={variant.stock_quantity || 0}
                     onChange={(e) => updateVariant(index, { stock_quantity: parseInt(e.target.value) || 0 })}
                     min="0"
-                    className={`w-16 px-2 py-1 border rounded text-sm ${
+                    className={`w-16 px-2 py-1 border rounded text-sm text-gray-900 ${
                       (variant.stock_quantity || 0) <= (variant.low_stock_alert || 5)
                         ? 'border-orange-400 bg-orange-50'
                         : ''

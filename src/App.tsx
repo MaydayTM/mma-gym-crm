@@ -20,6 +20,7 @@ import {
   Login,
   Shop,
 } from './pages'
+import { SubscriptionsManage } from './pages/SubscriptionsManage'
 import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
 
 const queryClient = new QueryClient({
@@ -94,6 +95,7 @@ function App() {
                 <Route path="members/:id" element={<MemberDetail />} />
                 <Route path="leads" element={<Leads />} />
                 <Route path="subscriptions" element={<Subscriptions />} />
+                <Route path="subscriptions/manage" element={<SubscriptionsManage />} />
                 <Route path="schedule" element={<Schedule />} />
                 <Route path="reservations" element={<Reservations />} />
                 <Route path="checkin" element={<CheckIn />} />
@@ -116,6 +118,7 @@ function App() {
                 <Route path="members/:id" element={<MemberDetail />} />
                 <Route path="leads" element={<Leads />} />
                 <Route path="subscriptions" element={<Subscriptions />} />
+                <Route path="subscriptions/manage" element={<SubscriptionsManage />} />
                 <Route path="schedule" element={<Schedule />} />
                 <Route path="reservations" element={<Reservations />} />
                 <Route path="checkin" element={<CheckIn />} />
