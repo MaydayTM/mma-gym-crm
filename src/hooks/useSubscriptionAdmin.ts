@@ -13,8 +13,8 @@ export interface AgeGroup {
   min_age: number | null
   max_age: number | null
   starting_price: number | null
-  sort_order: number
-  is_active: boolean
+  sort_order: number | null
+  is_active: boolean | null
 }
 
 export interface PlanType {
@@ -22,10 +22,10 @@ export interface PlanType {
   slug: string
   name: string
   description: string | null
-  features: string[]
+  features: unknown
   highlight_text: string | null
-  sort_order: number
-  is_active: boolean
+  sort_order: number | null
+  is_active: boolean | null
 }
 
 export interface PricingMatrix {
@@ -35,25 +35,25 @@ export interface PricingMatrix {
   duration_months: number
   price: number
   price_per_month: number | null
-  savings: number
-  includes_insurance: boolean
-  show_on_checkout: boolean
-  highlight_text: string | null
-  is_active: boolean
+  savings: number | null
+  includes_insurance: boolean | null
+  show_on_checkout?: boolean | null
+  highlight_text?: string | null
+  is_active: boolean | null
 }
 
 export interface OneTimeProduct {
   id: string
   slug: string
   name: string
-  product_type: 'daypass' | 'punch_card'
+  product_type: string
   price: number
   sessions: number | null
   validity_days: number
   description: string | null
-  show_on_checkout: boolean
-  sort_order: number
-  is_active: boolean
+  show_on_checkout?: boolean | null
+  sort_order: number | null
+  is_active: boolean | null
 }
 
 export interface Discount {
@@ -61,19 +61,19 @@ export interface Discount {
   slug: string
   name: string
   description: string | null
-  discount_type: 'fixed' | 'percentage'
+  discount_type: string
   amount: number | null
   percentage: number | null
-  is_exclusive: boolean
-  requires_verification: boolean
+  is_exclusive: boolean | null
+  requires_verification: boolean | null
   valid_from: string | null
   valid_until: string | null
   max_uses: number | null
-  current_uses: number
-  show_on_checkout: boolean
+  current_uses: number | null
+  show_on_checkout: boolean | null
   checkout_code: string | null
-  is_active: boolean
-  sort_order: number
+  is_active: boolean | null
+  sort_order: number | null
 }
 
 export interface PlanAddon {
@@ -82,11 +82,11 @@ export interface PlanAddon {
   name: string
   description: string | null
   price: number
-  billing_type: 'yearly' | 'once' | 'monthly'
-  applicable_to: string[] | null
-  is_required: boolean
-  sort_order: number
-  is_active: boolean
+  billing_type: string
+  applicable_to: unknown
+  is_required: boolean | null
+  sort_order: number | null
+  is_active: boolean | null
 }
 
 export interface FamilyDiscount {
@@ -110,7 +110,7 @@ export function useAgeGroups() {
         .order('sort_order')
 
       if (error) throw error
-      return data || []
+      return (data || []) as AgeGroup[]
     }
   })
 }
@@ -119,10 +119,10 @@ export function useCreateAgeGroup() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (ageGroup: Omit<AgeGroup, 'id'>) => {
+    mutationFn: async (ageGroup: Partial<AgeGroup>) => {
       const { data, error } = await supabase
         .from('age_groups')
-        .insert(ageGroup)
+        .insert(ageGroup as never)
         .select()
         .single()
 
@@ -142,7 +142,7 @@ export function useUpdateAgeGroup() {
     mutationFn: async ({ id, ...updates }: Partial<AgeGroup> & { id: string }) => {
       const { data, error } = await supabase
         .from('age_groups')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single()
@@ -188,7 +188,7 @@ export function usePlanTypes() {
         .order('sort_order')
 
       if (error) throw error
-      return data || []
+      return (data || []) as PlanType[]
     }
   })
 }
@@ -197,10 +197,10 @@ export function useCreatePlanType() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (planType: Omit<PlanType, 'id'>) => {
+    mutationFn: async (planType: Partial<PlanType>) => {
       const { data, error } = await supabase
         .from('plan_types')
-        .insert(planType)
+        .insert(planType as never)
         .select()
         .single()
 
@@ -220,7 +220,7 @@ export function useUpdatePlanType() {
     mutationFn: async ({ id, ...updates }: Partial<PlanType> & { id: string }) => {
       const { data, error } = await supabase
         .from('plan_types')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single()
@@ -248,7 +248,7 @@ export function usePricingMatrix() {
         .order('age_group_id')
 
       if (error) throw error
-      return data || []
+      return (data || []) as PricingMatrix[]
     }
   })
 }
@@ -257,10 +257,10 @@ export function useCreatePricing() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (pricing: Omit<PricingMatrix, 'id' | 'is_active'>) => {
+    mutationFn: async (pricing: Partial<PricingMatrix>) => {
       const { data, error } = await supabase
         .from('pricing_matrix')
-        .insert(pricing)
+        .insert(pricing as never)
         .select()
         .single()
 
@@ -280,7 +280,7 @@ export function useUpdatePricing() {
     mutationFn: async ({ id, ...updates }: Partial<PricingMatrix> & { id: string }) => {
       const { data, error } = await supabase
         .from('pricing_matrix')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single()
@@ -326,7 +326,7 @@ export function useOneTimeProducts() {
         .order('sort_order')
 
       if (error) throw error
-      return data || []
+      return (data || []) as OneTimeProduct[]
     }
   })
 }
@@ -335,10 +335,10 @@ export function useCreateOneTimeProduct() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (product: Omit<OneTimeProduct, 'id' | 'is_active'>) => {
+    mutationFn: async (product: Partial<OneTimeProduct>) => {
       const { data, error } = await supabase
         .from('one_time_products')
-        .insert(product)
+        .insert(product as never)
         .select()
         .single()
 
@@ -358,7 +358,7 @@ export function useUpdateOneTimeProduct() {
     mutationFn: async ({ id, ...updates }: Partial<OneTimeProduct> & { id: string }) => {
       const { data, error } = await supabase
         .from('one_time_products')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single()
@@ -398,13 +398,21 @@ export function useDiscounts() {
   return useQuery({
     queryKey: ['discounts'],
     queryFn: async (): Promise<Discount[]> => {
+      // Use raw SQL query since discounts table is new and not in generated types yet
       const { data, error } = await supabase
-        .from('discounts')
-        .select('*')
-        .order('sort_order')
+        .rpc('get_discounts' as never)
 
-      if (error) throw error
-      return data || []
+      if (error) {
+        // Fallback: try direct query with type assertion
+        const result = await (supabase as unknown as { from: (table: string) => { select: (cols: string) => { order: (col: string) => Promise<{ data: Discount[] | null; error: unknown }> } } })
+          .from('discounts')
+          .select('*')
+          .order('sort_order')
+
+        if (result.error) throw result.error
+        return (result.data || []) as Discount[]
+      }
+      return (data || []) as Discount[]
     }
   })
 }
@@ -419,7 +427,7 @@ export function useFamilyDiscounts() {
         .order('position')
 
       if (error) throw error
-      return data || []
+      return (data || []) as FamilyDiscount[]
     }
   })
 }
@@ -428,15 +436,15 @@ export function useCreateDiscount() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (discount: Omit<Discount, 'id' | 'current_uses'>) => {
-      const { data, error } = await supabase
+    mutationFn: async (discount: Partial<Discount>) => {
+      const result = await (supabase as unknown as { from: (table: string) => { insert: (data: unknown) => { select: () => { single: () => Promise<{ data: Discount | null; error: unknown }> } } } })
         .from('discounts')
         .insert(discount)
         .select()
         .single()
 
-      if (error) throw error
-      return data
+      if (result.error) throw result.error
+      return result.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discounts'] })
@@ -449,15 +457,15 @@ export function useUpdateDiscount() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Discount> & { id: string }) => {
-      const { data, error } = await supabase
+      const result = await (supabase as unknown as { from: (table: string) => { update: (data: unknown) => { eq: (col: string, val: string) => { select: () => { single: () => Promise<{ data: Discount | null; error: unknown }> } } } } })
         .from('discounts')
         .update(updates)
         .eq('id', id)
         .select()
         .single()
 
-      if (error) throw error
-      return data
+      if (result.error) throw result.error
+      return result.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discounts'] })
@@ -470,12 +478,12 @@ export function useDeleteDiscount() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const result = await (supabase as unknown as { from: (table: string) => { delete: () => { eq: (col: string, val: string) => Promise<{ error: unknown }> } } })
         .from('discounts')
         .delete()
         .eq('id', id)
 
-      if (error) throw error
+      if (result.error) throw result.error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['discounts'] })
@@ -497,7 +505,7 @@ export function usePlanAddons() {
         .order('sort_order')
 
       if (error) throw error
-      return data || []
+      return (data || []) as PlanAddon[]
     }
   })
 }
@@ -506,10 +514,10 @@ export function useCreatePlanAddon() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (addon: Omit<PlanAddon, 'id' | 'is_active'>) => {
+    mutationFn: async (addon: Partial<PlanAddon>) => {
       const { data, error } = await supabase
         .from('plan_addons')
-        .insert(addon)
+        .insert(addon as never)
         .select()
         .single()
 
@@ -529,7 +537,7 @@ export function useUpdatePlanAddon() {
     mutationFn: async ({ id, ...updates }: Partial<PlanAddon> & { id: string }) => {
       const { data, error } = await supabase
         .from('plan_addons')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single()

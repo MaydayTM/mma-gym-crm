@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Percent, Users, Tag } from 'lucide-react'
-import { useDiscounts, useFamilyDiscounts, useDeleteDiscount } from '../../hooks/useSubscriptionAdmin'
+import { useDiscounts, useFamilyDiscounts, useDeleteDiscount, Discount } from '../../hooks/useSubscriptionAdmin'
 import { DiscountModal } from './DiscountModal'
 
 export function DiscountsTab() {
@@ -25,7 +25,7 @@ export function DiscountsTab() {
     await deleteDiscount.mutateAsync(id)
   }
 
-  const formatDiscountValue = (discount: typeof discounts[0]) => {
+  const formatDiscountValue = (discount: Discount) => {
     if (discount.discount_type === 'percentage' && discount.percentage) {
       return `${discount.percentage}%`
     }

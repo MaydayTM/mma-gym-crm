@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, Eye, EyeOff, Loader2, Ticket, CreditCard } from 'lucide-react'
-import { useOneTimeProducts, useDeleteOneTimeProduct } from '../../hooks/useSubscriptionAdmin'
+import { useOneTimeProducts, useDeleteOneTimeProduct, OneTimeProduct } from '../../hooks/useSubscriptionAdmin'
 import { OneTimeProductModal } from './OneTimeProductModal'
 
 export function OneTimeProductsTab() {
@@ -25,7 +25,7 @@ export function OneTimeProductsTab() {
     await deleteProduct.mutateAsync(id)
   }
 
-  const ProductRow = ({ product }: { product: typeof products[0] }) => (
+  const ProductRow = ({ product }: { product: OneTimeProduct }) => (
     <tr className="hover:bg-white/5 transition">
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
