@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Product, ProductWithVariants, ProductVariant, OrderWithItems, DiscountCode } from '../types/shop';
+import type { Product, ProductWithVariants, ProductVariant, OrderWithItems, DiscountCode, OrderItem } from '../types/shop';
 
 // Default tenant ID for single-tenant setup
 const TENANT_ID = 'reconnect-academy';
@@ -36,7 +36,7 @@ export async function getProducts(): Promise<ProductWithVariants[]> {
   return products.map(product => ({
     ...product,
     variants: (variants || []).filter(v => v.product_id === product.id)
-  }));
+  })) as unknown as ProductWithVariants[];
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductWithVariants | null> {
@@ -61,7 +61,7 @@ export async function getProductBySlug(slug: string): Promise<ProductWithVariant
   return {
     ...product,
     variants: variants || []
-  };
+  } as unknown as ProductWithVariants;
 }
 
 export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariants[]> {
@@ -89,7 +89,7 @@ export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariant
   return products.map(product => ({
     ...product,
     variants: (variants || []).filter(v => v.product_id === product.id)
-  }));
+  })) as unknown as ProductWithVariants[];
 }
 
 export async function getProductsByCategory(category: string): Promise<ProductWithVariants[]> {
@@ -117,7 +117,7 @@ export async function getProductsByCategory(category: string): Promise<ProductWi
   return products.map(product => ({
     ...product,
     variants: (variants || []).filter(v => v.product_id === product.id)
-  }));
+  })) as unknown as ProductWithVariants[];
 }
 
 // ============================================
@@ -142,11 +142,11 @@ export async function validateDiscountCode(code: string): Promise<DiscountCode |
   }
 
   // Check max uses
-  if (data.max_uses !== null && data.times_used >= data.max_uses) {
+  if (data.max_uses !== null && (data.times_used ?? 0) >= data.max_uses) {
     return null;
   }
 
-  return data;
+  return data as unknown as DiscountCode;
 }
 
 // ============================================
@@ -173,8 +173,8 @@ export async function getOrderByNumber(orderNumber: string, email: string): Prom
 
   return {
     ...order,
-    items: items || []
-  };
+    items: (items || []) as unknown as OrderItem[]
+  } as unknown as OrderWithItems;
 }
 
 // ============================================
@@ -203,16 +203,18 @@ export async function getAllProductsAdmin(): Promise<ProductWithVariants[]> {
   return products.map(product => ({
     ...product,
     variants: (variants || []).filter(v => v.product_id === product.id)
-  }));
+  })) as unknown as ProductWithVariants[];
 }
 
 export async function createProduct(productData: Partial<Product>): Promise<Product | null> {
-  const { data, error } = await supabase
-    .from('products')
-    .insert({
-      ...productData,
-      tenant_id: TENANT_ID
-    })
+  const insertData = {
+    ...productData,
+    tenant_id: TENANT_ID
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('products') as any)
+    .insert(insertData)
     .select()
     .single();
 
@@ -221,13 +223,13 @@ export async function createProduct(productData: Partial<Product>): Promise<Prod
     return null;
   }
 
-  return data;
+  return data as unknown as Product;
 }
 
 export async function updateProduct(id: string, productData: Partial<Product>): Promise<Product | null> {
   const { data, error } = await supabase
     .from('products')
-    .update(productData)
+    .update(productData as Record<string, unknown>)
     .eq('id', id)
     .eq('tenant_id', TENANT_ID)
     .select()
@@ -238,7 +240,7 @@ export async function updateProduct(id: string, productData: Partial<Product>): 
     return null;
   }
 
-  return data;
+  return data as unknown as Product;
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
@@ -252,12 +254,14 @@ export async function deleteProduct(id: string): Promise<boolean> {
 }
 
 export async function createVariant(variantData: Partial<ProductVariant>): Promise<ProductVariant | null> {
-  const { data, error } = await supabase
-    .from('product_variants')
-    .insert({
-      ...variantData,
-      tenant_id: TENANT_ID
-    })
+  const insertData = {
+    ...variantData,
+    tenant_id: TENANT_ID
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.from('product_variants') as any)
+    .insert(insertData)
     .select()
     .single();
 
@@ -266,13 +270,13 @@ export async function createVariant(variantData: Partial<ProductVariant>): Promi
     return null;
   }
 
-  return data;
+  return data as unknown as ProductVariant;
 }
 
 export async function updateVariant(id: string, variantData: Partial<ProductVariant>): Promise<ProductVariant | null> {
   const { data, error } = await supabase
     .from('product_variants')
-    .update(variantData)
+    .update(variantData as Record<string, unknown>)
     .eq('id', id)
     .eq('tenant_id', TENANT_ID)
     .select()
@@ -283,7 +287,7 @@ export async function updateVariant(id: string, variantData: Partial<ProductVari
     return null;
   }
 
-  return data;
+  return data as unknown as ProductVariant;
 }
 
 export async function deleteVariant(id: string): Promise<boolean> {
@@ -322,7 +326,7 @@ export async function getAllOrdersAdmin(): Promise<OrderWithItems[]> {
   return orders.map(order => ({
     ...order,
     items: (items || []).filter(i => i.order_id === order.id)
-  }));
+  })) as unknown as OrderWithItems[];
 }
 
 export async function updateOrderStatus(

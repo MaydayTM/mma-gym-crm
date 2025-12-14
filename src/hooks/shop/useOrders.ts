@@ -30,7 +30,7 @@ export const useOrders = (filters: OrderFilters = {}) => {
 
       if (error) throw error;
 
-      return data as OrderWithItems[];
+      return data as unknown as OrderWithItems[];
     },
   });
 };

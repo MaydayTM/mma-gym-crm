@@ -28,7 +28,7 @@ export function usePaymentSettings() {
         throw error
       }
 
-      return data || null
+      return data as unknown as PaymentConfig | null
     },
   })
 
@@ -91,6 +91,11 @@ export function usePaymentSettings() {
     return `${supabaseUrl}/functions/v1/shop-webhook`
   }
 
+  // Check if shop is properly configured (env vars present)
+  const isShopConfigured = (): boolean => {
+    return !!import.meta.env.VITE_SUPABASE_URL
+  }
+
   return {
     config,
     isLoading,
@@ -100,6 +105,7 @@ export function usePaymentSettings() {
     isSaving: saveMutation.isPending,
     saveError: saveMutation.error as Error | null,
     isPaymentConfigured,
+    isShopConfigured: isShopConfigured(),
     getWebhookUrl,
   }
 }

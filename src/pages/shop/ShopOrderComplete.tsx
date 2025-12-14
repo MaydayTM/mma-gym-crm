@@ -7,10 +7,10 @@ interface OrderDetails {
   order_number: string
   customer_name: string
   customer_email: string
-  delivery_method: 'pickup' | 'shipping'
+  delivery_method: 'pickup' | 'shipping' | null
   total_amount: number
   status: string
-  created_at: string
+  created_at: string | null
 }
 
 export function ShopOrderComplete() {
@@ -39,7 +39,7 @@ export function ShopOrderComplete() {
         if (fetchError || !data) {
           setError('Bestelling niet gevonden')
         } else {
-          setOrder(data)
+          setOrder(data as OrderDetails)
         }
       } catch (err) {
         console.error('Error fetching order:', err)

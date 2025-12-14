@@ -169,15 +169,16 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
         // Update existing product
         const { error } = await supabase
           .from('products')
-          .update(productData)
+          .update(productData as Record<string, unknown>)
           .eq('id', product.id);
 
         if (error) throw error;
       } else {
         // Create new product
-        const { data: newProduct, error } = await supabase
-          .from('products')
-          .insert(productData)
+        const insertData = { ...productData, tenant_id: TENANT_ID };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: newProduct, error } = await (supabase.from('products') as any)
+          .insert(insertData)
           .select()
           .single();
 
