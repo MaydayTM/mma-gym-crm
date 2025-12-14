@@ -1,22 +1,18 @@
-import { shopSupabase, getShopTenantId, isShopConfigured } from '../lib/shopSupabase';
+import { supabase } from '../lib/supabase';
 import type { Product, ProductWithVariants, ProductVariant, OrderWithItems, DiscountCode } from '../types/shop';
+
+// Default tenant ID for single-tenant setup
+const TENANT_ID = 'reconnect-academy';
 
 // ============================================
 // Products
 // ============================================
 
 export async function getProducts(): Promise<ProductWithVariants[]> {
-  if (!isShopConfigured() || !shopSupabase) {
-    console.warn('Shop not configured');
-    return [];
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data: products, error } = await shopSupabase
+  const { data: products, error } = await supabase
     .from('products')
     .select('*')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .eq('is_active', true)
     .order('featured', { ascending: false })
     .order('created_at', { ascending: false });
@@ -28,7 +24,9 @@ export async function getProducts(): Promise<ProductWithVariants[]> {
 
   // Fetch variants for all products
   const productIds = products.map(p => p.id);
-  const { data: variants } = await shopSupabase
+  if (productIds.length === 0) return [];
+
+  const { data: variants } = await supabase
     .from('product_variants')
     .select('*')
     .in('product_id', productIds)
@@ -42,16 +40,10 @@ export async function getProducts(): Promise<ProductWithVariants[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductWithVariants | null> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return null;
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data: product, error } = await shopSupabase
+  const { data: product, error } = await supabase
     .from('products')
     .select('*')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .eq('seo_slug', slug)
     .eq('is_active', true)
     .single();
@@ -60,7 +52,7 @@ export async function getProductBySlug(slug: string): Promise<ProductWithVariant
     return null;
   }
 
-  const { data: variants } = await shopSupabase
+  const { data: variants } = await supabase
     .from('product_variants')
     .select('*')
     .eq('product_id', product.id)
@@ -73,16 +65,10 @@ export async function getProductBySlug(slug: string): Promise<ProductWithVariant
 }
 
 export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariants[]> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return [];
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data: products, error } = await shopSupabase
+  const { data: products, error } = await supabase
     .from('products')
     .select('*')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .eq('is_active', true)
     .eq('featured', true)
     .limit(limit);
@@ -92,7 +78,9 @@ export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariant
   }
 
   const productIds = products.map(p => p.id);
-  const { data: variants } = await shopSupabase
+  if (productIds.length === 0) return [];
+
+  const { data: variants } = await supabase
     .from('product_variants')
     .select('*')
     .in('product_id', productIds)
@@ -105,16 +93,10 @@ export async function getFeaturedProducts(limit = 4): Promise<ProductWithVariant
 }
 
 export async function getProductsByCategory(category: string): Promise<ProductWithVariants[]> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return [];
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data: products, error } = await shopSupabase
+  const { data: products, error } = await supabase
     .from('products')
     .select('*')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .eq('category', category)
     .eq('is_active', true)
     .order('created_at', { ascending: false });
@@ -124,7 +106,9 @@ export async function getProductsByCategory(category: string): Promise<ProductWi
   }
 
   const productIds = products.map(p => p.id);
-  const { data: variants } = await shopSupabase
+  if (productIds.length === 0) return [];
+
+  const { data: variants } = await supabase
     .from('product_variants')
     .select('*')
     .in('product_id', productIds)
@@ -141,17 +125,12 @@ export async function getProductsByCategory(category: string): Promise<ProductWi
 // ============================================
 
 export async function validateDiscountCode(code: string): Promise<DiscountCode | null> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return null;
-  }
-
-  const tenantId = getShopTenantId();
   const now = new Date().toISOString();
 
-  const { data, error } = await shopSupabase
-    .from('discount_codes')
+  const { data, error } = await supabase
+    .from('shop_discount_codes')
     .select('*')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .eq('code', code.toUpperCase())
     .eq('is_active', true)
     .or(`valid_from.is.null,valid_from.lte.${now}`)
@@ -175,16 +154,10 @@ export async function validateDiscountCode(code: string): Promise<DiscountCode |
 // ============================================
 
 export async function getOrderByNumber(orderNumber: string, email: string): Promise<OrderWithItems | null> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return null;
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data: order, error } = await shopSupabase
+  const { data: order, error } = await supabase
     .from('shop_orders')
     .select('*')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .eq('order_number', orderNumber)
     .eq('customer_email', email.toLowerCase())
     .single();
@@ -193,8 +166,8 @@ export async function getOrderByNumber(orderNumber: string, email: string): Prom
     return null;
   }
 
-  const { data: items } = await shopSupabase
-    .from('order_items')
+  const { data: items } = await supabase
+    .from('shop_order_items')
     .select('*')
     .eq('order_id', order.id);
 
@@ -209,16 +182,10 @@ export async function getOrderByNumber(orderNumber: string, email: string): Prom
 // ============================================
 
 export async function getAllProductsAdmin(): Promise<ProductWithVariants[]> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return [];
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data: products, error } = await shopSupabase
+  const { data: products, error } = await supabase
     .from('products')
     .select('*')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .order('created_at', { ascending: false });
 
   if (error || !products) {
@@ -228,7 +195,7 @@ export async function getAllProductsAdmin(): Promise<ProductWithVariants[]> {
   const productIds = products.map(p => p.id);
   if (productIds.length === 0) return [];
 
-  const { data: variants } = await shopSupabase
+  const { data: variants } = await supabase
     .from('product_variants')
     .select('*')
     .in('product_id', productIds);
@@ -240,17 +207,11 @@ export async function getAllProductsAdmin(): Promise<ProductWithVariants[]> {
 }
 
 export async function createProduct(productData: Partial<Product>): Promise<Product | null> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return null;
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data, error } = await shopSupabase
+  const { data, error } = await supabase
     .from('products')
     .insert({
       ...productData,
-      tenant_id: tenantId
+      tenant_id: TENANT_ID
     })
     .select()
     .single();
@@ -264,17 +225,11 @@ export async function createProduct(productData: Partial<Product>): Promise<Prod
 }
 
 export async function updateProduct(id: string, productData: Partial<Product>): Promise<Product | null> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return null;
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data, error } = await shopSupabase
+  const { data, error } = await supabase
     .from('products')
     .update(productData)
     .eq('id', id)
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .select()
     .single();
 
@@ -287,33 +242,21 @@ export async function updateProduct(id: string, productData: Partial<Product>): 
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return false;
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { error } = await shopSupabase
+  const { error } = await supabase
     .from('products')
     .delete()
     .eq('id', id)
-    .eq('tenant_id', tenantId);
+    .eq('tenant_id', TENANT_ID);
 
   return !error;
 }
 
 export async function createVariant(variantData: Partial<ProductVariant>): Promise<ProductVariant | null> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return null;
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data, error } = await shopSupabase
+  const { data, error } = await supabase
     .from('product_variants')
     .insert({
       ...variantData,
-      tenant_id: tenantId
+      tenant_id: TENANT_ID
     })
     .select()
     .single();
@@ -327,17 +270,11 @@ export async function createVariant(variantData: Partial<ProductVariant>): Promi
 }
 
 export async function updateVariant(id: string, variantData: Partial<ProductVariant>): Promise<ProductVariant | null> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return null;
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data, error } = await shopSupabase
+  const { data, error } = await supabase
     .from('product_variants')
     .update(variantData)
     .eq('id', id)
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .select()
     .single();
 
@@ -350,17 +287,11 @@ export async function updateVariant(id: string, variantData: Partial<ProductVari
 }
 
 export async function deleteVariant(id: string): Promise<boolean> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return false;
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { error } = await shopSupabase
+  const { error } = await supabase
     .from('product_variants')
     .delete()
     .eq('id', id)
-    .eq('tenant_id', tenantId);
+    .eq('tenant_id', TENANT_ID);
 
   return !error;
 }
@@ -370,16 +301,10 @@ export async function deleteVariant(id: string): Promise<boolean> {
 // ============================================
 
 export async function getAllOrdersAdmin(): Promise<OrderWithItems[]> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return [];
-  }
-
-  const tenantId = getShopTenantId();
-
-  const { data: orders, error } = await shopSupabase
+  const { data: orders, error } = await supabase
     .from('shop_orders')
     .select('*')
-    .eq('tenant_id', tenantId)
+    .eq('tenant_id', TENANT_ID)
     .order('created_at', { ascending: false });
 
   if (error || !orders) {
@@ -389,8 +314,8 @@ export async function getAllOrdersAdmin(): Promise<OrderWithItems[]> {
   const orderIds = orders.map(o => o.id);
   if (orderIds.length === 0) return [];
 
-  const { data: items } = await shopSupabase
-    .from('order_items')
+  const { data: items } = await supabase
+    .from('shop_order_items')
     .select('*')
     .in('order_id', orderIds);
 
@@ -405,12 +330,6 @@ export async function updateOrderStatus(
   status: string,
   additionalData?: { tracking_number?: string; tracking_url?: string; notes?: string }
 ): Promise<boolean> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return false;
-  }
-
-  const tenantId = getShopTenantId();
-
   const updateData: Record<string, unknown> = { status };
 
   // Set timestamp based on status
@@ -423,11 +342,11 @@ export async function updateOrderStatus(
     Object.assign(updateData, additionalData);
   }
 
-  const { error } = await shopSupabase
+  const { error } = await supabase
     .from('shop_orders')
     .update(updateData)
     .eq('id', orderId)
-    .eq('tenant_id', tenantId);
+    .eq('tenant_id', TENANT_ID);
 
   return !error;
 }
@@ -437,15 +356,10 @@ export async function updateOrderStatus(
 // ============================================
 
 export async function uploadProductImage(file: File): Promise<string | null> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return null;
-  }
-
-  const tenantId = getShopTenantId();
   const fileExt = file.name.split('.').pop();
-  const fileName = `${tenantId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+  const fileName = `${TENANT_ID}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-  const { error } = await shopSupabase.storage
+  const { error } = await supabase.storage
     .from('shop-products')
     .upload(fileName, file, {
       cacheControl: '3600',
@@ -457,7 +371,7 @@ export async function uploadProductImage(file: File): Promise<string | null> {
     return null;
   }
 
-  const { data } = shopSupabase.storage
+  const { data } = supabase.storage
     .from('shop-products')
     .getPublicUrl(fileName);
 
@@ -465,17 +379,13 @@ export async function uploadProductImage(file: File): Promise<string | null> {
 }
 
 export async function deleteProductImage(url: string): Promise<boolean> {
-  if (!isShopConfigured() || !shopSupabase) {
-    return false;
-  }
-
   // Extract path from URL
   const urlParts = url.split('/shop-products/');
   if (urlParts.length !== 2) return false;
 
   const path = urlParts[1];
 
-  const { error } = await shopSupabase.storage
+  const { error } = await supabase.storage
     .from('shop-products')
     .remove([path]);
 

@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { shopSupabase, getShopTenantId, isShopConfigured } from '../../lib/shopSupabase';
+import { supabase } from '../../lib/supabase';
 import type { ProductWithVariants } from '../../types/shop';
+
+// Default tenant ID for single-tenant setup
+const TENANT_ID = 'reconnect-academy';
 
 type ProductFilters = {
   category?: string;
@@ -14,19 +17,17 @@ export const useProduct = (slug: string | undefined) => {
   return useQuery({
     queryKey: ['product', slug],
     queryFn: async () => {
-      if (!slug || !isShopConfigured() || !shopSupabase) {
+      if (!slug) {
         return null;
       }
 
-      const tenantId = getShopTenantId();
-
-      const { data, error } = await shopSupabase
+      const { data, error } = await supabase
         .from('products')
         .select(`
           *,
           variants:product_variants(*)
         `)
-        .eq('tenant_id', tenantId)
+        .eq('tenant_id', TENANT_ID)
         .eq('seo_slug', slug)
         .eq('is_active', true)
         .single();
@@ -54,19 +55,13 @@ export const useProducts = (filters: ProductFilters = {}) => {
   return useQuery({
     queryKey: ['products', filters],
     queryFn: async () => {
-      if (!isShopConfigured() || !shopSupabase) {
-        return [];
-      }
-
-      const tenantId = getShopTenantId();
-
-      let query = shopSupabase
+      let query = supabase
         .from('products')
         .select(`
           *,
           variants:product_variants(*)
         `)
-        .eq('tenant_id', tenantId)
+        .eq('tenant_id', TENANT_ID)
         .order('featured', { ascending: false })
         .order('created_at', { ascending: false });
 

@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { shopSupabase, getShopTenantId } from '../../../lib/shopSupabase';
+import { supabase } from '../../../lib/supabase';
 import { ShopMediaUploader } from './ShopMediaUploader';
 import { VariantsManager } from './VariantsManager';
 import type { Product, ProductVariant, AvailabilityStatus } from '../../../types/shop';
+
+// Default tenant ID for single-tenant setup
+const TENANT_ID = 'reconnect-academy';
 
 const productSchema = z.object({
   name: z.string().min(2, 'Naam is verplicht'),
@@ -93,17 +96,6 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
     : basePrice;
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!shopSupabase) {
-      setSubmitError('Shop database connectie niet beschikbaar. Controleer VITE_SHOP_SUPABASE_URL en VITE_SHOP_SUPABASE_ANON_KEY.');
-      return;
-    }
-
-    const tenantId = getShopTenantId();
-    if (!tenantId) {
-      setSubmitError('Tenant ID niet geconfigureerd. Controleer VITE_SHOP_TENANT_ID.');
-      return;
-    }
-
     try {
       setSubmitError(null);
 
@@ -125,14 +117,14 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
         images: data.images,
         featured_image: data.featured_image,
         video_url: data.video_url,
-        ...(product ? {} : { tenant_id: tenantId }), // Only include tenant_id for new products
+        ...(product ? {} : { tenant_id: TENANT_ID }), // Only include tenant_id for new products
       };
 
       let productId = product?.id;
 
       if (product) {
         // Update existing product
-        const { error } = await shopSupabase
+        const { error } = await supabase
           .from('products')
           .update(productData)
           .eq('id', product.id);
@@ -140,7 +132,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
         if (error) throw error;
       } else {
         // Create new product
-        const { data: newProduct, error } = await shopSupabase
+        const { data: newProduct, error } = await supabase
           .from('products')
           .insert(productData)
           .select()
@@ -154,7 +146,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
       if (productId) {
         // Delete existing variants if updating
         if (product) {
-          await shopSupabase
+          await supabase
             .from('product_variants')
             .delete()
             .eq('product_id', productId);
@@ -164,7 +156,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
         if (variants.length > 0) {
           const variantsToInsert = variants.map(v => ({
             product_id: productId,
-            tenant_id: tenantId,
+            tenant_id: TENANT_ID,
             name: v.name || '',
             size: v.size || null,
             color: v.color || null,
@@ -175,7 +167,7 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
             is_active: v.is_active !== false,
           }));
 
-          const { error: variantError } = await shopSupabase
+          const { error: variantError } = await supabase
             .from('product_variants')
             .insert(variantsToInsert);
 

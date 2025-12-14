@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOrders } from '../../../hooks/shop/useOrders';
-import { shopSupabase } from '../../../lib/shopSupabase';
+import { supabase } from '../../../lib/supabase';
 import type { OrderStatus } from '../../../types/shop';
 
 interface OrderUpdate {
@@ -29,11 +29,7 @@ export const OrdersManager: React.FC = () => {
         updates.cancelled_at = new Date().toISOString();
       }
 
-      if (!shopSupabase) {
-        throw new Error('Shop database niet beschikbaar');
-      }
-
-      const { error } = await shopSupabase
+      const { error } = await supabase
         .from('shop_orders')
         .update(updates)
         .eq('id', orderId);

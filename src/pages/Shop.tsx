@@ -15,7 +15,6 @@ import { ProductsManager } from '../components/shop/admin/ProductsManager'
 import { OrdersManager } from '../components/shop/admin/OrdersManager'
 import { ShopDocumentation } from '../components/shop/admin/ShopDocumentation'
 import { BannersManager } from '../components/shop/admin/BannersManager'
-import { isShopConfigured } from '../lib/shopSupabase'
 
 // Shop frontend URL for public shop
 // The new shop frontend runs on /shop/products in this same app
@@ -56,28 +55,6 @@ export function Shop() {
           <button className="px-6 py-3 bg-amber-400 text-neutral-950 font-semibold rounded-xl hover:bg-amber-300 transition-colors">
             Start 30-dagen trial
           </button>
-        </div>
-      </div>
-    )
-  }
-
-  // Check if shop is configured
-  if (!isShopConfigured()) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-400/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-400" />
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">Shop niet geconfigureerd</h2>
-          <p className="text-neutral-400 mb-6">
-            De shop environment variables zijn niet ingesteld. Voeg de volgende variabelen toe aan je .env bestand:
-          </p>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-left text-sm font-mono text-neutral-300">
-            <p>VITE_SHOP_SUPABASE_URL=...</p>
-            <p>VITE_SHOP_SUPABASE_ANON_KEY=...</p>
-            <p>VITE_SHOP_TENANT_ID=...</p>
-          </div>
         </div>
       </div>
     )

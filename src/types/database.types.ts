@@ -2365,6 +2365,111 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_discount_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_order_amount: number | null
+          tenant_id: string
+          times_used: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order_amount?: number | null
+          tenant_id?: string
+          times_used?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order_amount?: number | null
+          tenant_id?: string
+          times_used?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      shop_order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_preorder: boolean | null
+          order_id: string
+          preorder_note: string | null
+          product_name: string
+          product_variant_id: string | null
+          quantity: number
+          sku: string | null
+          total_price: number
+          unit_price: number
+          variant_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_preorder?: boolean | null
+          order_id: string
+          preorder_note?: string | null
+          product_name: string
+          product_variant_id?: string | null
+          quantity?: number
+          sku?: string | null
+          total_price: number
+          unit_price: number
+          variant_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_preorder?: boolean | null
+          order_id?: string
+          preorder_note?: string | null
+          product_name?: string
+          product_variant_id?: string | null
+          quantity?: number
+          sku?: string | null
+          total_price?: number
+          unit_price?: number
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_order_items_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_orders: {
         Row: {
           cancelled_at: string | null
@@ -3244,6 +3349,7 @@ export type Database = {
         Returns: boolean
       }
       generate_order_number: { Args: { p_tenant_id: string }; Returns: string }
+      generate_shop_order_number: { Args: never; Returns: string }
       get_my_role: { Args: never; Returns: string }
       get_tenant_modules: {
         Args: { p_tenant_id: string }

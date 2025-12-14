@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { CheckCircle, XCircle, Loader2, Package, Truck, Store } from 'lucide-react'
-import { shopSupabase } from '../../lib/shopSupabase'
+import { supabase } from '../../lib/supabase'
 
 interface OrderDetails {
   order_number: string
@@ -23,14 +23,14 @@ export function ShopOrderComplete() {
 
   useEffect(() => {
     async function fetchOrder() {
-      if (!orderNumber || !shopSupabase) {
+      if (!orderNumber) {
         setError('Bestelling niet gevonden')
         setIsLoading(false)
         return
       }
 
       try {
-        const { data, error: fetchError } = await shopSupabase
+        const { data, error: fetchError } = await supabase
           .from('shop_orders')
           .select('order_number, customer_name, customer_email, delivery_method, total_amount, status, created_at')
           .eq('order_number', orderNumber)

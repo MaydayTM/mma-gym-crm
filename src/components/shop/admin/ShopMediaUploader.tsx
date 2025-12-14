@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Plus, X, Image as ImageIcon, Video } from 'lucide-react';
-import { shopSupabase } from '../../../lib/shopSupabase';
+import { supabase } from '../../../lib/supabase';
 
 interface ShopMediaUploaderProps {
   images: string[];
@@ -24,15 +24,10 @@ export const ShopMediaUploader: React.FC<ShopMediaUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    if (!shopSupabase) {
-      setError('Shop Supabase niet geconfigureerd');
-      return null;
-    }
-
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
 
-    const { error: uploadError } = await shopSupabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('shop-products')
       .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
@@ -41,7 +36,7 @@ export const ShopMediaUploader: React.FC<ShopMediaUploaderProps> = ({
       return null;
     }
 
-    const { data } = shopSupabase.storage.from('shop-products').getPublicUrl(fileName);
+    const { data } = supabase.storage.from('shop-products').getPublicUrl(fileName);
     return data.publicUrl;
   };
 

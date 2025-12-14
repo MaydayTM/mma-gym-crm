@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { shopSupabase, getShopTenantId, isShopConfigured } from '../lib/shopSupabase'
+import { supabase } from '../lib/supabase'
 import type { PaymentConfig, PaymentConfigFormData } from '../types/shop'
 
-const TENANT_ID = getShopTenantId() || 'reconnect'
+// Default tenant ID for single-tenant setup
+const TENANT_ID = 'reconnect-academy'
 
 export function usePaymentSettings() {
   const queryClient = useQueryClient()
@@ -16,11 +17,7 @@ export function usePaymentSettings() {
   } = useQuery({
     queryKey: ['payment-settings', TENANT_ID],
     queryFn: async (): Promise<PaymentConfig | null> => {
-      if (!isShopConfigured() || !shopSupabase) {
-        throw new Error('Shop niet geconfigureerd')
-      }
-
-      const { data, error } = await shopSupabase
+      const { data, error } = await supabase
         .from('tenant_payment_configs')
         .select('*')
         .eq('tenant_id', TENANT_ID)
@@ -33,16 +30,11 @@ export function usePaymentSettings() {
 
       return data || null
     },
-    enabled: isShopConfigured(),
   })
 
   // Save payment config mutation
   const saveMutation = useMutation({
     mutationFn: async (formData: PaymentConfigFormData): Promise<void> => {
-      if (!isShopConfigured() || !shopSupabase) {
-        throw new Error('Shop niet geconfigureerd')
-      }
-
       const configData = {
         tenant_id: TENANT_ID,
         provider: formData.provider,
@@ -58,7 +50,7 @@ export function usePaymentSettings() {
 
       if (config?.id) {
         // Update existing config
-        const { error } = await shopSupabase
+        const { error } = await supabase
           .from('tenant_payment_configs')
           .update(configData)
           .eq('id', config.id)
@@ -66,7 +58,7 @@ export function usePaymentSettings() {
         if (error) throw error
       } else {
         // Insert new config
-        const { error } = await shopSupabase
+        const { error } = await supabase
           .from('tenant_payment_configs')
           .insert(configData)
 
@@ -95,7 +87,7 @@ export function usePaymentSettings() {
 
   // Get webhook URL for Stripe
   const getWebhookUrl = (): string => {
-    const supabaseUrl = import.meta.env.VITE_SHOP_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     return `${supabaseUrl}/functions/v1/shop-webhook`
   }
 
@@ -109,6 +101,5 @@ export function usePaymentSettings() {
     saveError: saveMutation.error as Error | null,
     isPaymentConfigured,
     getWebhookUrl,
-    isShopConfigured: isShopConfigured(),
   }
 }
