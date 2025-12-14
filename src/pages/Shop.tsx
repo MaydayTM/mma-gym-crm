@@ -18,7 +18,8 @@ import { BannersManager } from '../components/shop/admin/BannersManager'
 import { isShopConfigured } from '../lib/shopSupabase'
 
 // Shop frontend URL for public shop
-const SHOP_FRONTEND_URL = import.meta.env.VITE_SHOP_URL || 'https://www.mmagym.be/shop'
+// The new shop frontend runs on /shop/products in this same app
+const SHOP_FRONTEND_URL = '/shop/products'
 
 export function Shop() {
   const { hasAccess, getTrialInfo } = useModules()
