@@ -93,7 +93,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 // Shop App - for shop.mmagym.be subdomain
 function ShopApp() {
   React.useEffect(() => {
-    document.title = "Reconnect Academy Shop"
+    document.title = "MMA Shop"
   }, [])
 
   return (
