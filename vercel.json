@@ -2,6 +2,30 @@
   "rewrites": [
     {
       "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "shop.mmagym.be"
+        }
+      ],
+      "destination": "/app.html"
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "crm.mmagym.be"
+        }
+      ],
+      "destination": "/app.html"
+    },
+    {
+      "source": "/app.html/(.*)",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
