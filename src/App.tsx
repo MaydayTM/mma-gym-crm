@@ -92,6 +92,10 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 // Shop App - for shop.mmagym.be subdomain
 function ShopApp() {
+  React.useEffect(() => {
+    document.title = "Reconnect Academy Shop"
+  }, [])
+
   return (
     <Routes>
       {/* Root shows shop landing */}
@@ -109,6 +113,10 @@ function ShopApp() {
 
 // CRM App - for crm.mmagym.be main domain
 function CRMApp() {
+  React.useEffect(() => {
+    document.title = "Roster CRM - Dashboard"
+  }, [])
+
   return (
     <AuthProvider>
       <Routes>
