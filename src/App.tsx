@@ -41,7 +41,17 @@ const ShopLoadingFallback = () => (
 
 // Check if we're on the shop subdomain
 const isShopSubdomain = window.location.hostname.startsWith('shop.') ||
-                        window.location.hostname === 'shop.mmagym.be'
+  window.location.hostname === 'shop.mmagym.be'
+
+// Check if we're on the roster subdomain (should be handled by Vercel rewrites to landing.html, but failsafe here)
+const isRosterSubdomain = window.location.hostname.startsWith('roster.') ||
+  window.location.hostname === 'roster.mmagym.be'
+
+if (isRosterSubdomain) {
+  // If the React App loads on roster, it means the Vercel rewrite failed or we hit a cached Service Worker/index.html
+  // Force redirect to the static landing page file
+  window.location.replace('/landing.html')
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
