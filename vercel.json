@@ -12,16 +12,6 @@
     },
     {
       "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "roster.mmagym.be"
-        }
-      ],
-      "destination": "/landing.html"
-    },
-    {
-      "source": "/:path*",
       "destination": "/index.html"
     }
   ],
