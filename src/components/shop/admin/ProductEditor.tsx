@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { ShopMediaUploader } from './ShopMediaUploader';
 import { VariantsManager } from './VariantsManager';
@@ -39,6 +40,7 @@ type ProductEditorProps = {
 
 export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }) => {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [variants, setVariants] = useState<Partial<ProductVariant>[]>(
     product?.variants || []
   );
@@ -89,11 +91,52 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
   const images = watch('images');
   const featuredImage = watch('featured_image');
   const videoUrl = watch('video_url');
+  const productName = watch('name');
+  const category = watch('category');
 
   // Calculate preorder price for display
   const preorderPrice = allowPreorder && preorderDiscount
     ? basePrice - (basePrice * (preorderDiscount / 100))
     : basePrice;
+
+  // Generate AI description
+  const handleGenerateDescription = async () => {
+    if (!productName) {
+      setSubmitError('Vul eerst een productnaam in');
+      return;
+    }
+
+    setIsGenerating(true);
+    setSubmitError(null);
+
+    try {
+      // Get colors from variants
+      const colors = variants
+        .map(v => v.color)
+        .filter((c): c is string => !!c)
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .join(', ');
+
+      const { data, error } = await supabase.functions.invoke('generate-description', {
+        body: {
+          productName,
+          category,
+          colors: colors || undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.description) {
+        setValue('description', data.description);
+      }
+    } catch (error) {
+      console.error('Error generating description:', error);
+      setSubmitError('Kon beschrijving niet genereren. Probeer het later opnieuw.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const onSubmit = async (data: ProductFormData) => {
     try {
@@ -216,10 +259,27 @@ export const ProductEditor: React.FC<ProductEditorProps> = ({ product, onClose }
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">Beschrijving *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">Beschrijving *</label>
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={isGenerating || !productName}
+                className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!productName ? 'Vul eerst een productnaam in' : 'Genereer beschrijving met AI'}
+              >
+                {isGenerating ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Sparkles size={14} />
+                )}
+                {isGenerating ? 'Genereren...' : 'AI Beschrijving'}
+              </button>
+            </div>
             <textarea
               {...register('description')}
               rows={4}
+              placeholder="Korte productbeschrijving in Venum-stijl..."
               className="w-full px-4 py-2 border rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-amber-400 focus:border-amber-400"
             />
             {errors.description && <p className="text-red-600 text-sm mt-1">{errors.description.message}</p>}
