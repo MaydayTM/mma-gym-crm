@@ -649,6 +649,143 @@ export type Database = {
         }
         Relationships: []
       }
+      creative_fighter_credit_costs: {
+        Row: {
+          action_type: string
+          credits_cost: number
+          description: string | null
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          action_type: string
+          credits_cost: number
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          action_type?: string
+          credits_cost?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      creative_fighter_credit_packages: {
+        Row: {
+          created_at: string | null
+          credits: number
+          currency: string | null
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          name: string
+          price_cents: number
+          sort_order: number | null
+          stripe_price_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credits: number
+          currency?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          name: string
+          price_cents: number
+          sort_order?: number | null
+          stripe_price_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credits?: number
+          currency?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          name?: string
+          price_cents?: number
+          sort_order?: number | null
+          stripe_price_id?: string | null
+        }
+        Relationships: []
+      }
+      creative_fighter_credit_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string | null
+          description: string | null
+          id: string
+          reference_id: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_fighter_credit_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creative_fighter_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creative_fighter_gear: {
+        Row: {
+          created_at: string | null
+          gear_type: string
+          id: string
+          image_url: string
+          output_format: string | null
+          prompt: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gear_type: string
+          id?: string
+          image_url: string
+          output_format?: string | null
+          prompt?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gear_type?: string
+          id?: string
+          image_url?: string
+          output_format?: string | null
+          prompt?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       creative_fighter_photos: {
         Row: {
           created_at: string | null
@@ -670,6 +807,39 @@ export type Database = {
           image_url?: string
           prompt?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      creative_fighter_profiles: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string | null
+          credits: number | null
+          display_name: string | null
+          email: string
+          id: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          credits?: number | null
+          display_name?: string | null
+          email: string
+          id?: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          credits?: number | null
+          display_name?: string | null
+          email?: string
+          id?: string
+          role?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -785,6 +955,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      discounts: {
+        Row: {
+          amount: number | null
+          checkout_code: string | null
+          created_at: string | null
+          current_uses: number | null
+          description: string | null
+          discount_type: string
+          id: string
+          is_active: boolean | null
+          is_exclusive: boolean | null
+          max_uses: number | null
+          name: string
+          percentage: number | null
+          requires_verification: boolean | null
+          show_on_checkout: boolean | null
+          slug: string
+          sort_order: number | null
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          amount?: number | null
+          checkout_code?: string | null
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_exclusive?: boolean | null
+          max_uses?: number | null
+          name: string
+          percentage?: number | null
+          requires_verification?: boolean | null
+          show_on_checkout?: boolean | null
+          slug: string
+          sort_order?: number | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          amount?: number | null
+          checkout_code?: string | null
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_type?: string
+          id?: string
+          is_active?: boolean | null
+          is_exclusive?: boolean | null
+          max_uses?: number | null
+          name?: string
+          percentage?: number | null
+          requires_verification?: boolean | null
+          show_on_checkout?: boolean | null
+          slug?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
       }
       family_discounts: {
         Row: {
@@ -1093,6 +1329,58 @@ export type Database = {
           },
         ]
       }
+      member_subscription_discounts: {
+        Row: {
+          created_at: string | null
+          discount_amount: number
+          discount_id: string | null
+          discount_name: string
+          family_discount_id: string | null
+          id: string
+          subscription_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          discount_amount: number
+          discount_id?: string | null
+          discount_name: string
+          family_discount_id?: string | null
+          id?: string
+          subscription_id: string
+        }
+        Update: {
+          created_at?: string | null
+          discount_amount?: number
+          discount_id?: string | null
+          discount_name?: string
+          family_discount_id?: string | null
+          id?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_subscription_discounts_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscription_discounts_family_discount_id_fkey"
+            columns: ["family_discount_id"]
+            isOneToOne: false
+            referencedRelation: "family_discounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscription_discounts_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "member_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_subscriptions: {
         Row: {
           addon_total: number | null
@@ -1355,6 +1643,42 @@ export type Database = {
         }
         Relationships: []
       }
+      modules: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          external_url: string | null
+          icon: string | null
+          id: string
+          is_core: boolean | null
+          name: string
+          price_monthly: number | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          external_url?: string | null
+          icon?: string | null
+          id?: string
+          is_core?: boolean | null
+          name: string
+          price_monthly?: number | null
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          external_url?: string | null
+          icon?: string | null
+          id?: string
+          is_core?: boolean | null
+          name?: string
+          price_monthly?: number | null
+          slug?: string
+        }
+        Relationships: []
+      }
       one_time_products: {
         Row: {
           created_at: string | null
@@ -1366,6 +1690,7 @@ export type Database = {
           price: number
           product_type: string
           sessions: number | null
+          show_on_checkout: boolean | null
           slug: string
           sort_order: number | null
           stripe_price_id: string | null
@@ -1381,6 +1706,7 @@ export type Database = {
           price: number
           product_type: string
           sessions?: number | null
+          show_on_checkout?: boolean | null
           slug: string
           sort_order?: number | null
           stripe_price_id?: string | null
@@ -1396,6 +1722,7 @@ export type Database = {
           price?: number
           product_type?: string
           sessions?: number | null
+          show_on_checkout?: boolean | null
           slug?: string
           sort_order?: number | null
           stripe_price_id?: string | null
@@ -1407,7 +1734,9 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_preorder: boolean | null
           order_id: string
+          preorder_note: string | null
           product_name: string
           product_variant_id: string | null
           quantity: number
@@ -1420,7 +1749,9 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          is_preorder?: boolean | null
           order_id: string
+          preorder_note?: string | null
           product_name: string
           product_variant_id?: string | null
           quantity: number
@@ -1433,7 +1764,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          is_preorder?: boolean | null
           order_id?: string
+          preorder_note?: string | null
           product_name?: string
           product_variant_id?: string | null
           quantity?: number
@@ -1545,11 +1878,54 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_discounts: {
+        Row: {
+          created_at: string | null
+          discount_id: string
+          id: string
+          override_amount: number | null
+          override_percentage: number | null
+          pricing_matrix_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          discount_id: string
+          id?: string
+          override_amount?: number | null
+          override_percentage?: number | null
+          pricing_matrix_id: string
+        }
+        Update: {
+          created_at?: string | null
+          discount_id?: string
+          id?: string
+          override_amount?: number | null
+          override_percentage?: number | null
+          pricing_matrix_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_discounts_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_discounts_pricing_matrix_id_fkey"
+            columns: ["pricing_matrix_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_matrix"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_matrix: {
         Row: {
           age_group_id: string
           created_at: string | null
           duration_months: number
+          highlight_text: string | null
           id: string
           includes_insurance: boolean | null
           is_active: boolean | null
@@ -1558,12 +1934,14 @@ export type Database = {
           price: number
           price_per_month: number | null
           savings: number | null
+          show_on_checkout: boolean | null
           stripe_price_id: string | null
         }
         Insert: {
           age_group_id: string
           created_at?: string | null
           duration_months: number
+          highlight_text?: string | null
           id?: string
           includes_insurance?: boolean | null
           is_active?: boolean | null
@@ -1572,12 +1950,14 @@ export type Database = {
           price: number
           price_per_month?: number | null
           savings?: number | null
+          show_on_checkout?: boolean | null
           stripe_price_id?: string | null
         }
         Update: {
           age_group_id?: string
           created_at?: string | null
           duration_months?: number
+          highlight_text?: string | null
           id?: string
           includes_insurance?: boolean | null
           is_active?: boolean | null
@@ -1586,6 +1966,7 @@ export type Database = {
           price?: number
           price_per_month?: number | null
           savings?: number | null
+          show_on_checkout?: boolean | null
           stripe_price_id?: string | null
         }
         Relationships: [
@@ -1667,6 +2048,7 @@ export type Database = {
       }
       products: {
         Row: {
+          allow_preorder: boolean | null
           availability_status: string
           base_price: number
           category: string
@@ -1678,6 +2060,8 @@ export type Database = {
           images: string[]
           is_active: boolean | null
           name: string
+          preorder_discount_percent: number | null
+          preorder_note: string | null
           presale_ends_at: string | null
           presale_price: number | null
           seo_slug: string
@@ -1687,6 +2071,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          allow_preorder?: boolean | null
           availability_status?: string
           base_price: number
           category: string
@@ -1698,6 +2083,8 @@ export type Database = {
           images?: string[]
           is_active?: boolean | null
           name: string
+          preorder_discount_percent?: number | null
+          preorder_note?: string | null
           presale_ends_at?: string | null
           presale_price?: number | null
           seo_slug: string
@@ -1707,6 +2094,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          allow_preorder?: boolean | null
           availability_status?: string
           base_price?: number
           category?: string
@@ -1718,6 +2106,8 @@ export type Database = {
           images?: string[]
           is_active?: boolean | null
           name?: string
+          preorder_discount_percent?: number | null
+          preorder_note?: string | null
           presale_ends_at?: string | null
           presale_price?: number | null
           seo_slug?: string
@@ -1864,6 +2254,117 @@ export type Database = {
           },
         ]
       }
+      shipping_settings: {
+        Row: {
+          created_at: string | null
+          free_shipping_threshold: number | null
+          id: string
+          pickup_enabled: boolean | null
+          pickup_location: string | null
+          shipping_cost: number | null
+          shipping_enabled: boolean | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          free_shipping_threshold?: number | null
+          id?: string
+          pickup_enabled?: boolean | null
+          pickup_location?: string | null
+          shipping_cost?: number | null
+          shipping_enabled?: boolean | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          free_shipping_threshold?: number | null
+          id?: string
+          pickup_enabled?: boolean | null
+          pickup_location?: string | null
+          shipping_cost?: number | null
+          shipping_enabled?: boolean | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      shop_banners: {
+        Row: {
+          background_color: string | null
+          badge_text: string | null
+          created_at: string | null
+          created_by: string | null
+          cta_link: string | null
+          cta_text: string | null
+          ends_at: string | null
+          id: string
+          image_alt: string | null
+          image_url: string
+          image_url_mobile: string | null
+          is_active: boolean | null
+          overlay_opacity: number | null
+          position: number | null
+          slug: string | null
+          starts_at: string | null
+          subtitle: string | null
+          tenant_id: string
+          text_color: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          background_color?: string | null
+          badge_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          ends_at?: string | null
+          id?: string
+          image_alt?: string | null
+          image_url: string
+          image_url_mobile?: string | null
+          is_active?: boolean | null
+          overlay_opacity?: number | null
+          position?: number | null
+          slug?: string | null
+          starts_at?: string | null
+          subtitle?: string | null
+          tenant_id: string
+          text_color?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          background_color?: string | null
+          badge_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          ends_at?: string | null
+          id?: string
+          image_alt?: string | null
+          image_url?: string
+          image_url_mobile?: string | null
+          is_active?: boolean | null
+          overlay_opacity?: number | null
+          position?: number | null
+          slug?: string | null
+          starts_at?: string | null
+          subtitle?: string | null
+          tenant_id?: string
+          text_color?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       shop_orders: {
         Row: {
           cancelled_at: string | null
@@ -1872,17 +2373,20 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           delivered_at: string | null
+          delivery_method: string | null
           discount_amount: number | null
           discount_code_id: string | null
           id: string
+          mollie_payment_id: string | null
           notes: string | null
           order_number: string
           paid_at: string | null
           payment_id: string | null
           payment_provider: string | null
           payment_session_id: string | null
+          ready_for_pickup_at: string | null
           shipped_at: string | null
-          shipping_address: Json
+          shipping_address: Json | null
           shipping_amount: number | null
           status: string
           subtotal_amount: number
@@ -1898,17 +2402,20 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           delivered_at?: string | null
+          delivery_method?: string | null
           discount_amount?: number | null
           discount_code_id?: string | null
           id?: string
+          mollie_payment_id?: string | null
           notes?: string | null
           order_number: string
           paid_at?: string | null
           payment_id?: string | null
           payment_provider?: string | null
           payment_session_id?: string | null
+          ready_for_pickup_at?: string | null
           shipped_at?: string | null
-          shipping_address: Json
+          shipping_address?: Json | null
           shipping_amount?: number | null
           status?: string
           subtotal_amount: number
@@ -1924,17 +2431,20 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           delivered_at?: string | null
+          delivery_method?: string | null
           discount_amount?: number | null
           discount_code_id?: string | null
           id?: string
+          mollie_payment_id?: string | null
           notes?: string | null
           order_number?: string
           paid_at?: string | null
           payment_id?: string | null
           payment_provider?: string | null
           payment_session_id?: string | null
+          ready_for_pickup_at?: string | null
           shipped_at?: string | null
-          shipping_address?: Json
+          shipping_address?: Json | null
           shipping_amount?: number | null
           status?: string
           subtotal_amount?: number
@@ -2311,6 +2821,47 @@ export type Database = {
           },
         ]
       }
+      tenant_module_subscriptions: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          module_id: string | null
+          started_at: string | null
+          status: string
+          tenant_id: string
+          trial_ends_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          module_id?: string | null
+          started_at?: string | null
+          status?: string
+          tenant_id: string
+          trial_ends_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          module_id?: string | null
+          started_at?: string | null
+          status?: string
+          tenant_id?: string
+          trial_ends_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_module_subscriptions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_payment_configs: {
         Row: {
           created_at: string | null
@@ -2459,6 +3010,81 @@ export type Database = {
       }
     }
     Views: {
+      active_shop_banners: {
+        Row: {
+          background_color: string | null
+          badge_text: string | null
+          created_at: string | null
+          created_by: string | null
+          cta_link: string | null
+          cta_text: string | null
+          ends_at: string | null
+          id: string | null
+          image_alt: string | null
+          image_url: string | null
+          image_url_mobile: string | null
+          is_active: boolean | null
+          overlay_opacity: number | null
+          position: number | null
+          slug: string | null
+          starts_at: string | null
+          subtitle: string | null
+          tenant_id: string | null
+          text_color: string | null
+          title: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          background_color?: string | null
+          badge_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          ends_at?: string | null
+          id?: string | null
+          image_alt?: string | null
+          image_url?: string | null
+          image_url_mobile?: string | null
+          is_active?: boolean | null
+          overlay_opacity?: number | null
+          position?: number | null
+          slug?: string | null
+          starts_at?: string | null
+          subtitle?: string | null
+          tenant_id?: string | null
+          text_color?: string | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          background_color?: string | null
+          badge_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          ends_at?: string | null
+          id?: string | null
+          image_alt?: string | null
+          image_url?: string | null
+          image_url_mobile?: string | null
+          is_active?: boolean | null
+          overlay_opacity?: number | null
+          position?: number | null
+          slug?: string | null
+          starts_at?: string | null
+          subtitle?: string | null
+          tenant_id?: string | null
+          text_color?: string | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       dashboard_stats: {
         Row: {
           active_members: number | null
@@ -2586,8 +3212,52 @@ export type Database = {
       }
     }
     Functions: {
+      add_credits: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_reference_id?: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: number
+      }
+      create_profile_on_signup: {
+        Args: {
+          p_auth_user_id: string
+          p_display_name?: string
+          p_email: string
+        }
+        Returns: string
+      }
+      decrease_variant_stock: {
+        Args: { p_quantity: number; p_variant_id: string }
+        Returns: boolean
+      }
+      deduct_credits: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_reference_id?: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       generate_order_number: { Args: { p_tenant_id: string }; Returns: string }
       get_my_role: { Args: never; Returns: string }
+      get_tenant_modules: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          external_url: string
+          icon: string
+          is_core: boolean
+          module_id: string
+          name: string
+          slug: string
+          status: string
+          trial_ends_at: string
+        }[]
+      }
       get_training_count: {
         Args: { p_discipline_id?: string; p_member_id: string }
         Returns: number
@@ -2597,7 +3267,15 @@ export type Database = {
         Returns: number
       }
       get_user_tenant_ids: { Args: never; Returns: string[] }
+      has_module_access: {
+        Args: { p_module_slug: string; p_tenant_id: string }
+        Returns: boolean
+      }
       is_tenant_owner: { Args: { check_tenant_id: string }; Returns: boolean }
+      restore_variant_stock: {
+        Args: { p_quantity: number; p_variant_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,7 +1,14 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, Truck, Shield, Headphones, ArrowRight, ShoppingBag } from 'lucide-react'
-import { useProducts, useShopCart, useHeroBanner, usePromoBanner } from '../../hooks/shop'
+import {
+  useProducts,
+  useShopCart,
+  useHeroBanner,
+  usePromoBanner,
+  useCategoryBanners,
+  useSpotlightBanner,
+} from '../../hooks/shop'
 import { ProductCard } from '../../components/shop/public/ProductCard'
 import { ShopCart } from '../../components/shop/public/ShopCart'
 import type { ProductCategory } from '../../types/shop'
@@ -10,6 +17,7 @@ import type { ProductCategory } from '../../types/shop'
 const DEFAULT_HERO = {
   title: 'Train Like A Champion',
   subtitle: 'Official Reconnect MMA merchandise. Premium quality fight gear en kleding.',
+  badge_text: 'NEW COLLECTION',
   cta_text: 'Shop Now',
   image_url: '/Fight GEAR.png',
 }
@@ -17,10 +25,11 @@ const DEFAULT_HERO = {
 const DEFAULT_PROMO = {
   title: 'GEAR UP FOR GREATNESS',
   subtitle: 'Pre-order nu en ontvang exclusieve early bird korting op onze nieuwste collectie',
+  badge_text: 'PRE-ORDER',
   cta_text: 'Shop Pre-Orders',
 }
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   {
     id: 'clothing',
     name: 'Kleding',
@@ -41,6 +50,20 @@ const CATEGORIES = [
   },
 ]
 
+const DEFAULT_SPOTLIGHT = {
+  title: 'Custom Gloves',
+  subtitle: '8 glove models, up to 20 customizable areas, nearly 30 materials available. Design je eigen unieke bokshandschoenen met het Reconnect logo.',
+  badge_text: 'CUSTOM GEAR',
+  cta_text: 'Customize Now',
+  cta_link: '/shop/products/reconnect-boxing-gloves',
+  image_url: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&h=600&fit=crop',
+  features: [
+    'Kies uit 8 verschillende modellen',
+    'Personaliseer met je naam of gym logo',
+    'Premium materialen & vakmanschap',
+  ],
+}
+
 export const ShopLanding: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | ''>('')
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -50,14 +73,17 @@ export const ShopLanding: React.FC = () => {
     category: selectedCategory || undefined,
   })
 
-  // Fetch banners from database with fallbacks
+  // Fetch all banners from database with fallbacks
   const { banner: heroBanner } = useHeroBanner()
   const { banner: promoBanner } = usePromoBanner()
+  const { getCategory } = useCategoryBanners()
+  const { banner: spotlightBanner } = useSpotlightBanner()
 
   // Use database banner or fallback to defaults
   const hero = {
     title: heroBanner?.title || DEFAULT_HERO.title,
     subtitle: heroBanner?.subtitle || DEFAULT_HERO.subtitle,
+    badge_text: heroBanner?.badge_text || DEFAULT_HERO.badge_text,
     cta_text: heroBanner?.cta_text || DEFAULT_HERO.cta_text,
     image_url: heroBanner?.image_url || DEFAULT_HERO.image_url,
   }
@@ -65,8 +91,29 @@ export const ShopLanding: React.FC = () => {
   const promo = {
     title: promoBanner?.title || DEFAULT_PROMO.title,
     subtitle: promoBanner?.subtitle || DEFAULT_PROMO.subtitle,
+    badge_text: promoBanner?.badge_text || DEFAULT_PROMO.badge_text,
     cta_text: promoBanner?.cta_text || DEFAULT_PROMO.cta_text,
   }
+
+  const spotlight = {
+    title: spotlightBanner?.title || DEFAULT_SPOTLIGHT.title,
+    subtitle: spotlightBanner?.subtitle || DEFAULT_SPOTLIGHT.subtitle,
+    badge_text: spotlightBanner?.badge_text || DEFAULT_SPOTLIGHT.badge_text,
+    cta_text: spotlightBanner?.cta_text || DEFAULT_SPOTLIGHT.cta_text,
+    cta_link: spotlightBanner?.cta_link || DEFAULT_SPOTLIGHT.cta_link,
+    image_url: spotlightBanner?.image_url || DEFAULT_SPOTLIGHT.image_url,
+  }
+
+  // Build categories with database banners or fallbacks
+  const categories = DEFAULT_CATEGORIES.map(cat => {
+    const dbBanner = getCategory(cat.id)
+    return {
+      id: cat.id,
+      name: dbBanner?.title || cat.name,
+      description: dbBanner?.subtitle || cat.description,
+      image: dbBanner?.image_url || cat.image,
+    }
+  })
 
   const featuredProducts = products?.filter(p => p.featured) || []
   const newProducts = products?.slice(0, 4) || []
@@ -98,9 +145,11 @@ export const ShopLanding: React.FC = () => {
 
         <div className="relative container mx-auto px-4 h-full flex items-center">
           <div className="max-w-xl">
-            <span className="inline-block bg-amber-400 text-black text-sm font-bold px-3 py-1 rounded mb-4">
-              NEW COLLECTION
-            </span>
+            {hero.badge_text && (
+              <span className="inline-block bg-amber-400 text-black text-sm font-bold px-3 py-1 rounded mb-4">
+                {hero.badge_text}
+              </span>
+            )}
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
               {hero.title.includes('Champion') ? (
                 <>
@@ -179,13 +228,13 @@ export const ShopLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* Shop by Category */}
+      {/* Shop by Category - configurable via CRM */}
       <section className="py-12 md:py-16 border-b border-neutral-800">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">Shop by Category</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {CATEGORIES.map(category => (
+            {categories.map(category => (
               <button
                 key={category.id}
                 onClick={() => {
@@ -227,19 +276,19 @@ export const ShopLanding: React.FC = () => {
         </section>
       )}
 
-      {/* 3D Glove Showcase / Custom Experience Section */}
+      {/* Spotlight Section - configurable via CRM */}
       <section className="py-16 md:py-24 bg-neutral-900">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left: 3D Glove Image */}
+            {/* Left: Spotlight Image */}
             <div className="relative">
               <div className="aspect-[4/3] relative">
                 {/* Gradient background effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-transparent to-red-500/20 rounded-3xl" />
 
                 <img
-                  src="https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&h=600&fit=crop"
-                  alt="Reconnect Custom Gloves"
+                  src={spotlight.image_url}
+                  alt={spotlight.title}
                   className="relative w-full h-full object-contain drop-shadow-2xl"
                 />
 
@@ -255,37 +304,32 @@ export const ShopLanding: React.FC = () => {
 
             {/* Right: Content */}
             <div>
-              <span className="inline-block bg-amber-400/10 text-amber-400 text-sm font-bold px-3 py-1 rounded mb-4">
-                CUSTOM GEAR
-              </span>
+              {spotlight.badge_text && (
+                <span className="inline-block bg-amber-400/10 text-amber-400 text-sm font-bold px-3 py-1 rounded mb-4">
+                  {spotlight.badge_text}
+                </span>
+              )}
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Custom Gloves
+                {spotlight.title}
               </h2>
               <p className="text-neutral-400 text-lg mb-6">
-                8 glove models, up to 20 customizable areas, nearly 30 materials available.
-                Design je eigen unieke bokshandschoenen met het Reconnect logo.
+                {spotlight.subtitle}
               </p>
 
               <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3 text-neutral-300">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full" />
-                  Kies uit 8 verschillende modellen
-                </li>
-                <li className="flex items-center gap-3 text-neutral-300">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full" />
-                  Personaliseer met je naam of gym logo
-                </li>
-                <li className="flex items-center gap-3 text-neutral-300">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full" />
-                  Premium materialen & vakmanschap
-                </li>
+                {DEFAULT_SPOTLIGHT.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-center gap-3 text-neutral-300">
+                    <div className="w-2 h-2 bg-amber-400 rounded-full" />
+                    {feature}
+                  </li>
+                ))}
               </ul>
 
               <Link
-                to="/shop/products/reconnect-boxing-gloves"
+                to={spotlight.cta_link}
                 className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-black px-6 py-3 rounded-full font-bold transition-colors"
               >
-                Customize Now
+                {spotlight.cta_text}
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
@@ -311,7 +355,7 @@ export const ShopLanding: React.FC = () => {
               >
                 Alles
               </button>
-              {CATEGORIES.map(cat => (
+              {categories.map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id as ProductCategory)}
