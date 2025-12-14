@@ -1,10 +1,24 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, Truck, Shield, Headphones, ArrowRight, ShoppingBag } from 'lucide-react'
-import { useProducts, useShopCart } from '../../hooks/shop'
+import { useProducts, useShopCart, useHeroBanner, usePromoBanner } from '../../hooks/shop'
 import { ProductCard } from '../../components/shop/public/ProductCard'
 import { ShopCart } from '../../components/shop/public/ShopCart'
 import type { ProductCategory } from '../../types/shop'
+
+// Default fallback content when no banners configured in database
+const DEFAULT_HERO = {
+  title: 'Train Like A Champion',
+  subtitle: 'Official Reconnect MMA merchandise. Premium quality fight gear en kleding.',
+  cta_text: 'Shop Now',
+  image_url: '/Fight GEAR.png',
+}
+
+const DEFAULT_PROMO = {
+  title: 'GEAR UP FOR GREATNESS',
+  subtitle: 'Pre-order nu en ontvang exclusieve early bird korting op onze nieuwste collectie',
+  cta_text: 'Shop Pre-Orders',
+}
 
 const CATEGORIES = [
   {
@@ -36,6 +50,24 @@ export const ShopLanding: React.FC = () => {
     category: selectedCategory || undefined,
   })
 
+  // Fetch banners from database with fallbacks
+  const { banner: heroBanner } = useHeroBanner()
+  const { banner: promoBanner } = usePromoBanner()
+
+  // Use database banner or fallback to defaults
+  const hero = {
+    title: heroBanner?.title || DEFAULT_HERO.title,
+    subtitle: heroBanner?.subtitle || DEFAULT_HERO.subtitle,
+    cta_text: heroBanner?.cta_text || DEFAULT_HERO.cta_text,
+    image_url: heroBanner?.image_url || DEFAULT_HERO.image_url,
+  }
+
+  const promo = {
+    title: promoBanner?.title || DEFAULT_PROMO.title,
+    subtitle: promoBanner?.subtitle || DEFAULT_PROMO.subtitle,
+    cta_text: promoBanner?.cta_text || DEFAULT_PROMO.cta_text,
+  }
+
   const featuredProducts = products?.filter(p => p.featured) || []
   const newProducts = products?.slice(0, 4) || []
 
@@ -54,12 +86,12 @@ export const ShopLanding: React.FC = () => {
         )}
       </button>
 
-      {/* Hero Banner */}
+      {/* Hero Banner - configurable via CRM */}
       <section className="relative h-[500px] md:h-[600px] overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/Fight GEAR.png')",
+            backgroundImage: `url('${hero.image_url}')`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
@@ -70,17 +102,23 @@ export const ShopLanding: React.FC = () => {
               NEW COLLECTION
             </span>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
-              Train Like A <span className="text-amber-400">Champion</span>
+              {hero.title.includes('Champion') ? (
+                <>
+                  {hero.title.split('Champion')[0]}<span className="text-amber-400">Champion</span>{hero.title.split('Champion')[1]}
+                </>
+              ) : (
+                hero.title
+              )}
             </h1>
             <p className="text-lg md:text-xl text-neutral-300 mb-8">
-              Official Reconnect MMA merchandise. Premium quality fight gear en kleding.
+              {hero.subtitle}
             </p>
             <div className="flex flex-wrap gap-4">
               <button
                 onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
                 className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-black px-6 py-3 rounded-full font-bold transition-colors"
               >
-                Shop Now
+                {hero.cta_text}
                 <ArrowRight className="w-5 h-5" />
               </button>
               <button
@@ -117,7 +155,7 @@ export const ShopLanding: React.FC = () => {
         </section>
       )}
 
-      {/* Promo Banner */}
+      {/* Promo Banner - configurable via CRM */}
       <section className="relative py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-amber-600" />
         <div className="absolute inset-0 opacity-20" style={{
@@ -126,16 +164,16 @@ export const ShopLanding: React.FC = () => {
 
         <div className="relative container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-5xl font-bold text-black mb-4">
-            GEAR UP FOR GREATNESS
+            {promo.title}
           </h2>
           <p className="text-xl text-black/80 mb-8 max-w-2xl mx-auto">
-            Pre-order nu en ontvang exclusieve early bird korting op onze nieuwste collectie
+            {promo.subtitle}
           </p>
           <button
             onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}
             className="inline-flex items-center gap-2 bg-black text-white px-8 py-4 rounded-full font-bold hover:bg-neutral-800 transition-colors"
           >
-            Shop Pre-Orders
+            {promo.cta_text}
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>

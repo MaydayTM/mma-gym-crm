@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
@@ -22,7 +22,22 @@ import {
 } from './pages'
 import { SubscriptionsManage } from './pages/SubscriptionsManage'
 import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
-import { ShopLanding, ShopProductDetail, ShopCheckout, ShopOrderComplete } from './pages/shop/index'
+
+// Lazy load public shop pages for better performance
+const ShopLanding = React.lazy(() => import('./pages/shop/ShopLanding'))
+const ShopProductDetail = React.lazy(() => import('./pages/shop/ShopProductDetail'))
+const ShopCheckout = React.lazy(() => import('./pages/shop/ShopCheckout'))
+const ShopOrderComplete = React.lazy(() => import('./pages/shop/ShopOrderComplete'))
+
+// Loading fallback for lazy-loaded shop pages
+const ShopLoadingFallback = () => (
+  <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+      <p className="text-neutral-400">Laden...</p>
+    </div>
+  </div>
+)
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,11 +97,11 @@ function App() {
               <Route path="/app.html/checkout/success" element={<CheckoutSuccess />} />
               <Route path="/app.html/checkout/cancel" element={<CheckoutCancel />} />
 
-              {/* Public shop routes */}
-              <Route path="/shop/products" element={<ShopLanding />} />
-              <Route path="/shop/products/:slug" element={<ShopProductDetail />} />
-              <Route path="/shop/checkout" element={<ShopCheckout />} />
-              <Route path="/shop/order-complete" element={<ShopOrderComplete />} />
+              {/* Public shop routes - lazy loaded */}
+              <Route path="/shop/products" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
+              <Route path="/shop/products/:slug" element={<Suspense fallback={<ShopLoadingFallback />}><ShopProductDetail /></Suspense>} />
+              <Route path="/shop/checkout" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
+              <Route path="/shop/order-complete" element={<Suspense fallback={<ShopLoadingFallback />}><ShopOrderComplete /></Suspense>} />
 
               {/* Protected routes - support both / and /app.html */}
               <Route
