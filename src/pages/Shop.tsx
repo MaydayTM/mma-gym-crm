@@ -14,6 +14,7 @@ import { useOrders } from '../hooks/shop/useOrders'
 import { ProductsManager } from '../components/shop/admin/ProductsManager'
 import { OrdersManager } from '../components/shop/admin/OrdersManager'
 import { ShopDocumentation } from '../components/shop/admin/ShopDocumentation'
+import { BannersManager } from '../components/shop/admin/BannersManager'
 import { isShopConfigured } from '../lib/shopSupabase'
 
 // Shop frontend URL for public shop
@@ -21,7 +22,7 @@ const SHOP_FRONTEND_URL = import.meta.env.VITE_SHOP_URL || 'https://www.mmagym.b
 
 export function Shop() {
   const { hasAccess, getTrialInfo } = useModules()
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'settings' | 'guidelines'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'banners' | 'settings' | 'guidelines'>('overview')
   const trialInfo = getTrialInfo('shop')
 
   // Fetch real data for stats
@@ -146,6 +147,7 @@ export function Shop() {
             { id: 'overview', label: 'Overzicht' },
             { id: 'products', label: 'Producten' },
             { id: 'orders', label: 'Bestellingen' },
+            { id: 'banners', label: 'Banners' },
             { id: 'guidelines', label: 'Richtlijnen' },
             { id: 'settings', label: 'Instellingen' },
           ].map((tab) => (
@@ -171,6 +173,7 @@ export function Shop() {
         {activeTab === 'overview' && <ShopOverview products={products} orders={orders} />}
         {activeTab === 'products' && <ProductsManager />}
         {activeTab === 'orders' && <OrdersManager />}
+        {activeTab === 'banners' && <BannersManager />}
         {activeTab === 'guidelines' && <ShopDocumentation />}
         {activeTab === 'settings' && <ShopSettings />}
       </div>
