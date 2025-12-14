@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Roster Gym CRM – Made by Fighters, for Fighters</title>
+    <meta name="description" content="De CRM die begrijpt wat jouw gym nodig heeft. Gebouwd door vechtsporters die weten dat je tijd beter op de mat doorgebracht wordt dan achter een scherm.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="/images/newflavicon.png" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+      * { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+      .lucide { stroke-width: 1.5; }
+
+      /* Border gradient utility */
+      [style*="--border-gradient"]::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        padding: 1px;
+        border-radius: var(--border-radius-before, inherit);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        background: var(--border-gradient);
+        pointer-events: none;
+      }
+
+      /* Animation */
+      @keyframes fadeSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .animate-on-scroll {
+        opacity: 0;
+        animation: fadeSlideIn 1s ease-out forwards;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-neutral-950 text-neutral-50 flex flex-col antialiased">
+    <!-- Background effect -->
+    <div class="aura-background-component top-0 w-full -z-10 absolute hue-rotate-90 brightness-150 h-[1100px] saturate-0" style="mask-image: linear-gradient(to bottom, transparent, black 0%, black 15%, transparent); -webkit-mask-image: linear-gradient(to bottom, transparent, black 0%, black 15%, transparent)">
+      <div class="aura-background-component top-0 w-full -z-10 absolute h-full">
+        <div data-us-project="HzcaAbRLaALMhHJp8gLY" class="absolute w-full h-full left-0 top-0 -z-10"></div>
+        <script type="text/javascript">
+          !function(){if(!window.UnicornStudio){window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.29/dist/unicornStudio.umd.js",i.onload=function(){window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)},(document.head || document.body).appendChild(i)}}();
+        </script>
+      </div>
+    </div>
+
+    <!-- Top Navigation -->
+    <header class="w-full border-b border-neutral-900/80">
+      <div class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between gap-6">
+        <!-- Logo -->
+        <div class="inline-flex items-center gap-3">
+          <div class="flex h-11 w-11 items-center justify-center rounded-3xl border border-amber-300/70 bg-neutral-950 shadow-[0_0_0_1px_rgba(250,204,21,0.5)]">
+            <span class="text-[11px] font-semibold tracking-[0.28em] text-amber-300">RCN</span>
+          </div>
+          <span class="text-xs font-medium tracking-[0.26em] text-neutral-200 uppercase">Roster</span>
+        </div>
+
+        <!-- Nav Links -->
+        <nav class="hidden md:flex items-center gap-8 text-[13px] text-neutral-300">
+          <a href="#product" class="hover:text-neutral-50 transition-colors">Product</a>
+          <a href="#pricing" class="hover:text-neutral-50 transition-colors">Prijzen</a>
+          <a href="#gyms" class="hover:text-neutral-50 transition-colors">Gyms</a>
+          <a href="#contact" class="hover:text-neutral-50 transition-colors">Contact</a>
+        </nav>
+
+        <!-- Nav CTAs -->
+        <div class="flex items-center gap-3">
+          <a href="https://crm.mmagym.be" class="hidden sm:inline-flex items-center rounded-full border border-amber-300/50 px-4 py-1.5 text-[13px] text-amber-200 bg-neutral-950 hover:bg-neutral-900 hover:border-amber-300 transition">
+            Log in
+          </a>
+          <a href="https://crm.mmagym.be" class="inline-flex items-center rounded-full bg-amber-300 text-neutral-950 px-5 py-2 text-[13px] font-medium hover:bg-amber-200 transition shadow-[0_8px_24px_rgba(251,191,36,0.5)]">
+            Start gratis
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 w-full">
+      <!-- HERO -->
+      <section class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-12 w-full max-w-6xl mr-auto ml-auto pt-20 pr-4 pb-16 pl-4 gap-x-12 gap-y-12 items-center">
+        <!-- Left: Hero copy -->
+        <div class="w-full lg:w-[56%] flex flex-col items-start">
+          <!-- Badge -->
+          <div class="flex flex-col mb-10 gap-x-4 gap-y-4 items-start">
+            <div class="inline-flex text-[11px] text-neutral-200 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-4 py-1.5 backdrop-blur-sm gap-x-2 gap-y-2 items-center" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 9999px">
+              <div class="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.85)]"></div>
+              <span class="uppercase tracking-[0.22em] text-neutral-400">In ontwikkeling</span>
+              <span class="h-3 w-px bg-neutral-800"></span>
+              <span class="text-neutral-200">Beta lanceert binnenkort</span>
+            </div>
+          </div>
+
+          <!-- Massive Heading -->
+          <div class="space-y-6">
+            <h1 class="text-[40px] sm:text-[56px] md:text-[72px] lg:text-[80px] leading-[0.9] font-semibold tracking-tight text-amber-100">
+              Made by Fighters,
+              <span class="block text-neutral-50">for Fighters.</span>
+            </h1>
+            <p class="text-[17px] sm:text-[18px] md:text-[20px] leading-relaxed text-neutral-300 max-w-xl">
+              De CRM die begrijpt wat jouw gym nodig heeft. Gebouwd door vechtsporters die weten dat je tijd beter op de mat doorgebracht wordt dan achter een scherm.
+            </p>
+          </div>
+
+          <!-- CTA Row -->
+          <div class="mt-10 flex flex-col sm:flex-row items-start gap-4">
+            <a href="https://crm.mmagym.be" class="inline-flex text-[15px] transition outline-none font-medium text-neutral-950 bg-amber-300 rounded-full pt-3.5 pr-7 pb-3.5 pl-7 gap-x-2 gap-y-2 items-center justify-center hover:bg-amber-200 shadow-[0_20px_45px_rgba(251,191,36,0.7)]" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0)); --border-radius-before: 9999px">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                <line x1="16" x2="16" y1="2" y2="6"/>
+                <line x1="8" x2="8" y1="2" y2="6"/>
+                <line x1="3" x2="21" y1="10" y2="10"/>
+              </svg>
+              <span>Start Gratis</span>
+            </a>
+
+            <button type="button" disabled class="inline-flex text-[15px] transition outline-none text-neutral-400 bg-gradient-to-br from-white/5 to-white/0 rounded-full px-6 py-3 gap-x-2 gap-y-2 items-center justify-center cursor-not-allowed" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)); --border-radius-before: 9999px" title="Binnenkort beschikbaar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lucide">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span>Bekijk Demo</span>
+            </button>
+          </div>
+
+          <!-- Social proof -->
+          <div class="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-[12px] text-neutral-400">
+            <div class="flex -space-x-2">
+              <img class="h-10 w-10 rounded-full border border-neutral-900 object-cover" src="https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=200&q=80" alt="Customer avatar">
+              <img class="h-10 w-10 rounded-full border border-neutral-900 object-cover" src="https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=200&q=80" alt="Customer avatar">
+              <img class="h-10 w-10 rounded-full border border-neutral-900 object-cover" src="https://images.unsplash.com/photo-1525130413817-d45c1d127c42?auto=format&fit=crop&w=200&q=80" alt="Customer avatar">
+            </div>
+            <div class="space-y-0.5">
+              <p class="text-[13px] text-neutral-200">Gebouwd voor vechtsport gyms in de Benelux.</p>
+              <p class="text-[12px] text-neutral-500">Minder administratie, meer tijd op de mat.</p>
+            </div>
+          </div>
+
+          <!-- Bottom mini highlights -->
+          <div class="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-[12px] text-neutral-400">
+            <div class="inline-flex items-center gap-2">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+              <span>Privacy & beveiliging op enterprise-niveau</span>
+            </div>
+            <span class="hidden sm:inline h-3 w-px bg-neutral-800"></span>
+            <span>Gemaakt voor BJJ, MMA, kickboksen en meer.</span>
+          </div>
+        </div>
+
+        <!-- Right: Visual stack -->
+        <div class="w-full lg:w-[44%] grid grid-cols-2 gap-4 sm:gap-5">
+          <!-- Big stacked word tile -->
+          <div class="col-span-2 sm:px-8 sm:py-10 flex bg-center text-neutral-950 bg-amber-100 bg-[url(https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/6b18c9b8-d29b-416a-9c49-ea59f1d4b3b9_1600w.jpg)] bg-cover rounded-3xl pt-8 pr-6 pb-8 pl-6 items-end" style="mask-image: linear-gradient(160deg, transparent, black 0%, black 65%, transparent); -webkit-mask-image: linear-gradient(160deg, transparent, black 0%, black 65%, transparent);">
+            <div class="space-y-1 leading-none">
+              <p class="text-[26px] sm:text-[34px] md:text-[40px] font-semibold tracking-tight">ROLL</p>
+              <p class="text-[26px] sm:text-[34px] md:text-[40px] font-semibold tracking-tight">TRAIN</p>
+              <p class="text-[26px] sm:text-[34px] md:text-[40px] font-semibold tracking-tight">COACH</p>
+              <p class="text-[26px] sm:text-[34px] md:text-[40px] font-semibold tracking-tight">GROW</p>
+            </div>
+          </div>
+
+          <!-- Glove image card -->
+          <div class="rounded-3xl overflow-hidden bg-neutral-900 min-h-[200px]">
+            <img
+              src="/images/glove.png"
+              alt="MMA Glove"
+              class="w-full h-full object-cover"
+            />
+          </div>
+
+          <!-- Phone / dashboard style tile -->
+          <div class="flex flex-col bg-gradient-to-b from-neutral-800 to-neutral-900 rounded-3xl pt-6 pr-5 pb-6 pl-5 justify-between" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 24px">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-[11px] text-neutral-300">
+                <span class="uppercase tracking-[0.22em] text-amber-200">Groeicurve</span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-300"></span>
+                  +18.4%
+                </span>
+              </div>
+              <div class="rounded-2xl border border-neutral-700 bg-neutral-900 px-3 py-3">
+                <div class="flex items-center justify-between text-[11px] text-neutral-300 mb-3">
+                  <span>Leden & omzet</span>
+                  <span class="font-medium">€5.842</span>
+                </div>
+                <div class="grid grid-cols-12 gap-1 h-20 items-end">
+                  <div class="h-4 rounded-md bg-amber-400/70"></div>
+                  <div class="h-6 rounded-md bg-amber-400/70"></div>
+                  <div class="h-10 rounded-md bg-amber-400/70"></div>
+                  <div class="h-8 rounded-md bg-amber-400/70"></div>
+                  <div class="h-14 rounded-md bg-amber-400/70"></div>
+                  <div class="h-16 rounded-md bg-amber-400/70"></div>
+                  <div class="h-20 rounded-md bg-amber-400"></div>
+                  <div class="h-12 rounded-md bg-amber-400/70"></div>
+                  <div class="h-10 rounded-md bg-amber-400/70"></div>
+                  <div class="h-8 rounded-md bg-amber-400/70"></div>
+                  <div class="h-6 rounded-md bg-amber-400/70"></div>
+                  <div class="h-5 rounded-md bg-amber-400/70"></div>
+                </div>
+              </div>
+              <p class="mt-3 text-[15px] font-medium tracking-tight text-neutral-50">Groei je gym met cijfers die tellen.</p>
+              <p class="text-[12px] text-neutral-400">Zie in één oogopslag hoe retentie, aanwezigheid en omzet evolueren per discipline.</p>
+            </div>
+          </div>
+
+          <!-- Brand tile -->
+          <div class="col-span-2 flex flex-col sm:flex-row sm:items-center bg-gradient-to-br from-white/5 to-white/0 rounded-3xl pt-8 pr-8 pb-8 pl-8 gap-x-6 gap-y-6 items-start justify-between" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 24px">
+            <div class="flex items-center gap-4">
+              <div class="flex flex-none bg-amber-300 w-11 h-11 rounded-3xl shadow-[0_0_0_1px_rgba(250,204,21,0.4)] items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-neutral-950">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-[22px] sm:text-[26px] font-semibold tracking-tight text-amber-100">Roster Gym CRM</p>
+                <p class="text-[12px] text-neutral-400">Minder spreadsheets, meer sparren. Alles wat je gym nodig heeft in één systeem.</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 text-[11px]">
+              <span class="px-3 py-1 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-100">BJJ</span>
+              <span class="px-3 py-1 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-100">MMA</span>
+              <span class="px-3 py-1 rounded-full bg-amber-300 text-neutral-950">Kickboksen</span>
+              <span class="px-3 py-1 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-100">Muay Thai</span>
+              <span class="px-3 py-1 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-100">Jeugdlessen</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRODUCT UI PREVIEW -->
+      <section id="product" class="w-full border-t border-neutral-900/80">
+        <div class="w-full max-w-6xl mx-auto px-4 py-16 flex flex-col gap-10">
+          <!-- PRIMARY APP CARD -->
+          <div class="relative bg-gradient-to-b from-neutral-950 via-neutral-950 to-neutral-900 rounded-[2.25rem] border border-neutral-800 shadow-2xl overflow-hidden">
+            <!-- Top bar -->
+            <div class="px-6 pt-4 pb-3 flex items-center justify-between border-b border-neutral-800/70 text-[11px] text-neutral-300">
+              <div class="flex items-center gap-3">
+                <div class="flex gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-neutral-700"></span>
+                  <span class="h-1.5 w-1.5 rounded-full bg-neutral-700"></span>
+                  <span class="h-1.5 w-1.5 rounded-full bg-neutral-700"></span>
+                </div>
+                <span class="h-3 w-px bg-neutral-800"></span>
+                <p class="uppercase tracking-[0.22em] text-neutral-500">Gym Workspace</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-neutral-500">Vandaag · 09:42</span>
+                <span class="h-3 w-px bg-neutral-800"></span>
+                <div class="flex items-center gap-1.5 text-[11px]">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="lucide h-3.5 w-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <span class="text-neutral-300">Live zicht</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="p-7 space-y-7">
+              <!-- Header -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="space-y-2">
+                  <p class="text-[11px] font-medium uppercase tracking-[0.26em] text-amber-200">Overzicht gym</p>
+                  <h2 class="text-[26px] sm:text-[30px] font-semibold tracking-tight text-neutral-50">Alle leden, proeflessen en betalingen in één live scherm.</h2>
+                </div>
+                <div class="inline-flex gap-2 text-[11px] text-neutral-300 bg-neutral-950 rounded-full pt-1.5 pr-4 pb-1.5 pl-4 gap-x-2 gap-y-2 items-center" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 9999px">
+                  <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                  <span class="uppercase tracking-[0.2em] text-neutral-400">Laatste 30 dagen</span>
+                </div>
+              </div>
+
+              <!-- KPI Row -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                <div class="flex flex-col bg-emerald-500/5 rounded-2xl pt-3.5 pr-4 pb-3.5 pl-4 justify-between" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 16px">
+                  <p class="text-[11px] uppercase tracking-[0.22em] text-emerald-300">Actieve leden</p>
+                  <p class="mt-2 text-[20px] font-medium text-neutral-50">247</p>
+                  <div class="mt-2 flex items-center gap-1.5 text-[11px] text-emerald-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="lucide h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M7 14l5-5 5 5"/>
+                    </svg>
+                    <span>+18% vs vorige maand</span>
+                  </div>
+                </div>
+
+                <div class="flex flex-col bg-gradient-to-br from-white/10 to-white/0 rounded-2xl pt-3.5 pr-4 pb-3.5 pl-4 justify-between" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 16px">
+                  <p class="text-[11px] uppercase tracking-[0.22em] text-neutral-500">Proeflessen</p>
+                  <p class="mt-2 text-[20px] font-medium text-neutral-50">63</p>
+                  <p class="mt-2 text-[11px] text-neutral-400">42 in opvolging</p>
+                </div>
+
+                <div class="flex flex-col bg-gradient-to-br from-white/10 to-white/0 rounded-2xl pt-3.5 pr-4 pb-3.5 pl-4 justify-between" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 16px">
+                  <p class="text-[11px] uppercase tracking-[0.22em] text-neutral-500">Openstaande betalingen</p>
+                  <p class="mt-2 text-[20px] font-medium text-neutral-50">€1.420</p>
+                  <p class="mt-2 text-[11px] text-amber-300/90">Herinneringen gepland</p>
+                </div>
+
+                <div class="flex flex-col bg-gradient-to-br from-white/10 to-white/0 rounded-2xl pt-3.5 pr-4 pb-3.5 pl-4 justify-between" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 16px">
+                  <p class="text-[11px] uppercase tracking-[0.22em] text-neutral-500">Bezetting</p>
+                  <p class="mt-2 text-[20px] font-medium text-neutral-50">86%</p>
+                  <p class="text-[11px] text-neutral-400 mt-2">Topuren & rustige slots</p>
+                </div>
+              </div>
+
+              <!-- Features Table -->
+              <div class="mt-5 border-t border-neutral-800/80 pt-5 space-y-3">
+                <div class="flex items-center justify-between">
+                  <p class="text-[11px] uppercase tracking-[0.24em] text-neutral-500">Belangrijkste flows</p>
+                  <button type="button" class="inline-flex text-[11px] hover:border-neutral-600 hover:bg-neutral-900 transition text-neutral-300 bg-gradient-to-br from-white/10 to-white/0 rounded-full pt-1.5 pr-3 pb-1.5 pl-3 gap-x-1.5 gap-y-1.5 items-center" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 9999px">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="lucide h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 6H3"/><path d="M10 12H3"/><path d="M21 18H3"/>
+                    </svg>
+                    <span>Bekijk alle automaties</span>
+                  </button>
+                </div>
+
+                <div class="space-y-2.5 text-[12px]">
+                  <!-- Row 1 -->
+                  <div class="flex items-center justify-between gap-3 rounded-2xl border border-neutral-800 bg-neutral-950 px-3.5 py-3 hover:border-amber-300/70 hover:bg-neutral-900 transition">
+                    <div class="flex items-center gap-3">
+                      <div class="flex text-[11px] font-medium text-neutral-200 bg-neutral-800 w-9 h-9 rounded-2xl items-center justify-center">LB</div>
+                      <div>
+                        <p class="text-[14px] font-medium text-neutral-50 tracking-tight">Leden Beheer</p>
+                        <p class="text-[11px] text-neutral-400">Gordels, disciplines, check-ins en abonnementen in één overzicht</p>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] text-amber-300 border border-amber-500/40">Kernfeature</span>
+                  </div>
+
+                  <!-- Row 2 -->
+                  <div class="flex items-center justify-between gap-3 rounded-2xl border border-neutral-800 bg-neutral-950 px-3.5 py-3 hover:border-amber-300/70 hover:bg-neutral-900 transition">
+                    <div class="flex items-center gap-3">
+                      <div class="flex text-[11px] font-medium text-neutral-200 bg-neutral-800 w-9 h-9 rounded-2xl items-center justify-center">SA</div>
+                      <div>
+                        <p class="text-[14px] font-medium text-neutral-50 tracking-tight">Slimme Automatisering</p>
+                        <p class="text-[11px] text-neutral-400">Automatische herinneringen, betalingsopvolging en lead nurturing</p>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] text-emerald-300 border border-emerald-500/40">Loopt automatisch</span>
+                  </div>
+
+                  <!-- Row 3 -->
+                  <div class="flex items-center justify-between gap-3 rounded-2xl border border-neutral-800 bg-neutral-950 px-3.5 py-3 hover:border-amber-300/70 hover:bg-neutral-900 transition">
+                    <div class="flex items-center gap-3">
+                      <div class="flex text-[11px] font-medium text-neutral-200 bg-neutral-800 w-9 h-9 rounded-2xl items-center justify-center">PP</div>
+                      <div>
+                        <p class="text-[14px] font-medium text-neutral-50 tracking-tight">Proefles Pipeline</p>
+                        <p class="text-[11px] text-neutral-400">Van Instagram DM tot betalend lid – volg elke lead stap voor stap</p>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center rounded-full bg-rose-500/10 px-2.5 py-0.5 text-[11px] text-rose-300 border border-rose-500/40">Lead focus</span>
+                  </div>
+
+                  <!-- Row 4 -->
+                  <div class="flex items-center justify-between gap-3 rounded-2xl border border-neutral-800 bg-neutral-950 px-3.5 py-3 hover:border-amber-300/70 hover:bg-neutral-900 transition">
+                    <div class="flex items-center gap-3">
+                      <div class="flex text-[11px] font-medium text-neutral-200 bg-neutral-800 w-9 h-9 rounded-2xl items-center justify-center">IT</div>
+                      <div>
+                        <p class="text-[14px] font-medium text-neutral-50 tracking-tight">Inzichten die Tellen</p>
+                        <p class="text-[11px] text-neutral-400">Retentie, omzet en aanwezigheid – weet wat werkt en waar je moet bijsturen</p>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] text-emerald-300 border border-emerald-500/40">Beslissen op data</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTTOM CARDS -->
+          <div id="gyms" class="grid md:grid-cols-2 gap-6">
+            <!-- Social Proof Card -->
+            <div class="bg-gradient-to-br from-white/5 to-white/0 rounded-3xl px-5 py-5 shadow-2xl space-y-4" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 24px">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-[11px] uppercase tracking-[0.24em] text-neutral-500">Social proof</p>
+                <span class="inline-flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-0.5 text-[11px] text-neutral-300 border border-neutral-800">
+                  <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                  <span>Beta fase</span>
+                </span>
+              </div>
+
+              <div class="space-y-3 text-[13px]">
+                <div class="bg-emerald-500/5 rounded-2xl pt-3 pr-3.5 pb-3 pl-3.5 space-y-2" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(52,211,153,0.5), rgba(255, 255, 255, 0)); --border-radius-before: 16px">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-[11px] uppercase tracking-[0.22em] text-emerald-300">Ervaring uit de mat</p>
+                    <span class="text-[11px] text-neutral-400">Reconnect Academy</span>
+                  </div>
+                  <p class="text-[15px] font-medium text-neutral-50 tracking-tight">"Eindelijk een CRM die snapt dat een BJJ gym anders werkt dan een fitness keten."</p>
+                  <p class="text-[12px] text-neutral-200">– Mehdi, Reconnect Academy (Zwarte band BJJ)</p>
+                </div>
+
+                <div class="bg-neutral-950 rounded-2xl pt-3 pr-3.5 pb-3 pl-3.5 space-y-1.5" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 16px">
+                  <p class="text-[11px] uppercase tracking-[0.22em] text-neutral-500">Voor vechtsport gyms</p>
+                  <p class="text-[13px] text-neutral-200">Werkt net zo goed voor kleine academies als voor grote teams met meerdere locaties.</p>
+                  <p class="text-[12px] text-neutral-400">Geen generieke fitnesssoftware, maar workflows afgestemd op BJJ, MMA en striking.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Setup Card -->
+            <div class="bg-gradient-to-br from-white/5 to-white/0 rounded-3xl px-5 py-5 shadow-2xl space-y-4" style="position: relative; --border-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)); --border-radius-before: 24px">
+              <p class="text-[11px] uppercase tracking-[0.24em] text-neutral-500">Start in minder dan een week</p>
+
+              <div class="space-y-3 text-[13px]">
+                <div class="flex items-center justify-between gap-3 pb-3 border-b border-neutral-800">
+                  <div class="flex items-center gap-3">
+                    <div class="flex text-[11px] font-medium text-neutral-200 bg-neutral-800 w-8 h-8 rounded-2xl items-center justify-center">PM</div>
+                    <div>
+                      <p class="text-[14px] text-neutral-50 tracking-tight">Betaalmethodes</p>
+                      <p class="text-[11px] text-neutral-400">SEPA · kaart · cash</p>
+                    </div>
+                  </div>
+                  <span class="text-[11px] text-emerald-300">Geconnecteerd</span>
+                </div>
+
+                <div class="flex items-center justify-between gap-3 pb-3 border-b border-neutral-800">
+                  <div class="flex items-center gap-3">
+                    <div class="flex text-[11px] font-medium text-neutral-200 bg-neutral-800 w-8 h-8 rounded-2xl items-center justify-center">PL</div>
+                    <div>
+                      <p class="text-[14px] text-neutral-50 tracking-tight">Proefles formulieren</p>
+                      <p class="text-[11px] text-neutral-400">Website · socials · QR</p>
+                    </div>
+                  </div>
+                  <span class="text-[11px] text-emerald-300">Actief</span>
+                </div>
+
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="flex text-[11px] font-medium text-neutral-200 bg-neutral-800 w-8 h-8 rounded-2xl items-center justify-center">CO</div>
+                    <div>
+                      <p class="text-[14px] text-neutral-50 tracking-tight">Coach accounts</p>
+                      <p class="text-[11px] text-neutral-400">Aanwezigheid & notities</p>
+                    </div>
+                  </div>
+                  <span class="text-[11px] text-emerald-300">Klaar in 2 klikken</span>
+                </div>
+              </div>
+
+              <a href="https://crm.mmagym.be" class="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-4 py-3 text-[14px] font-medium hover:bg-amber-200 transition shadow-[0_12px_32px_rgba(251,191,36,0.5)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="lucide h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 5v14"/><path d="M5 12h14"/>
+                </svg>
+                <span>Start vandaag gratis</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRICING SECTION -->
+      <section id="pricing" class="isolate overflow-hidden pt-24 pb-24 relative border-t border-neutral-900/80">
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_0%,rgba(255,255,255,0.05),transparent_60%)]"></div>
+
+        <div class="z-10 md:px-8 max-w-7xl mr-auto ml-auto pr-6 pl-6 relative">
+          <div class="text-center">
+            <h2 class="sm:text-5xl text-4xl font-medium tracking-tight text-white animate-on-scroll" style="animation: fadeSlideIn 1.0s ease-out 0.1s both;">Prijzen</h2>
+            <p class="mt-4 text-neutral-400 text-[16px] max-w-xl mx-auto animate-on-scroll" style="animation: fadeSlideIn 1.0s ease-out 0.15s both;">Transparante prijzen voor elke gym. Geen verborgen kosten, geen lange contracten.</p>
+
+            <div class="flex mt-6 gap-x-4 gap-y-4 items-center justify-center animate-on-scroll" style="animation: fadeSlideIn 1.0s ease-out 0.2s both;">
+              <span class="text-sm text-white/70">Maandelijks</span>
+              <button id="billingToggle" class="relative inline-flex h-8 w-16 items-center rounded-full p-1 ring-1 transition bg-white/10 ring-white/15">
+                <span id="billingKnob" class="inline-flex h-6 w-6 translate-x-0 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.25)] transition will-change-transform bg-white"></span>
+              </button>
+              <span class="text-sm text-white/70">Jaarlijks
+                <span id="annualBadge" class="ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] ring-1 bg-amber-400/10 text-amber-300 ring-amber-300/20 opacity-50">Bespaar 20%</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="grid gap-6 lg:grid-cols-3 mt-10 gap-x-6 gap-y-6">
+            <!-- Starter -->
+            <div class="animate-on-scroll border rounded-3xl pt-6 pr-6 pb-6 pl-6 backdrop-blur-xl border-white/10" style="animation: fadeSlideIn 1.0s ease-out 0.3s both;">
+              <div class="flex items-center justify-between">
+                <div class="">
+                  <div class="text-sm uppercase tracking-[0.18em] text-white/60">Starter</div>
+                  <div class="mt-2 flex items-end gap-2">
+                    <div class="text-4xl font-medium tracking-tight text-white" data-monthly="€0" data-annual="€0">€0</div>
+                    <div class="text-sm text-white/50" data-period="">/maand</div>
+                  </div>
+                </div>
+              </div>
+
+              <button disabled class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium tracking-tight bg-white/80 text-black/80 cursor-not-allowed">
+                Binnenkort beschikbaar
+              </button>
+
+              <ul class="mt-6 space-y-3 text-sm text-white/75">
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  Tot 50 leden
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  Leden beheer & gordel tracking
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  Basis dashboard & analytics
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  Community support
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  CSV import bestaande leden
+                </li>
+              </ul>
+            </div>
+
+            <!-- Pro (featured) -->
+            <div class="border ring-1 rounded-3xl pt-2 pr-2 pb-2 pl-2 relative backdrop-blur-xl animate-on-scroll border-white/10 ring-amber-300/10" style="animation: fadeSlideIn 1.0s ease-out 0.4s both;">
+              <div class="relative overflow-hidden rounded-2xl bg-gradient-to-b from-white/[0.06] to-transparent">
+                <div class="absolute inset-0">
+                  <img src="https://hoirqrkdgbmvpwutwuwj-all.supabase.co/storage/v1/object/public/assets/assets/4ca8123b-2b44-4ef6-9ce7-51db6671104c_800w.jpg" alt="Premium background" class="h-48 w-full rounded-t-2xl object-cover opacity-60" style="">
+                  <div class="absolute inset-0 bg-[radial-gradient(60%_80%_at_80%_0%,rgba(251,191,36,0.25),transparent_60%)]"></div>
+                </div>
+
+                <div class="relative p-6">
+                  <div class="flex items-start justify-between">
+                    <div class="">
+                      <div class="text-sm uppercase tracking-[0.18em] text-white/70">Professional</div>
+                      <div class="mt-2 flex items-end gap-2">
+                        <div class="text-4xl font-medium tracking-tight text-white" data-monthly="€49" data-annual="€39">€49</div>
+                        <div class="text-sm text-white/60" data-period="">/maand</div>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] ring-1 bg-amber-400/15 text-amber-300 ring-amber-300/25">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg> Meest populair
+                    </span>
+                  </div>
+
+                  <button disabled class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b px-4 py-3 text-sm font-medium tracking-tight from-amber-300/80 to-amber-400/80 text-black/80 cursor-not-allowed">
+                    Binnenkort beschikbaar
+                  </button>
+
+                  <ul class="mt-6 space-y-3 text-sm text-white/85">
+                    <li class="flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+                      Onbeperkt leden
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+                      Lead pipeline & automatisering
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+                      Stripe betalingen & facturatie
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+                      Rooster & check-in systeem
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+                      Prioriteit support via chat
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Enterprise -->
+            <div class="animate-on-scroll border rounded-3xl pt-6 pr-6 pb-6 pl-6 backdrop-blur-xl border-white/10" style="animation: fadeSlideIn 1.0s ease-out 0.5s both;">
+              <div class="flex items-center justify-between">
+                <div class="">
+                  <div class="text-sm uppercase tracking-[0.18em] text-white/60">Enterprise</div>
+                  <div class="mt-2 flex items-end gap-2">
+                    <div class="text-4xl font-medium tracking-tight text-white">Op maat</div>
+                    <div class="text-sm text-white/50" data-period=""></div>
+                  </div>
+                </div>
+              </div>
+
+              <button disabled class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium tracking-tight border-white/15 bg-white/5 text-white/60 cursor-not-allowed">
+                Neem contact op
+              </button>
+
+              <ul class="mt-6 space-y-3 text-sm text-white/75">
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  Meerdere locaties & franchises
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  White-label branding
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  Dedicated support & onboarding
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  API toegang & custom integraties
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-emerald-400 mt-0.5"><path d="M20 6 9 17l-5-5"></path></svg>
+                  SLA & enterprise beveiliging
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <p class="animate-on-scroll text-xs text-center mt-6 text-white/50" style="animation: fadeSlideIn 1.0s ease-out 0.6s both;">Alle plannen inclusief 14 dagen gratis proefperiode. Geen setup kosten.</p>
+        </div>
+      </section>
+
+      <!-- FINAL CTA -->
+      <section id="contact" class="w-full border-t border-neutral-900/80">
+        <div class="max-w-4xl mx-auto px-4 py-20 text-center">
+          <h2 class="text-[32px] sm:text-[40px] font-semibold tracking-tight text-neutral-50 mb-4">Klaar om je gym te upgraden?</h2>
+          <p class="text-[18px] text-neutral-400 mb-8">We lanceren binnenkort – schrijf je in voor vroege toegang.</p>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <input type="email" placeholder="jouw@email.be" class="w-full sm:w-auto px-6 py-4 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-50 placeholder-neutral-500 focus:outline-none focus:border-amber-300/50 text-[15px]" />
+            <button type="button" disabled class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-amber-300/60 text-neutral-950/80 px-8 py-4 text-[16px] font-medium cursor-not-allowed" title="Binnenkort beschikbaar">
+              <span>Houd me op de hoogte</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="lucide h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full border-t border-neutral-900/80 py-8">
+      <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-neutral-500">
+        <p>© 2025 Roster Gym CRM. Made by fighters, for fighters.</p>
+        <div class="flex items-center gap-6">
+          <a href="#" class="hover:text-neutral-300 transition">Privacy</a>
+          <a href="#" class="hover:text-neutral-300 transition">Terms</a>
+          <a href="mailto:hello@mmagym.be" class="hover:text-neutral-300 transition">Contact</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Billing Toggle Script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('billingToggle');
+        const knob = document.getElementById('billingKnob');
+        const annualBadge = document.getElementById('annualBadge');
+        let isAnnual = false;
+
+        if (toggle && knob) {
+          toggle.addEventListener('click', function() {
+            isAnnual = !isAnnual;
+
+            if (isAnnual) {
+              knob.style.transform = 'translateX(32px)';
+              annualBadge.style.opacity = '1';
+            } else {
+              knob.style.transform = 'translateX(0)';
+              annualBadge.style.opacity = '0.5';
+            }
+
+            // Update prices
+            document.querySelectorAll('[data-monthly]').forEach(el => {
+              el.textContent = isAnnual ? el.dataset.annual : el.dataset.monthly;
+            });
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

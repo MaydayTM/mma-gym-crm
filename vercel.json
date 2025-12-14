@@ -5,44 +5,20 @@
       "has": [
         {
           "type": "host",
-          "value": "shop.mmagym.be"
+          "value": "roster.mmagym.be"
         }
       ],
-      "destination": "/app.html"
+      "destination": "/landing.html"
     },
     {
       "source": "/:path*",
       "has": [
         {
           "type": "host",
-          "value": "shop.mmagym.be"
+          "value": "roster.mmagym.be"
         }
       ],
-      "destination": "/app.html"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "crm.mmagym.be"
-        }
-      ],
-      "destination": "/app.html"
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "crm.mmagym.be"
-        }
-      ],
-      "destination": "/app.html"
-    },
-    {
-      "source": "/app.html/:path*",
-      "destination": "/app.html"
+      "destination": "/landing.html"
     },
     {
       "source": "/:path*",
