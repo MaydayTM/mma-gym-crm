@@ -22,7 +22,7 @@ import {
 } from './pages'
 import { SubscriptionsManage } from './pages/SubscriptionsManage'
 import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
-import { ShopProducts, ShopProductDetail, ShopCheckout, ShopOrderComplete } from './pages/shop/index'
+import { ShopLanding, ShopProductDetail, ShopCheckout, ShopOrderComplete } from './pages/shop/index'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,7 +83,7 @@ function App() {
               <Route path="/app.html/checkout/cancel" element={<CheckoutCancel />} />
 
               {/* Public shop routes */}
-              <Route path="/shop/products" element={<ShopProducts />} />
+              <Route path="/shop/products" element={<ShopLanding />} />
               <Route path="/shop/products/:slug" element={<ShopProductDetail />} />
               <Route path="/shop/checkout" element={<ShopCheckout />} />
               <Route path="/shop/order-complete" element={<ShopOrderComplete />} />
