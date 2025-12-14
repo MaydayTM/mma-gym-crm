@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/auth'
@@ -39,6 +39,10 @@ const ShopLoadingFallback = () => (
   </div>
 )
 
+// Check if we're on the shop subdomain
+const isShopSubdomain = window.location.hostname.startsWith('shop.') ||
+                        window.location.hostname === 'shop.mmagym.be'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -76,82 +80,106 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
+// Shop App - for shop.mmagym.be subdomain
+function ShopApp() {
+  return (
+    <Routes>
+      {/* Root shows shop landing */}
+      <Route path="/" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
+      <Route path="/products" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
+      <Route path="/products/:slug" element={<Suspense fallback={<ShopLoadingFallback />}><ShopProductDetail /></Suspense>} />
+      <Route path="/cart" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
+      <Route path="/checkout" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
+      <Route path="/order-complete" element={<Suspense fallback={<ShopLoadingFallback />}><ShopOrderComplete /></Suspense>} />
+      {/* Fallback - redirect unknown routes to shop */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+// CRM App - for crm.mmagym.be main domain
+function CRMApp() {
+  return (
+    <AuthProvider>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/app.html/login" element={<Login />} />
+
+        {/* Public checkout routes */}
+        <Route path="/checkout/plans" element={<PlansOverview />} />
+        <Route path="/checkout/plans/:ageGroup" element={<PlanCheckout />} />
+        <Route path="/checkout/success" element={<CheckoutSuccess />} />
+        <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+        <Route path="/app.html/checkout/plans" element={<PlansOverview />} />
+        <Route path="/app.html/checkout/plans/:ageGroup" element={<PlanCheckout />} />
+        <Route path="/app.html/checkout/success" element={<CheckoutSuccess />} />
+        <Route path="/app.html/checkout/cancel" element={<CheckoutCancel />} />
+
+        {/* Public shop routes on CRM domain */}
+        <Route path="/shop/products" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
+        <Route path="/shop/products/:slug" element={<Suspense fallback={<ShopLoadingFallback />}><ShopProductDetail /></Suspense>} />
+        <Route path="/shop/checkout" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
+        <Route path="/shop/order-complete" element={<Suspense fallback={<ShopLoadingFallback />}><ShopOrderComplete /></Suspense>} />
+
+        {/* Protected routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="members" element={<Members />} />
+          <Route path="members/:id" element={<MemberDetail />} />
+          <Route path="leads" element={<Leads />} />
+          <Route path="subscriptions" element={<Subscriptions />} />
+          <Route path="subscriptions/manage" element={<SubscriptionsManage />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path="reservations" element={<Reservations />} />
+          <Route path="checkin" element={<CheckIn />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="team" element={<Team />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="shop" element={<Shop />} />
+        </Route>
+        <Route
+          path="/app.html"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="members" element={<Members />} />
+          <Route path="members/:id" element={<MemberDetail />} />
+          <Route path="leads" element={<Leads />} />
+          <Route path="subscriptions" element={<Subscriptions />} />
+          <Route path="subscriptions/manage" element={<SubscriptionsManage />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path="reservations" element={<Reservations />} />
+          <Route path="checkin" element={<CheckIn />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="team" element={<Team />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="shop" element={<Shop />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
+  )
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/app.html/login" element={<Login />} />
-
-              {/* Public checkout routes - both /checkout and /app.html/checkout work */}
-              <Route path="/checkout/plans" element={<PlansOverview />} />
-              <Route path="/checkout/plans/:ageGroup" element={<PlanCheckout />} />
-              <Route path="/checkout/success" element={<CheckoutSuccess />} />
-              <Route path="/checkout/cancel" element={<CheckoutCancel />} />
-              <Route path="/app.html/checkout/plans" element={<PlansOverview />} />
-              <Route path="/app.html/checkout/plans/:ageGroup" element={<PlanCheckout />} />
-              <Route path="/app.html/checkout/success" element={<CheckoutSuccess />} />
-              <Route path="/app.html/checkout/cancel" element={<CheckoutCancel />} />
-
-              {/* Public shop routes - lazy loaded */}
-              <Route path="/shop/products" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
-              <Route path="/shop/products/:slug" element={<Suspense fallback={<ShopLoadingFallback />}><ShopProductDetail /></Suspense>} />
-              <Route path="/shop/checkout" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
-              <Route path="/shop/order-complete" element={<Suspense fallback={<ShopLoadingFallback />}><ShopOrderComplete /></Suspense>} />
-
-              {/* Protected routes - support both / and /app.html */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Dashboard />} />
-                <Route path="members" element={<Members />} />
-                <Route path="members/:id" element={<MemberDetail />} />
-                <Route path="leads" element={<Leads />} />
-                <Route path="subscriptions" element={<Subscriptions />} />
-                <Route path="subscriptions/manage" element={<SubscriptionsManage />} />
-                <Route path="schedule" element={<Schedule />} />
-                <Route path="reservations" element={<Reservations />} />
-                <Route path="checkin" element={<CheckIn />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="tasks" element={<Tasks />} />
-                <Route path="team" element={<Team />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="shop" element={<Shop />} />
-              </Route>
-              <Route
-                path="/app.html"
-                element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<Dashboard />} />
-                <Route path="members" element={<Members />} />
-                <Route path="members/:id" element={<MemberDetail />} />
-                <Route path="leads" element={<Leads />} />
-                <Route path="subscriptions" element={<Subscriptions />} />
-                <Route path="subscriptions/manage" element={<SubscriptionsManage />} />
-                <Route path="schedule" element={<Schedule />} />
-                <Route path="reservations" element={<Reservations />} />
-                <Route path="checkin" element={<CheckIn />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="tasks" element={<Tasks />} />
-                <Route path="team" element={<Team />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="shop" element={<Shop />} />
-              </Route>
-            </Routes>
-          </AuthProvider>
+          {isShopSubdomain ? <ShopApp /> : <CRMApp />}
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
