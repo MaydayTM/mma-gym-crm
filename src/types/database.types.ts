@@ -3306,6 +3306,18 @@ export type Database = {
         }
         Returns: number
       }
+      check_import_duplicates: {
+        Args: { p_emails: string[]; p_names: string[]; p_phones: string[] }
+        Returns: {
+          confidence: number
+          existing_email: string
+          existing_first_name: string
+          existing_last_name: string
+          existing_member_id: string
+          input_index: number
+          match_type: string
+        }[]
+      }
       create_profile_on_signup: {
         Args: {
           p_auth_user_id: string
@@ -3326,6 +3338,24 @@ export type Database = {
           p_user_id: string
         }
         Returns: boolean
+      }
+      find_duplicate_members: {
+        Args: never
+        Returns: {
+          confidence: number
+          created_at: string
+          email: string
+          first_name: string
+          group_id: number
+          has_subscription: boolean
+          is_recommended_master: boolean
+          last_name: string
+          match_type: string
+          member_id: string
+          phone: string
+          profile_completeness: number
+          total_checkins: number
+        }[]
       }
       generate_order_number: { Args: { p_tenant_id: string }; Returns: string }
       generate_shop_order_number: { Args: never; Returns: string }
@@ -3357,6 +3387,10 @@ export type Database = {
         Returns: boolean
       }
       is_tenant_owner: { Args: { check_tenant_id: string }; Returns: boolean }
+      merge_duplicate_members: {
+        Args: { p_duplicate_ids: string[]; p_master_id: string }
+        Returns: Json
+      }
       restore_variant_stock: {
         Args: { p_quantity: number; p_variant_id: string }
         Returns: boolean
@@ -3366,7 +3400,18 @@ export type Database = {
       [_ in never]: never
     }
     CompositeTypes: {
-      [_ in never]: never
+      duplicate_match: {
+        member_id: string | null
+        match_type: string | null
+        confidence: number | null
+        first_name: string | null
+        last_name: string | null
+        email: string | null
+        phone: string | null
+        has_subscription: boolean | null
+        total_checkins: number | null
+        created_at: string | null
+      }
     }
   }
 }

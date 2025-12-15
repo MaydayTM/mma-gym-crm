@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserPlus, Upload, Search, Filter } from 'lucide-react'
+import { UserPlus, Upload, Search, Filter, Users } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { NewMemberForm } from '../components/members/NewMemberForm'
 import { ImportMembersModal } from '../components/members/ImportMembersModal'
+import { DuplicateReviewModal } from '../components/members/DuplicateReviewModal'
 import { useMembers } from '../hooks/useMembers'
 
 export function Members() {
   const navigate = useNavigate()
   const [isNewMemberModalOpen, setIsNewMemberModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
   const { data: members, isLoading, error } = useMembers()
@@ -35,6 +37,19 @@ export function Members() {
           </p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={() => setIsDuplicateModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 text-[15px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-6 py-3 hover:bg-neutral-900 transition"
+            style={{
+              position: 'relative',
+              '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
+              '--border-radius-before': '9999px',
+            } as React.CSSProperties}
+            title="Scan database op duplicaat leden"
+          >
+            <Users size={18} strokeWidth={1.5} />
+            <span>Duplicaten</span>
+          </button>
           <button
             onClick={() => setIsImportModalOpen(true)}
             className="inline-flex items-center justify-center gap-2 text-[15px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-6 py-3 hover:bg-neutral-900 transition"
@@ -231,6 +246,12 @@ export function Members() {
       <ImportMembersModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
+      />
+
+      {/* Duplicate Review Modal */}
+      <DuplicateReviewModal
+        isOpen={isDuplicateModalOpen}
+        onClose={() => setIsDuplicateModalOpen(false)}
       />
     </div>
   )
