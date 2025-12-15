@@ -501,32 +501,63 @@ export function MembersTable({ filters, onSelect }: MembersTableProps) {
 
 ---
 
+## 🖥️ GEÏNSTALLEERDE CLI TOOLS
+
+> **BELANGRIJK VOOR CLAUDE:** Deze tools zijn al geïnstalleerd en geconfigureerd op Mehdi's machine. Je hoeft ze NIET opnieuw te installeren.
+
+### Supabase CLI
+- **Status:** Geïnstalleerd en gelinkt
+- **Project:** `wiuzjpoizxeycrshsuqn` (Reconnect Academy)
+- **Commando's beschikbaar:**
+  - `npx supabase db push` - Push migrations naar productie
+  - `npx supabase gen types typescript --linked > src/types/database.types.ts` - Regenereer types
+  - `npx supabase functions serve` - Local Edge Functions testen
+  - `npx supabase functions deploy <function-name>` - Deploy Edge Function
+
+### Vercel CLI
+- **Status:** Geïnstalleerd en ingelogd
+- **Project:** Gelinkt aan dit repo
+- **Commando's beschikbaar:**
+  - `vercel` - Preview deployment
+  - `vercel --prod` - Production deployment
+  - `vercel env pull` - Pull environment variables
+
+### Environment Variables
+- **Locatie:** `.env` bestand in project root (NIET committen!)
+- **Voorbeeld:** Zie `.env.example` voor vereiste variabelen
+- **Supabase keys:** Staan in `.env` - NOOIT tonen in chat
+- **Vercel:** Environment variables ook geconfigureerd in Vercel dashboard
+
+---
+
 ## 🔧 DEVELOPMENT COMMANDS
 
 ```bash
-# Project setup
+# Project setup (alleen bij eerste keer)
 npm create vite@latest rcn-crm -- --template react-ts
 cd rcn-crm
 npm install
 
-# Dependencies
+# Dependencies (alleen bij eerste keer)
 npm install @supabase/supabase-js @tanstack/react-query
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
 
-# Supabase setup
-npx supabase init
-npx supabase link --project-ref wiuzjpoizxeycrshsuqn
-npx supabase db push              # Push migrations
+# Supabase setup (REEDS GEDAAN - niet opnieuw uitvoeren)
+# npx supabase init
+# npx supabase link --project-ref wiuzjpoizxeycrshsuqn
+
+# Database wijzigingen
+npx supabase db push              # Push migrations naar productie
 npx supabase gen types typescript --linked > src/types/database.types.ts
 
 # Development
-npm run dev                       # Start dev server
+npm run dev                       # Start dev server (localhost:5173)
 npx supabase functions serve      # Local Edge Functions
 
 # Deployment
-npm run build
-vercel --prod
+npm run build                     # Build voor productie
+vercel --prod                     # Deploy naar Vercel
 ```
 
 ---
@@ -564,5 +595,5 @@ vercel --prod
 
 ---
 
-*Laatste update: November 2025*
+*Laatste update: 15 december 2025*
 *Fase: MVP Development - Functionele Shell*
