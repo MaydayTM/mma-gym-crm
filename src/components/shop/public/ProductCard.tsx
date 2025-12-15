@@ -18,6 +18,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, basePath }) =
   const detectedBasePath = basePath ?? (
     location.pathname.startsWith('/shop') ? '/shop/products' : '/products'
   )
+
+  const productUrl = `${detectedBasePath}/${product.seo_slug}`
+  console.log('[ProductCard] Product:', product.name, 'URL:', productUrl, 'slug:', product.seo_slug)
   const effectivePrice = getEffectivePrice(product)
   const showPresale = isInPresale(product)
   const allowPreorder = canPreorder(product)
@@ -50,7 +53,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, basePath }) =
 
   return (
     <Link
-      to={`${detectedBasePath}/${product.seo_slug}`}
+      to={productUrl}
       className="group block bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-all duration-300"
     >
       {/* Image Container */}
