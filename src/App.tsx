@@ -24,24 +24,43 @@ import { SubscriptionsManage } from './pages/SubscriptionsManage'
 import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
 
 // Lazy load public shop pages for better performance
-const ShopLanding = React.lazy(() => import('./pages/shop/ShopLanding'))
-const ShopProductDetail = React.lazy(() => import('./pages/shop/ShopProductDetail'))
-const ShopCheckout = React.lazy(() => import('./pages/shop/ShopCheckout'))
-const ShopOrderComplete = React.lazy(() => import('./pages/shop/ShopOrderComplete'))
+const ShopLanding = React.lazy(() => {
+  console.log('[App] Lazy loading ShopLanding...')
+  return import('./pages/shop/ShopLanding')
+})
+const ShopProductDetail = React.lazy(() => {
+  console.log('[App] Lazy loading ShopProductDetail...')
+  return import('./pages/shop/ShopProductDetail')
+})
+const ShopCheckout = React.lazy(() => {
+  console.log('[App] Lazy loading ShopCheckout...')
+  return import('./pages/shop/ShopCheckout')
+})
+const ShopOrderComplete = React.lazy(() => {
+  console.log('[App] Lazy loading ShopOrderComplete...')
+  return import('./pages/shop/ShopOrderComplete')
+})
 
 // Loading fallback for lazy-loaded shop pages
-const ShopLoadingFallback = () => (
-  <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-    <div className="text-center">
-      <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-      <p className="text-neutral-400">Laden...</p>
+const ShopLoadingFallback = () => {
+  console.log('[App] ShopLoadingFallback rendering...')
+  return (
+    <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-neutral-400">Laden...</p>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 // Check if we're on the shop subdomain
 const isShopSubdomain = window.location.hostname.startsWith('shop.') ||
   window.location.hostname === 'shop.mmagym.be'
+
+console.log('[App] Hostname:', window.location.hostname)
+console.log('[App] Pathname:', window.location.pathname)
+console.log('[App] isShopSubdomain:', isShopSubdomain)
 
 // Check if we're on the roster subdomain (should be handled by Vercel rewrites to landing.html, but failsafe here)
 const isRosterSubdomain = window.location.hostname.startsWith('roster.') ||
@@ -120,7 +139,7 @@ function CRMApp() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public routes */}
+        {/* Public routes - no auth required */}
         <Route path="/login" element={<Login />} />
         <Route path="/app.html/login" element={<Login />} />
 

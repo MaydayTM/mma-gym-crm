@@ -10,7 +10,12 @@ type PurchaseMode = 'stock' | 'preorder'
 
 export const ShopProductDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>()
-  const { data: product, isLoading } = useProduct(slug)
+
+  console.log('[ShopProductDetail] Component loaded, slug from URL:', slug)
+
+  const { data: product, isLoading, error } = useProduct(slug)
+
+  console.log('[ShopProductDetail] Product state:', { isLoading, hasProduct: !!product, error })
   const { addItem, itemCount } = useShopCart()
 
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)

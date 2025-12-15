@@ -96,7 +96,7 @@ export function useMergeDuplicates() {
         throw error
       }
 
-      return data as MergeResult
+      return data as unknown as MergeResult
     },
     onSuccess: () => {
       // Invalidate alle relevante queries
@@ -135,7 +135,7 @@ export function useMergeAllRecommended() {
 
           if (error) throw error
 
-          const result = data as MergeResult
+          const result = data as unknown as MergeResult
           if (result.success) {
             totalMerged++
             totalDeleted += result.merged_count || 0
