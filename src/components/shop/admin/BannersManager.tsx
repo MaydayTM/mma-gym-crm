@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Image,
-  Upload,
   Trash2,
   Edit2,
   Plus,
@@ -16,6 +15,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { BANNER_SIZES, type BannerType, type ShopBanner } from '../../../hooks/shop/useShopBanners'
+import { BannerImageUploader } from './BannerImageUploader'
 
 const TENANT_ID = 'reconnect'
 
@@ -420,43 +420,23 @@ function BannerEditModal({ banner, onClose, onSave, isSaving }: BannerEditModalP
             />
           </div>
 
-          {/* Image URL */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-2">
-              Afbeelding URL (Desktop) *
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="url"
-                value={formData.image_url}
-                onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                required
-                placeholder="https://..."
-                className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-neutral-500 focus:ring-2 focus:ring-amber-400 focus:border-transparent"
-              />
-              <button
-                type="button"
-                className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
-                title="Upload (binnenkort beschikbaar)"
-              >
-                <Upload className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+          {/* Image URL - Desktop */}
+          <BannerImageUploader
+            currentUrl={formData.image_url}
+            onUrlChange={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+            label="Afbeelding (Desktop) *"
+            maxSizeMB={2}
+            recommendedSize={`${sizeInfo.desktop.width}×${sizeInfo.desktop.height}px`}
+          />
 
-          {/* Mobile Image URL */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-2">
-              Afbeelding URL (Mobiel) - Optioneel
-            </label>
-            <input
-              type="url"
-              value={formData.image_url_mobile}
-              onChange={(e) => setFormData(prev => ({ ...prev, image_url_mobile: e.target.value }))}
-              placeholder="https://... (laat leeg voor dezelfde als desktop)"
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-neutral-500 focus:ring-2 focus:ring-amber-400 focus:border-transparent"
-            />
-          </div>
+          {/* Image URL - Mobile */}
+          <BannerImageUploader
+            currentUrl={formData.image_url_mobile}
+            onUrlChange={(url) => setFormData(prev => ({ ...prev, image_url_mobile: url }))}
+            label="Afbeelding (Mobiel) - Optioneel"
+            maxSizeMB={2}
+            recommendedSize={`${sizeInfo.mobile.width}×${sizeInfo.mobile.height}px (laat leeg voor desktop)`}
+          />
 
           {/* CTA */}
           <div className="grid grid-cols-2 gap-4">
@@ -674,17 +654,13 @@ function BannerCreateModal({ type, onTypeChange, onClose, onCreate, isCreating }
           </div>
 
           {/* Image URL */}
-          <div>
-            <label className="block text-sm font-medium text-neutral-300 mb-2">Afbeelding URL *</label>
-            <input
-              type="url"
-              value={formData.image_url}
-              onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-              required
-              placeholder="https://..."
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-neutral-500 focus:ring-2 focus:ring-amber-400 focus:border-transparent"
-            />
-          </div>
+          <BannerImageUploader
+            currentUrl={formData.image_url}
+            onUrlChange={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+            label="Afbeelding *"
+            maxSizeMB={2}
+            recommendedSize={`${sizeInfo.desktop.width}×${sizeInfo.desktop.height}px`}
+          />
 
           {/* Actions */}
           <div className="flex gap-3 pt-4 border-t border-white/10">
