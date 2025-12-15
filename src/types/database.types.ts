@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -2013,7 +2014,7 @@ export type Database = {
           size?: string | null
           sku?: string | null
           stock_quantity?: number
-          tenant_id: string
+          tenant_id?: string
         }
         Update: {
           color?: string | null
@@ -2035,13 +2036,6 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "product_variants_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -2088,7 +2082,7 @@ export type Database = {
           presale_ends_at?: string | null
           presale_price?: number | null
           seo_slug: string
-          tenant_id: string
+          tenant_id?: string
           updated_at?: string | null
           video_thumbnail?: string | null
           video_url?: string | null
@@ -2116,15 +2110,7 @@ export type Database = {
           video_thumbnail?: string | null
           video_url?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "products_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       reservations: {
         Row: {
@@ -2564,13 +2550,6 @@ export type Database = {
             columns: ["discount_code_id"]
             isOneToOne: false
             referencedRelation: "discount_codes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shop_orders_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
