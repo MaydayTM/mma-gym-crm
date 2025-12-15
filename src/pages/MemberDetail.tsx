@@ -211,39 +211,6 @@ export function MemberDetail() {
               </div>
             </div>
 
-            {/* Gym Info */}
-            <div className="space-y-3">
-              <h3 className="text-[11px] font-medium text-neutral-500 uppercase tracking-[0.22em]">
-                Gym
-              </h3>
-              <div className="space-y-2">
-                {member.disciplines && member.disciplines.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {member.disciplines.map((d) => (
-                      <span
-                        key={d}
-                        className="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-100 text-[11px] uppercase"
-                      >
-                        {d}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {member.belt_color && (
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-4 h-4 rounded-full border border-white/20 ${getBeltColorClass(
-                        member.belt_color
-                      )}`}
-                    />
-                    <span className="text-[14px] text-neutral-300 capitalize">
-                      {member.belt_color}
-                      {member.belt_stripes ? ` (${member.belt_stripes} strepen)` : ''}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -511,22 +478,6 @@ function getSubscriptionStatusClasses(status: string | null): string {
     expired: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/40',
   }
   return statuses[status || ''] || 'bg-neutral-500/10 text-neutral-400 border-neutral-500/40'
-}
-
-function getBeltColorClass(color: string | null): string {
-  const colors: Record<string, string> = {
-    white: 'bg-white',
-    grey: 'bg-gray-400',
-    yellow: 'bg-yellow-400',
-    orange: 'bg-orange-500',
-    green: 'bg-green-500',
-    blue: 'bg-blue-500',
-    purple: 'bg-purple-500',
-    brown: 'bg-amber-700',
-    black: 'bg-black',
-    red: 'bg-red-600',
-  }
-  return colors[color || ''] || 'bg-gray-500'
 }
 
 function formatDate(dateString: string): string {
