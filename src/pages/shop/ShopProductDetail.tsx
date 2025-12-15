@@ -11,11 +11,7 @@ type PurchaseMode = 'stock' | 'preorder'
 export const ShopProductDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>()
 
-  console.log('[ShopProductDetail] Component loaded, slug from URL:', slug)
-
-  const { data: product, isLoading, error } = useProduct(slug)
-
-  console.log('[ShopProductDetail] Product state:', { isLoading, hasProduct: !!product, error })
+  const { data: product, isLoading } = useProduct(slug)
   const { addItem, itemCount } = useShopCart()
 
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -74,13 +70,14 @@ export const ShopProductDetail: React.FC = () => {
   const canBuyPreorder = showPresale || allowPreorder
 
   // Auto-select purchase mode based on availability
+  // Only switch modes when availability changes, not on every purchaseMode change
   useEffect(() => {
-    if (purchaseMode === 'stock' && !canBuyStock && canBuyPreorder) {
+    if (!canBuyStock && canBuyPreorder) {
       setPurchaseMode('preorder')
-    } else if (purchaseMode === 'preorder' && !canBuyPreorder && canBuyStock) {
+    } else if (!canBuyPreorder && canBuyStock) {
       setPurchaseMode('stock')
     }
-  }, [canBuyStock, canBuyPreorder, purchaseMode])
+  }, [canBuyStock, canBuyPreorder])
 
   const finalPrice = selectedVariant
     ? (purchaseMode === 'preorder' ? preorderPrice : effectivePrice) + selectedVariant.price_adjustment

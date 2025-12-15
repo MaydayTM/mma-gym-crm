@@ -20,7 +20,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, basePath }) =
   )
 
   const productUrl = `${detectedBasePath}/${product.seo_slug}`
-  console.log('[ProductCard] Product:', product.name, 'URL:', productUrl, 'slug:', product.seo_slug)
   const effectivePrice = getEffectivePrice(product)
   const showPresale = isInPresale(product)
   const allowPreorder = canPreorder(product)

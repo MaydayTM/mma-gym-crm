@@ -18,11 +18,8 @@ export const useProduct = (slug: string | undefined) => {
     queryKey: ['product', slug],
     queryFn: async () => {
       if (!slug) {
-        console.log('[useProduct] No slug provided');
         return null;
       }
-
-      console.log('[useProduct] Fetching product with slug:', slug, 'tenant:', TENANT_ID);
 
       const { data, error } = await supabase
         .from('products')
@@ -36,26 +33,12 @@ export const useProduct = (slug: string | undefined) => {
         .single();
 
       if (error) {
-        console.log('[useProduct] Error:', error.code, error.message);
         if (error.code === 'PGRST116') {
-          // Not found - let's check if product exists but is inactive
-          const { data: anyProduct } = await supabase
-            .from('products')
-            .select('id, seo_slug, is_active, tenant_id')
-            .eq('seo_slug', slug)
-            .single();
-
-          if (anyProduct) {
-            console.log('[useProduct] Product exists but filtered out:', anyProduct);
-          } else {
-            console.log('[useProduct] Product not found with slug:', slug);
-          }
+          // Not found
           return null;
         }
         throw error;
       }
-
-      console.log('[useProduct] Found product:', data?.name);
 
       // Filter active variants
       const product = data as ProductWithVariants;
