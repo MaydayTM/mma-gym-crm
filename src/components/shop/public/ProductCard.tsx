@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import type { ProductWithVariants } from '../../../types/shop'
 import { getEffectivePrice, isInPresale, getPreorderPrice, canPreorder } from '../../../types/shop'
@@ -9,7 +9,15 @@ type ProductCardProps = {
   basePath?: string // Allow custom base path for shop URL
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, basePath = '/shop/products' }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, basePath }) => {
+  const location = useLocation()
+
+  // Auto-detect basePath based on current URL
+  // If on shop subdomain (path starts with / not /shop), use /products
+  // If on main CRM domain (path starts with /shop), use /shop/products
+  const detectedBasePath = basePath ?? (
+    location.pathname.startsWith('/shop') ? '/shop/products' : '/products'
+  )
   const effectivePrice = getEffectivePrice(product)
   const showPresale = isInPresale(product)
   const allowPreorder = canPreorder(product)
@@ -42,7 +50,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, basePath = '/
 
   return (
     <Link
-      to={`${basePath}/${product.seo_slug}`}
+      to={`${detectedBasePath}/${product.seo_slug}`}
       className="group block bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-all duration-300"
     >
       {/* Image Container */}
