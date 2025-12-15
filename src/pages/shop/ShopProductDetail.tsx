@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ShoppingBag, ArrowLeft, Clock, Check, Truck, Store } from 'lucide-react'
 import { useProduct, useShopCart } from '../../hooks/shop'
@@ -20,20 +20,81 @@ export const ShopProductDetail: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
 
-  // Auto-select first available variant
+  // Compute derived values using useMemo to avoid recalculation issues
+  const { selectedVariant, effectivePrice, preorderPrice, showPresale, allowPreorder, canBuyStock, canBuyPreorder } = useMemo(() => {
+    if (!product) {
+      return {
+        selectedVariant: null,
+        effectivePrice: 0,
+        preorderPrice: 0,
+        showPresale: false,
+        allowPreorder: false,
+        canBuyStock: false,
+        canBuyPreorder: false,
+      }
+    }
+
+    const variant = product.variants.find(v => v.id === selectedVariantId) || null
+    const effective = getEffectivePrice(product)
+    const preorder = getPreorderPrice(product)
+    const presale = isInPresale(product)
+    const preorderAllowed = canPreorder(product)
+    const inStock = variant && variant.stock_quantity > 0
+
+    return {
+      selectedVariant: variant,
+      effectivePrice: effective,
+      preorderPrice: preorder,
+      showPresale: presale,
+      allowPreorder: preorderAllowed,
+      canBuyStock: !!inStock,
+      canBuyPreorder: presale || preorderAllowed,
+    }
+  }, [product, selectedVariantId])
+
+  // Auto-select first available variant when product loads
   useEffect(() => {
     if (product && !selectedVariantId) {
-      const showPresale = isInPresale(product)
-      const allowPreorder = canPreorder(product)
-      const firstAvailableVariant = (showPresale || allowPreorder)
+      const presale = isInPresale(product)
+      const preorderAllowed = canPreorder(product)
+      const firstAvailableVariant = (presale || preorderAllowed)
         ? product.variants[0]
         : product.variants.find(v => v.stock_quantity > 0)
       if (firstAvailableVariant) {
         setSelectedVariantId(firstAvailableVariant.id)
       }
     }
-  }, [product, selectedVariantId])
+  }, [product]) // Only depend on product, not selectedVariantId
 
+  // Auto-select purchase mode based on what's available
+  // This only runs once when the product loads, not on every change
+  useEffect(() => {
+    if (!product) return
+
+    const presale = isInPresale(product)
+    const preorderAllowed = canPreorder(product)
+    const hasPreorder = presale || preorderAllowed
+
+    // If no stock available but preorder is, default to preorder
+    const anyInStock = product.variants.some(v => v.stock_quantity > 0)
+    if (!anyInStock && hasPreorder) {
+      setPurchaseMode('preorder')
+    }
+  }, [product]) // Only run when product changes
+
+  const finalPrice = selectedVariant
+    ? (purchaseMode === 'preorder' ? preorderPrice : effectivePrice) + selectedVariant.price_adjustment
+    : purchaseMode === 'preorder' ? preorderPrice : effectivePrice
+
+  const handleAddToCart = () => {
+    if (!selectedVariant || !product) return
+
+    addItem(product, selectedVariant.id, purchaseMode === 'preorder')
+    setShowSuccess(true)
+    setTimeout(() => setShowSuccess(false), 3000)
+  }
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
@@ -45,50 +106,18 @@ export const ShopProductDetail: React.FC = () => {
     )
   }
 
+  // Not found state
   if (!product) {
     return (
       <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Product niet gevonden</h2>
-          <Link to="/shop/products" className="text-amber-400 hover:underline">
+          <Link to="/products" className="text-amber-400 hover:underline">
             Terug naar shop
           </Link>
         </div>
       </div>
     )
-  }
-
-  const selectedVariant = product.variants.find(v => v.id === selectedVariantId)
-  const effectivePrice = getEffectivePrice(product)
-  const preorderPrice = getPreorderPrice(product)
-  const showPresale = isInPresale(product)
-  const allowPreorder = canPreorder(product)
-
-  // Determine available purchase modes
-  const inStock = selectedVariant && selectedVariant.stock_quantity > 0
-  const canBuyStock = inStock
-  const canBuyPreorder = showPresale || allowPreorder
-
-  // Auto-select purchase mode based on availability
-  // Only switch modes when availability changes, not on every purchaseMode change
-  useEffect(() => {
-    if (!canBuyStock && canBuyPreorder) {
-      setPurchaseMode('preorder')
-    } else if (!canBuyPreorder && canBuyStock) {
-      setPurchaseMode('stock')
-    }
-  }, [canBuyStock, canBuyPreorder])
-
-  const finalPrice = selectedVariant
-    ? (purchaseMode === 'preorder' ? preorderPrice : effectivePrice) + selectedVariant.price_adjustment
-    : purchaseMode === 'preorder' ? preorderPrice : effectivePrice
-
-  const handleAddToCart = () => {
-    if (!selectedVariant) return
-
-    addItem(product, selectedVariant.id, purchaseMode === 'preorder')
-    setShowSuccess(true)
-    setTimeout(() => setShowSuccess(false), 3000)
   }
 
   return (
@@ -110,7 +139,7 @@ export const ShopProductDetail: React.FC = () => {
       <div className="bg-neutral-950 border-b border-neutral-800">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center gap-2 text-sm text-neutral-400">
-            <Link to="/shop/products" className="hover:text-amber-400 flex items-center gap-1">
+            <Link to="/products" className="hover:text-amber-400 flex items-center gap-1">
               <ArrowLeft size={16} />
               Shop
             </Link>
