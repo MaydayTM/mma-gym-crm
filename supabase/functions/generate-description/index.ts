@@ -9,7 +9,8 @@ interface GenerateRequest {
   productName: string
   category: string
   colors?: string
-  size?: string
+  sizes?: string
+  generateTitle?: boolean
 }
 
 serve(async (req) => {
@@ -24,35 +25,43 @@ serve(async (req) => {
       throw new Error('ANTHROPIC_API_KEY not configured')
     }
 
-    const { productName, category, colors, size }: GenerateRequest = await req.json()
+    const { productName, category, colors, sizes, generateTitle }: GenerateRequest = await req.json()
 
     if (!productName) {
       throw new Error('productName is required')
     }
 
     // Build context about the product
+    const categoryLabel = category === 'clothing' ? 'Kleding' : category === 'gear' ? 'Fight Gear' : 'Accessoires'
     const productInfo = [
       `Product: ${productName}`,
-      `Categorie: ${category === 'clothing' ? 'Kleding' : category === 'gear' ? 'Fight Gear' : 'Accessoires'}`,
+      `Categorie: ${categoryLabel}`,
       colors ? `Kleuren: ${colors}` : null,
-      size ? `Maten: ${size}` : null,
+      sizes ? `Maten: ${sizes}` : null,
     ].filter(Boolean).join('\n')
 
-    // Call Anthropic API
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 200,
-        messages: [
-          {
-            role: 'user',
-            content: `Je bent een copywriter voor een MMA/BJJ gym webshop (Reconnect Academy).
+    // Build prompt based on whether we need title too
+    const prompt = generateTitle
+      ? `Je bent een copywriter voor een MMA/BJJ gym webshop (Reconnect Academy).
+
+Maak een professionele productnaam EN beschrijving in Venum-stijl.
+
+Stijl voorbeelden voor titels:
+- "Reconnect Academy T-Shirt - Black/Gold"
+- "Reconnect Pro Rashguard Long Sleeve - Black"
+- "Reconnect Competition BJJ Gi - White"
+- "Reconnect Training Shorts - Grey/Red"
+
+${productInfo}
+
+BELANGRIJK: Antwoord EXACT in dit JSON format:
+{
+  "title": "De geoptimaliseerde productnaam in Venum-stijl",
+  "description": "Korte beschrijving van 2-3 zinnen in het Nederlands. Focus op kwaliteit en training."
+}
+
+Alleen JSON, geen extra tekst.`
+      : `Je bent een copywriter voor een MMA/BJJ gym webshop (Reconnect Academy).
 Schrijf een ZEER korte productbeschrijving in het Nederlands.
 
 Stijl voorbeelden (Venum-stijl):
@@ -69,7 +78,23 @@ Regels:
 
 ${productInfo}
 
-Schrijf alleen de beschrijving, geen titel of extra tekst.`,
+Schrijf alleen de beschrijving, geen titel of extra tekst.`
+
+    // Call Anthropic API
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicApiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 300,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
           },
         ],
       }),
@@ -78,14 +103,41 @@ Schrijf alleen de beschrijving, geen titel of extra tekst.`,
     if (!response.ok) {
       const error = await response.text()
       console.error('Anthropic API error:', error)
-      throw new Error('Failed to generate description')
+      throw new Error('Failed to generate content')
     }
 
     const data = await response.json()
-    const description = data.content[0]?.text || ''
+    const content = data.content[0]?.text || ''
+
+    // Parse response based on mode
+    if (generateTitle) {
+      try {
+        // Try to parse JSON response
+        const parsed = JSON.parse(content.trim())
+        return new Response(
+          JSON.stringify({
+            title: parsed.title?.trim() || null,
+            description: parsed.description?.trim() || null,
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
+      } catch {
+        // If JSON parsing fails, return just description
+        return new Response(
+          JSON.stringify({ description: content.trim() }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
+      }
+    }
 
     return new Response(
-      JSON.stringify({ description: description.trim() }),
+      JSON.stringify({ description: content.trim() }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
