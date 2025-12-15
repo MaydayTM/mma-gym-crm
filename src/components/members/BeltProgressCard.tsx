@@ -13,6 +13,7 @@ interface BeltProgressCardProps {
 const BELT_COLORS: Record<string, string> = {
   white: 'bg-white',
   yellow: 'bg-yellow-400',
+  orange: 'bg-orange-500',
   green: 'bg-green-500',
   blue: 'bg-blue-500',
   purple: 'bg-purple-500',
@@ -20,7 +21,8 @@ const BELT_COLORS: Record<string, string> = {
   black: 'bg-black',
 }
 
-const BELT_ORDER = ['white', 'yellow', 'green', 'blue', 'purple', 'brown', 'black']
+// Belt order for BJJ/Luta Livre (kids/youth): wit-geel-oranje-groen-blauw-paars-bruin-zwart
+const BELT_ORDER = ['white', 'yellow', 'orange', 'green', 'blue', 'purple', 'brown', 'black']
 
 export function BeltProgressCard({ memberId, memberName }: BeltProgressCardProps) {
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false)

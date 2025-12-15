@@ -11,10 +11,12 @@ interface AddBeltModalProps {
   existingDisciplineIds: string[]
 }
 
-const BELT_ORDER = ['white', 'yellow', 'green', 'blue', 'purple', 'brown', 'black']
+// Belt order for BJJ/Luta Livre (kids/youth): wit-geel-oranje-groen-blauw-paars-bruin-zwart
+const BELT_ORDER = ['white', 'yellow', 'orange', 'green', 'blue', 'purple', 'brown', 'black']
 const BELT_LABELS: Record<string, string> = {
   white: 'Wit',
   yellow: 'Geel',
+  orange: 'Oranje',
   green: 'Groen',
   blue: 'Blauw',
   purple: 'Paars',
