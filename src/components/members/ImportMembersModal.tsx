@@ -342,7 +342,27 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
       }
     }
 
-    return { data, errors }
+    // Filter out duplicate emails within the file (keep first occurrence)
+    const seenEmails = new Set<string>()
+    const uniqueData: ParsedMember[] = []
+    let duplicatesInFile = 0
+
+    for (const member of data) {
+      const emailLower = member.email.toLowerCase()
+      if (seenEmails.has(emailLower)) {
+        duplicatesInFile++
+        errors.push({
+          row: data.indexOf(member) + 2, // +2 for header row and 0-index
+          field: 'email',
+          message: `Dubbele email in bestand: ${member.email} (overgeslagen)`
+        })
+      } else {
+        seenEmails.add(emailLower)
+        uniqueData.push(member)
+      }
+    }
+
+    return { data: uniqueData, errors }
   }, [])
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
