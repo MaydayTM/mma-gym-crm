@@ -20,6 +20,7 @@
     "react-hook-form": "^7.68.0",
     "react-router-dom": "^7.9.6",
     "solar-icon-set": "^2.0.1",
+    "xlsx": "^0.18.5",
     "zod": "^4.1.13"
   },
   "devDependencies": {

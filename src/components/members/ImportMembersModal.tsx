@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2, Users, AlertTriangle, ArrowRight, SkipForward } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { Modal } from '../ui'
 import { useImportMembers } from '../../hooks/useImportMembers'
 import { useCheckImportDuplicates, getMatchTypeLabel, getConfidenceColor } from '../../hooks/useDuplicateDetection'
@@ -24,6 +25,11 @@ interface ParsedMember {
   belt_stripes?: number
   legacy_checkin_count?: number
   notes?: string
+  // ClubPlanner extra velden (voor display, niet opgeslagen)
+  member_since?: string
+  last_visit?: string
+  retention_status?: string
+  subscription_status?: string
 }
 
 interface ValidationError {
@@ -80,7 +86,9 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     const errors: ValidationError[] = []
 
     // Map CSV headers to our fields
+    // Supports both custom format and ClubPlanner export format
     const headerMap: Record<string, string> = {
+      // Custom format (Nederlands)
       'voornaam': 'first_name',
       'achternaam': 'last_name',
       'email': 'email',
@@ -97,6 +105,20 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
       'training_count': 'legacy_checkin_count',
       'legacy_checkin_count': 'legacy_checkin_count',
       'notities': 'notes',
+
+      // ClubPlanner export format
+      'naam': 'last_name',
+      'e-mail': 'email',
+      'mobiel nr.': 'phone',
+      'telefoonnr.': 'phone',
+      'adres': 'street',
+      'stad': 'city',
+      'aantal bezoeken': 'legacy_checkin_count',
+      'memo': 'notes',
+      'lid sinds': 'member_since',
+      'laatste bezoek': 'last_visit',
+      'retentiestatus': 'retention_status',
+      'status': 'subscription_status',
     }
 
     for (let i = 1; i < lines.length; i++) {
@@ -184,6 +206,145 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     return { data, errors }
   }, [])
 
+  // Parse Excel file to CSV-like text
+  const parseExcelToRows = useCallback((buffer: ArrayBuffer): string[][] => {
+    const workbook = XLSX.read(buffer, { type: 'array' })
+    const firstSheetName = workbook.SheetNames[0]
+    const worksheet = workbook.Sheets[firstSheetName]
+
+    // Convert to array of arrays (including header row)
+    const rows = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 })
+    return rows as string[][]
+  }, [])
+
+  // Process rows (from CSV or Excel) into ParsedMember objects
+  const processRows = useCallback((rows: string[][]): { data: ParsedMember[]; errors: ValidationError[] } => {
+    if (rows.length < 2) {
+      return { data: [], errors: [{ row: 0, field: 'file', message: 'Bestand is leeg of heeft geen data rijen' }] }
+    }
+
+    const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase())
+    const data: ParsedMember[] = []
+    const errors: ValidationError[] = []
+
+    // Map CSV headers to our fields
+    // Supports both custom format and ClubPlanner export format
+    const headerMap: Record<string, string> = {
+      // Custom format (Nederlands)
+      'voornaam': 'first_name',
+      'achternaam': 'last_name',
+      'email': 'email',
+      'telefoon': 'phone',
+      'geboortedatum': 'birth_date',
+      'geslacht': 'gender',
+      'straat': 'street',
+      'postcode': 'zip_code',
+      'gemeente': 'city',
+      'disciplines': 'disciplines',
+      'gordel_kleur': 'belt_color',
+      'gordel_strepen': 'belt_stripes',
+      'trainingen': 'legacy_checkin_count',
+      'training_count': 'legacy_checkin_count',
+      'legacy_checkin_count': 'legacy_checkin_count',
+      'notities': 'notes',
+
+      // ClubPlanner export format
+      'naam': 'last_name',
+      'e-mail': 'email',
+      'mobiel nr.': 'phone',
+      'telefoonnr.': 'phone',
+      'adres': 'street',
+      'stad': 'city',
+      'aantal bezoeken': 'legacy_checkin_count',
+      'memo': 'notes',
+      'lid sinds': 'member_since',
+      'laatste bezoek': 'last_visit',
+      'retentiestatus': 'retention_status',
+      'status': 'subscription_status',
+    }
+
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i]
+      if (!values || values.length === 0 || values.every(v => !v)) continue
+
+      const row: Record<string, unknown> = {}
+
+      headers.forEach((header, index) => {
+        const field = headerMap[header]
+        if (field && values[index] !== undefined && values[index] !== null && values[index] !== '') {
+          let value: unknown = values[index]?.toString().trim()
+
+          // Parse specific fields
+          if (field === 'disciplines' && typeof value === 'string') {
+            value = value.split(',').map(d => d.trim().toLowerCase())
+          }
+          if (field === 'belt_stripes' && typeof value === 'string') {
+            value = parseInt(value, 10) || 0
+          }
+          if ((field === 'legacy_checkin_count' || field === 'aantal bezoeken') && typeof value === 'string') {
+            value = parseInt(value, 10) || 0
+          }
+          if (field === 'gender' && typeof value === 'string') {
+            // Map ClubPlanner gender values
+            const genderMap: Record<string, string> = {
+              'man': 'man',
+              'vrouw': 'vrouw',
+              'onbekend': 'onbekend',
+              'm': 'man',
+              'v': 'vrouw',
+              'male': 'man',
+              'female': 'vrouw',
+            }
+            value = genderMap[value.toLowerCase()] || value.toLowerCase()
+          }
+          if (field === 'belt_color' && typeof value === 'string') {
+            value = value.toLowerCase()
+          }
+
+          row[field] = value
+        }
+      })
+
+      // Validate required fields
+      if (!row.first_name) {
+        errors.push({ row: i + 1, field: 'voornaam', message: 'Voornaam is verplicht' })
+      }
+      if (!row.last_name) {
+        errors.push({ row: i + 1, field: 'achternaam/naam', message: 'Achternaam is verplicht' })
+      }
+      if (!row.email) {
+        errors.push({ row: i + 1, field: 'email/e-mail', message: 'Email is verplicht' })
+      } else if (typeof row.email === 'string' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
+        errors.push({ row: i + 1, field: 'email', message: 'Ongeldig email formaat' })
+      }
+
+      if (row.first_name && row.last_name && row.email) {
+        data.push({
+          first_name: row.first_name as string,
+          last_name: row.last_name as string,
+          email: row.email as string,
+          phone: row.phone as string | undefined,
+          birth_date: row.birth_date as string | undefined,
+          gender: row.gender as string | undefined,
+          street: row.street as string | undefined,
+          zip_code: row.zip_code as string | undefined,
+          city: row.city as string | undefined,
+          disciplines: row.disciplines as string[] | undefined,
+          belt_color: row.belt_color as string | undefined,
+          belt_stripes: row.belt_stripes as number | undefined,
+          legacy_checkin_count: row.legacy_checkin_count as number | undefined,
+          notes: row.notes as string | undefined,
+          member_since: row.member_since as string | undefined,
+          last_visit: row.last_visit as string | undefined,
+          retention_status: row.retention_status as string | undefined,
+          subscription_status: row.subscription_status as string | undefined,
+        })
+      }
+    }
+
+    return { data, errors }
+  }, [])
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
@@ -191,10 +352,33 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     setFile(selectedFile)
     setStep('checking')
 
+    const isExcel = selectedFile.name.endsWith('.xlsx') || selectedFile.name.endsWith('.xls')
+
     const reader = new FileReader()
     reader.onload = async (event) => {
-      const text = event.target?.result as string
-      const { data, errors } = parseCSV(text)
+      let data: ParsedMember[] = []
+      let errors: ValidationError[] = []
+
+      try {
+        if (isExcel) {
+          // Parse Excel file
+          const buffer = event.target?.result as ArrayBuffer
+          const rows = parseExcelToRows(buffer)
+          const result = processRows(rows)
+          data = result.data
+          errors = result.errors
+        } else {
+          // Parse CSV file
+          const text = event.target?.result as string
+          const result = parseCSV(text)
+          data = result.data
+          errors = result.errors
+        }
+      } catch (err) {
+        console.error('Error parsing file:', err)
+        errors = [{ row: 0, field: 'file', message: 'Fout bij het lezen van het bestand' }]
+      }
+
       setParsedData(data)
       setErrors(errors)
 
@@ -229,7 +413,13 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
         setStep('preview')
       }
     }
-    reader.readAsText(selectedFile)
+
+    // Read as ArrayBuffer for Excel, text for CSV
+    if (isExcel) {
+      reader.readAsArrayBuffer(selectedFile)
+    } else {
+      reader.readAsText(selectedFile)
+    }
   }
 
   // Update duplicate action
@@ -339,24 +529,26 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
           <div className="relative">
             <input
               type="file"
-              accept=".csv"
+              accept=".csv,.xlsx,.xls"
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
             <div className="p-8 border-2 border-dashed border-white/20 rounded-2xl hover:border-amber-300/50 transition-colors text-center">
               <Upload className="mx-auto text-neutral-500 mb-4" size={40} strokeWidth={1.5} />
-              <p className="text-[14px] font-medium text-neutral-50">Sleep je CSV bestand hierheen</p>
-              <p className="text-[13px] text-neutral-500 mt-1">of klik om te selecteren</p>
+              <p className="text-[14px] font-medium text-neutral-50">Sleep je CSV of Excel bestand hierheen</p>
+              <p className="text-[13px] text-neutral-500 mt-1">of klik om te selecteren (.csv, .xlsx)</p>
             </div>
           </div>
 
           {/* Instructions */}
           <div className="text-[13px] text-neutral-400">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-neutral-500 mb-2">Ondersteunde formaten</p>
+            <p className="mb-3 text-neutral-300">ClubPlanner Excel export of CSV met de volgende kolommen:</p>
             <p className="text-[11px] uppercase tracking-[0.22em] text-neutral-500 mb-2">Verplichte kolommen</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>voornaam</li>
-              <li>achternaam</li>
-              <li>email</li>
+              <li>Voornaam</li>
+              <li>Naam (achternaam)</li>
+              <li>E-Mail</li>
             </ul>
           </div>
         </div>
