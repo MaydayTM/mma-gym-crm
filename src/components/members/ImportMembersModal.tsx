@@ -482,24 +482,38 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
 
     setStep('importing')
 
-    const formattedMembers = membersToImport.map(member => ({
-      first_name: member.first_name,
-      last_name: member.last_name,
-      email: member.email,
-      phone: member.phone || null,
-      birth_date: member.birth_date || null,
-      gender: member.gender || null,
-      street: member.street || null,
-      zip_code: member.zip_code || null,
-      city: member.city || null,
-      disciplines: member.disciplines || null,
-      belt_color: member.belt_color || null,
-      belt_stripes: member.belt_stripes || 0,
-      legacy_checkin_count: member.legacy_checkin_count || 0,
-      notes: member.notes || null,
-      status: 'active' as const,
-      role: 'fighter' as const,
-    }))
+    const formattedMembers = membersToImport.map(member => {
+      // Build the member object, only including fields that have values
+      const memberData: {
+        first_name: string
+        last_name: string
+        email: string
+        status: string
+        role: string
+        [key: string]: unknown
+      } = {
+        first_name: member.first_name,
+        last_name: member.last_name,
+        email: member.email,
+        status: 'active',
+        role: 'fighter',
+      }
+
+      // Only add optional fields if they have values
+      if (member.phone) memberData.phone = member.phone
+      if (member.birth_date) memberData.birth_date = member.birth_date
+      if (member.gender) memberData.gender = member.gender
+      if (member.street) memberData.street = member.street
+      if (member.zip_code) memberData.zip_code = member.zip_code
+      if (member.city) memberData.city = member.city
+      if (member.disciplines && member.disciplines.length > 0) memberData.disciplines = member.disciplines
+      if (member.belt_color) memberData.belt_color = member.belt_color
+      if (member.belt_stripes) memberData.belt_stripes = member.belt_stripes
+      if (member.legacy_checkin_count) memberData.legacy_checkin_count = member.legacy_checkin_count
+      if (member.notes) memberData.notes = member.notes
+
+      return memberData
+    })
 
     importMembers(formattedMembers, {
       onSuccess: () => {

@@ -1,14 +1,21 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import type { TablesInsert } from '../types/database.types'
 
-type NewMember = TablesInsert<'members'>
+// Flexible type for import - only requires essential fields
+type ImportMember = {
+  first_name: string
+  last_name: string
+  email: string
+  status: string
+  role: string
+  [key: string]: unknown // Allow any additional fields
+}
 
 export function useImportMembers() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (members: NewMember[]) => {
+    mutationFn: async (members: ImportMember[]) => {
       // Insert in batches of 50 to avoid hitting limits
       const batchSize = 50
       const results = []
