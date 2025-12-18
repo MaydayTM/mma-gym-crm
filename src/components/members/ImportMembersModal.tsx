@@ -5,6 +5,148 @@ import { Modal } from '../ui'
 import { useImportMembers } from '../../hooks/useImportMembers'
 import { useCheckImportDuplicates, getMatchTypeLabel, getConfidenceColor } from '../../hooks/useDuplicateDetection'
 
+// ===========================================
+// Helper Functions for Data Parsing
+// ===========================================
+
+/**
+ * Parse various date formats to YYYY-MM-DD
+ * Handles: DD/MM/YYYY, DD-MM-YYYY, Excel serial numbers, ISO dates
+ */
+function parseDate(value: unknown): string | undefined {
+  if (!value) return undefined
+
+  // Handle Excel serial date numbers
+  if (typeof value === 'number') {
+    // Excel dates are days since 1900-01-01 (with a bug for 1900 leap year)
+    const excelEpoch = new Date(1899, 11, 30) // Dec 30, 1899
+    const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000)
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0]
+    }
+    return undefined
+  }
+
+  const str = String(value).trim()
+  if (!str) return undefined
+
+  // Already in ISO format (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return str
+  }
+
+  // DD/MM/YYYY or DD-MM-YYYY format (common in Belgium/Netherlands)
+  const euMatch = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
+  if (euMatch) {
+    const [, day, month, year] = euMatch
+    const d = parseInt(day, 10)
+    const m = parseInt(month, 10)
+    const y = parseInt(year, 10)
+
+    // Validate date ranges
+    if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1900 && y <= 2100) {
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    }
+  }
+
+  // MM/DD/YYYY format (US format, less common)
+  const usMatch = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
+  if (usMatch) {
+    const [, month, day, year] = usMatch
+    const d = parseInt(day, 10)
+    const m = parseInt(month, 10)
+    const y = parseInt(year, 10)
+
+    // Only use US format if month > 12 (clearly a day in EU format) doesn't apply
+    if (m > 12 && d <= 12) {
+      // This looks like DD/MM/YYYY was misinterpreted, skip
+    } else if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1900 && y <= 2100) {
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    }
+  }
+
+  // Try native Date parsing as fallback
+  const parsed = new Date(str)
+  if (!isNaN(parsed.getTime()) && parsed.getFullYear() >= 1900) {
+    return parsed.toISOString().split('T')[0]
+  }
+
+  return undefined
+}
+
+/**
+ * Normalize gender values to database-allowed values
+ * Database expects: 'man', 'vrouw', 'anders', 'onbekend'
+ */
+function normalizeGender(value: unknown): string | undefined {
+  if (!value) return undefined
+
+  const str = String(value).trim().toLowerCase()
+  if (!str) return undefined
+
+  const genderMap: Record<string, string> = {
+    // Dutch
+    'man': 'man',
+    'vrouw': 'vrouw',
+    'anders': 'anders',
+    'onbekend': 'onbekend',
+    // Abbreviations
+    'm': 'man',
+    'v': 'vrouw',
+    'x': 'anders',
+    'o': 'onbekend',
+    // English
+    'male': 'man',
+    'female': 'vrouw',
+    'other': 'anders',
+    'unknown': 'onbekend',
+    // Common variations
+    'mannelijk': 'man',
+    'vrouwelijk': 'vrouw',
+    'jongen': 'man',
+    'meisje': 'vrouw',
+  }
+
+  return genderMap[str] || undefined
+}
+
+/**
+ * Parse numeric value (handles strings with commas, etc.)
+ */
+function parseNumber(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined
+
+  if (typeof value === 'number') {
+    return isNaN(value) ? undefined : Math.floor(value)
+  }
+
+  const str = String(value).trim()
+  // Remove thousands separators and handle comma as decimal
+  const cleaned = str.replace(/\./g, '').replace(',', '.')
+  const num = parseInt(cleaned, 10)
+
+  return isNaN(num) ? undefined : num
+}
+
+/**
+ * Clean and normalize phone number
+ */
+function normalizePhone(value: unknown): string | undefined {
+  if (!value) return undefined
+
+  const str = String(value).trim()
+  if (!str) return undefined
+
+  // Remove common formatting characters but keep + for international
+  const cleaned = str.replace(/[\s\-\(\)\.]/g, '')
+
+  // Basic validation: should have at least 8 digits
+  const digitsOnly = cleaned.replace(/\D/g, '')
+  if (digitsOnly.length < 8) return undefined
+
+  return cleaned
+}
+
 interface ImportMembersModalProps {
   isOpen: boolean
   onClose: () => void
@@ -36,6 +178,7 @@ interface ValidationError {
   row: number
   field: string
   message: string
+  rawData?: Record<string, unknown> // Original row data for export
 }
 
 interface ImportDuplicate {
@@ -58,6 +201,8 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
   const [errors, setErrors] = useState<ValidationError[]>([])
   const [duplicates, setDuplicates] = useState<ImportDuplicate[]>([])
   const [step, setStep] = useState<'upload' | 'checking' | 'duplicates' | 'preview' | 'importing' | 'done'>('upload')
+  const [originalHeaders, setOriginalHeaders] = useState<string[]>([])
+  const [skippedRows, setSkippedRows] = useState<unknown[][]>([])
 
   const { mutate: importMembers } = useImportMembers()
   const { mutateAsync: checkDuplicates } = useCheckImportDuplicates()
@@ -68,11 +213,50 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     setErrors([])
     setDuplicates([])
     setStep('upload')
+    setOriginalHeaders([])
+    setSkippedRows([])
   }
 
   const handleClose = () => {
     resetState()
     onClose()
+  }
+
+  // Export skipped rows to CSV
+  const exportSkippedRows = () => {
+    if (skippedRows.length === 0 || originalHeaders.length === 0) return
+
+    // Add error reason column
+    const headersWithError = [...originalHeaders, 'Import_Fout']
+
+    // Create CSV content
+    const csvRows = [headersWithError.join(';')]
+
+    for (const row of skippedRows) {
+      const rowArray = row as unknown[]
+      // Find the error for this row
+      const rowIndex = skippedRows.indexOf(row)
+      const error = errors.find(e => e.row === rowIndex + 2) // +2 for header and 1-index
+      const errorMessage = error?.message || 'Onbekende fout'
+
+      const values = [...rowArray.map(v => {
+        const str = String(v ?? '').replace(/"/g, '""')
+        return str.includes(';') || str.includes('"') || str.includes('\n') ? `"${str}"` : str
+      }), errorMessage]
+
+      csvRows.push(values.join(';'))
+    }
+
+    const csvContent = csvRows.join('\n')
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `overgeslagen-leden-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   const parseCSV = useCallback((text: string): { data: ParsedMember[]; errors: ValidationError[] } => {
@@ -206,56 +390,73 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     return { data, errors }
   }, [])
 
-  // Parse Excel file to CSV-like text
-  const parseExcelToRows = useCallback((buffer: ArrayBuffer): string[][] => {
-    const workbook = XLSX.read(buffer, { type: 'array' })
+  // Parse Excel file to rows (preserving raw values for proper date handling)
+  const parseExcelToRows = useCallback((buffer: ArrayBuffer): unknown[][] => {
+    const workbook = XLSX.read(buffer, { type: 'array', cellDates: false, raw: true })
     const firstSheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[firstSheetName]
 
     // Convert to array of arrays (including header row)
-    const rows = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 })
-    return rows as string[][]
+    // Use raw: true to preserve Excel serial numbers for dates
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(worksheet, { header: 1, raw: true, defval: '' })
+    return rows as unknown[][]
   }, [])
 
   // Process rows (from CSV or Excel) into ParsedMember objects
-  const processRows = useCallback((rows: string[][]): { data: ParsedMember[]; errors: ValidationError[] } => {
+  const processRows = useCallback((rows: unknown[][]): { data: ParsedMember[]; errors: ValidationError[]; skipped: unknown[][]; headers: string[] } => {
     if (rows.length < 2) {
-      return { data: [], errors: [{ row: 0, field: 'file', message: 'Bestand is leeg of heeft geen data rijen' }] }
+      return { data: [], errors: [{ row: 0, field: 'file', message: 'Bestand is leeg of heeft geen data rijen' }], skipped: [], headers: [] }
     }
 
-    const headers = rows[0].map(h => (h || '').toString().trim().toLowerCase())
+    const headersRaw = (rows[0] as unknown[]).map(h => (h || '').toString().trim())
+    const headers = headersRaw.map(h => h.toLowerCase())
     const data: ParsedMember[] = []
     const errors: ValidationError[] = []
+    const skipped: unknown[][] = []
 
-    // Map CSV headers to our fields
+    // Map CSV/Excel headers to our fields
     // Supports both custom format and ClubPlanner export format
     const headerMap: Record<string, string> = {
-      // Custom format (Nederlands)
+      // Name fields
       'voornaam': 'first_name',
       'achternaam': 'last_name',
+      'naam': 'last_name', // ClubPlanner uses "Naam" for last name (not full name!)
+      'volledige naam': 'full_name', // Only this is the full name to be split
+      'tussenvoegsel': 'tussenvoegsel',
+      'tussenvoegsels': 'tussenvoegsel',
+
+      // Contact fields
       'email': 'email',
+      'e-mail': 'email',
       'telefoon': 'phone',
+      'mobiel nr.': 'phone',
+      'telefoonnr.': 'phone_landline',
+
+      // Personal info
       'geboortedatum': 'birth_date',
       'geslacht': 'gender',
+
+      // Address fields
       'straat': 'street',
+      'straatnaam': 'street',
+      'adres': 'street',
+      'huisnummer': 'house_number',
       'postcode': 'zip_code',
       'gemeente': 'city',
+      'stad': 'city',
+      'woonplaats': 'city',
+
+      // Training/membership
       'disciplines': 'disciplines',
       'gordel_kleur': 'belt_color',
       'gordel_strepen': 'belt_stripes',
       'trainingen': 'legacy_checkin_count',
       'training_count': 'legacy_checkin_count',
       'legacy_checkin_count': 'legacy_checkin_count',
-      'notities': 'notes',
-
-      // ClubPlanner export format
-      'naam': 'last_name',
-      'e-mail': 'email',
-      'mobiel nr.': 'phone',
-      'telefoonnr.': 'phone',
-      'adres': 'street',
-      'stad': 'city',
       'aantal bezoeken': 'legacy_checkin_count',
+
+      // Notes and status
+      'notities': 'notes',
       'memo': 'notes',
       'lid sinds': 'member_since',
       'laatste bezoek': 'last_visit',
@@ -264,61 +465,180 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     }
 
     for (let i = 1; i < rows.length; i++) {
-      const values = rows[i]
+      const values = rows[i] as unknown[]
       if (!values || values.length === 0 || values.every(v => !v)) continue
 
       const row: Record<string, unknown> = {}
 
       headers.forEach((header, index) => {
         const field = headerMap[header]
-        if (field && values[index] !== undefined && values[index] !== null && values[index] !== '') {
-          let value: unknown = values[index]?.toString().trim()
+        const rawValue = values[index]
 
-          // Parse specific fields
-          if (field === 'disciplines' && typeof value === 'string') {
-            value = value.split(',').map(d => d.trim().toLowerCase())
-          }
-          if (field === 'belt_stripes' && typeof value === 'string') {
-            value = parseInt(value, 10) || 0
-          }
-          if ((field === 'legacy_checkin_count' || field === 'aantal bezoeken') && typeof value === 'string') {
-            value = parseInt(value, 10) || 0
-          }
-          if (field === 'gender' && typeof value === 'string') {
-            // Map ClubPlanner gender values
-            const genderMap: Record<string, string> = {
-              'man': 'man',
-              'vrouw': 'vrouw',
-              'onbekend': 'onbekend',
-              'm': 'man',
-              'v': 'vrouw',
-              'male': 'man',
-              'female': 'vrouw',
+        if (field && rawValue !== undefined && rawValue !== null && rawValue !== '') {
+          // Store raw value for special processing
+          row[`_raw_${field}`] = rawValue
+
+          // Parse specific fields using helper functions
+          switch (field) {
+            case 'birth_date':
+            case 'member_since':
+            case 'last_visit':
+              row[field] = parseDate(rawValue)
+              break
+
+            case 'gender':
+              row[field] = normalizeGender(rawValue)
+              break
+
+            case 'legacy_checkin_count':
+            case 'belt_stripes':
+              row[field] = parseNumber(rawValue)
+              break
+
+            case 'phone':
+            case 'phone_landline':
+              row[field] = normalizePhone(rawValue)
+              break
+
+            case 'full_name': {
+              // Only use full_name if we don't have separate first_name/last_name columns
+              // This will be processed after the main loop
+              row._full_name = String(rawValue).trim()
+              break
             }
-            value = genderMap[value.toLowerCase()] || value.toLowerCase()
-          }
-          if (field === 'belt_color' && typeof value === 'string') {
-            value = value.toLowerCase()
-          }
 
-          row[field] = value
+            case 'tussenvoegsel': {
+              // Store tussenvoegsel to combine with last_name later
+              row._tussenvoegsel = String(rawValue).trim()
+              break
+            }
+
+            case 'house_number': {
+              // Store house number to combine with street later
+              row._house_number = String(rawValue).trim()
+              break
+            }
+
+            case 'disciplines':
+              if (typeof rawValue === 'string') {
+                row[field] = rawValue.split(',').map(d => d.trim().toLowerCase()).filter(Boolean)
+              }
+              break
+
+            case 'belt_color':
+              if (typeof rawValue === 'string') {
+                row[field] = rawValue.toLowerCase().trim()
+              }
+              break
+
+            case 'email':
+              // Normalize email
+              row[field] = String(rawValue).trim().toLowerCase()
+              break
+
+            default:
+              // String fields - just trim
+              row[field] = String(rawValue).trim()
+          }
         }
       })
 
-      // Validate required fields
-      if (!row.first_name) {
-        errors.push({ row: i + 1, field: 'voornaam', message: 'Voornaam is verplicht' })
-      }
-      if (!row.last_name) {
-        errors.push({ row: i + 1, field: 'achternaam/naam', message: 'Achternaam is verplicht' })
-      }
-      if (!row.email) {
-        errors.push({ row: i + 1, field: 'email/e-mail', message: 'Email is verplicht' })
-      } else if (typeof row.email === 'string' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
-        errors.push({ row: i + 1, field: 'email', message: 'Ongeldig email formaat' })
+      // Use phone_landline as fallback if no mobile
+      if (!row.phone && row.phone_landline) {
+        row.phone = row.phone_landline
       }
 
-      if (row.first_name && row.last_name && row.email) {
+      // Combine tussenvoegsel with last_name (e.g., "Van den" + "Driessche" = "Van den Driessche")
+      if (row._tussenvoegsel && row.last_name) {
+        row.last_name = `${row._tussenvoegsel} ${row.last_name}`
+      }
+
+      // Combine house_number with street
+      if (row._house_number && row.street) {
+        row.street = `${row.street} ${row._house_number}`
+      }
+
+      // If we only have full_name (no separate first/last name columns), parse it
+      if (row._full_name && !row.first_name && !row.last_name) {
+        const nameStr = row._full_name as string
+
+        // Dutch tussenvoegsels to detect
+        const tussenvoegsels = [
+          'van de', 'van den', 'van der', 'van het', 'van \'t',
+          'de', 'den', 'der', 'het', '\'t',
+          'te', 'ter', 'ten',
+          'op de', 'op den', 'op het',
+          'in de', 'in den', 'in het', 'in \'t',
+          'aan de', 'aan den', 'aan het',
+          'uit de', 'uit den', 'uit het',
+          'von', 'von der', 'von den',
+          'la', 'le', 'du', 'des',
+        ].sort((a, b) => b.length - a.length) // Sort by length (longest first)
+
+        if (nameStr.includes(',')) {
+          // Format: "Achternaam, Voornaam" or "Van den Driessche, Lukas"
+          const parts = nameStr.split(',').map(p => p.trim())
+          row.last_name = parts[0]
+          row.first_name = parts[1] || ''
+        } else {
+          // Format: "Voornaam Tussenvoegsel Achternaam" (e.g., "Lukas Van den Driessche")
+          // Try to detect tussenvoegsel
+          const nameLower = nameStr.toLowerCase()
+          let foundTussenvoegsel = ''
+          let tussenvoegselIndex = -1
+
+          for (const tv of tussenvoegsels) {
+            const idx = nameLower.indexOf(' ' + tv + ' ')
+            if (idx !== -1) {
+              foundTussenvoegsel = nameStr.substring(idx + 1, idx + 1 + tv.length)
+              tussenvoegselIndex = idx
+              break
+            }
+          }
+
+          if (foundTussenvoegsel && tussenvoegselIndex !== -1) {
+            // Split on tussenvoegsel
+            row.first_name = nameStr.substring(0, tussenvoegselIndex).trim()
+            row.last_name = nameStr.substring(tussenvoegselIndex + 1).trim()
+          } else {
+            // No tussenvoegsel found - take first word as first name, rest as last name
+            const parts = nameStr.split(/\s+/)
+            if (parts.length >= 2) {
+              row.first_name = parts[0]
+              row.last_name = parts.slice(1).join(' ')
+            } else {
+              row.last_name = nameStr
+              row.first_name = ''
+            }
+          }
+        }
+      }
+
+      // Validate required fields and track skipped rows
+      const rowErrors: string[] = []
+
+      if (!row.first_name) {
+        rowErrors.push('Voornaam ontbreekt')
+      }
+      if (!row.last_name) {
+        rowErrors.push('Achternaam ontbreekt')
+      }
+      if (!row.email) {
+        rowErrors.push('Email ontbreekt')
+      } else if (typeof row.email === 'string' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
+        rowErrors.push(`Ongeldig email: ${row.email}`)
+      }
+
+      if (rowErrors.length > 0) {
+        // Track this row as skipped
+        skipped.push(values)
+        errors.push({
+          row: i + 1,
+          field: rowErrors.length > 1 ? 'meerdere' : rowErrors[0].split(' ')[0].toLowerCase(),
+          message: rowErrors.join(', '),
+          rawData: row
+        })
+      } else {
         data.push({
           first_name: row.first_name as string,
           last_name: row.last_name as string,
@@ -343,26 +663,34 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     }
 
     // Filter out duplicate emails within the file (keep first occurrence)
-    const seenEmails = new Set<string>()
+    const seenEmails = new Map<string, number>() // email -> first occurrence row index
     const uniqueData: ParsedMember[] = []
-    let duplicatesInFile = 0
+    const duplicateIndices = new Set<number>()
 
-    for (const member of data) {
+    for (let idx = 0; idx < data.length; idx++) {
+      const member = data[idx]
       const emailLower = member.email.toLowerCase()
+
       if (seenEmails.has(emailLower)) {
-        duplicatesInFile++
+        const firstRow = seenEmails.get(emailLower)!
+        duplicateIndices.add(idx)
         errors.push({
-          row: data.indexOf(member) + 2, // +2 for header row and 0-index
+          row: idx + 2, // +2 for header row and 1-index
           field: 'email',
-          message: `Dubbele email in bestand: ${member.email} (overgeslagen)`
+          message: `Dubbele email in bestand (eerste keer op rij ${firstRow + 2}): ${member.email}`
         })
       } else {
-        seenEmails.add(emailLower)
+        seenEmails.set(emailLower, idx)
         uniqueData.push(member)
       }
     }
 
-    return { data: uniqueData, errors }
+    // Log summary of duplicates found
+    if (duplicateIndices.size > 0) {
+      console.log(`[Import] Filtered ${duplicateIndices.size} duplicate emails within file`)
+    }
+
+    return { data: uniqueData, errors, skipped, headers: headersRaw }
   }, [])
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -378,6 +706,8 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     reader.onload = async (event) => {
       let data: ParsedMember[] = []
       let errors: ValidationError[] = []
+      let skipped: unknown[][] = []
+      let headers: string[] = []
 
       try {
         if (isExcel) {
@@ -387,6 +717,8 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
           const result = processRows(rows)
           data = result.data
           errors = result.errors
+          skipped = result.skipped
+          headers = result.headers
         } else {
           // Parse CSV file
           const text = event.target?.result as string
@@ -401,14 +733,15 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
 
       setParsedData(data)
       setErrors(errors)
+      setSkippedRows(skipped)
+      setOriginalHeaders(headers)
 
       // Check for duplicates against existing members
       if (data.length > 0) {
         try {
           const emails = data.map(m => m.email).filter(Boolean)
-          const phones = data.map(m => m.phone).filter((p): p is string => !!p)
 
-          const duplicateResults = await checkDuplicates({ emails, phones })
+          const duplicateResults = await checkDuplicates({ emails })
 
           if (duplicateResults && duplicateResults.length > 0) {
             // Map duplicates to our interface with parsed member data
@@ -483,14 +816,24 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     setStep('importing')
 
     const formattedMembers = membersToImport.map(member => {
-      // Build the member object, only including fields that have values
+      // Build the member object with explicit fields (no index signature)
       const memberData: {
         first_name: string
         last_name: string
         email: string
         status: string
         role: string
-        [key: string]: unknown
+        phone?: string
+        birth_date?: string
+        gender?: string
+        street?: string
+        zip_code?: string
+        city?: string
+        disciplines?: string[]
+        belt_color?: string
+        belt_stripes?: number
+        legacy_checkin_count?: number
+        notes?: string
       } = {
         first_name: member.first_name,
         last_name: member.last_name,
@@ -783,13 +1126,33 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
 
           {/* Errors list */}
           {errors.length > 0 && (
-            <div className="p-4 bg-rose-500/5 border border-rose-500/40 rounded-2xl max-h-32 overflow-y-auto">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-rose-300 mb-2">Fouten</p>
-              {errors.map((error, i) => (
-                <p key={i} className="text-[13px] text-rose-300/70">
-                  Rij {error.row}: {error.field} - {error.message}
+            <div className="p-4 bg-rose-500/5 border border-rose-500/40 rounded-2xl">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-rose-300">
+                  {errors.length} rijen overgeslagen
                 </p>
-              ))}
+                {skippedRows.length > 0 && (
+                  <button
+                    onClick={exportSkippedRows}
+                    className="text-[12px] font-medium text-rose-300 hover:text-rose-200 flex items-center gap-1 transition"
+                  >
+                    <Download size={14} />
+                    Exporteer overgeslagen rijen
+                  </button>
+                )}
+              </div>
+              <div className="max-h-32 overflow-y-auto">
+                {errors.slice(0, 20).map((error, i) => (
+                  <p key={i} className="text-[13px] text-rose-300/70">
+                    Rij {error.row}: {error.message}
+                  </p>
+                ))}
+                {errors.length > 20 && (
+                  <p className="text-[13px] text-rose-300/50 mt-1">
+                    En {errors.length - 20} meer... (download CSV voor volledige lijst)
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

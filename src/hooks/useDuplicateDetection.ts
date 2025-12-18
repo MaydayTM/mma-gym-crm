@@ -161,15 +161,11 @@ export function useCheckImportDuplicates() {
   return useMutation({
     mutationFn: async ({
       emails,
-      phones,
     }: {
       emails: string[]
-      phones: string[]
     }) => {
       const { data, error } = await supabase.rpc('check_import_duplicates', {
         p_emails: emails,
-        p_phones: phones,
-        p_names: [], // Nog niet geïmplementeerd
       })
 
       if (error) {

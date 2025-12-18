@@ -3306,7 +3306,7 @@ export type Database = {
         Returns: number
       }
       check_import_duplicates: {
-        Args: { p_emails: string[]; p_names: string[]; p_phones: string[] }
+        Args: { p_emails: string[] }
         Returns: {
           confidence: number
           existing_email: string
