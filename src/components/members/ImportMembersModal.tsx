@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
-import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2, Users, AlertTriangle, ArrowRight, SkipForward } from 'lucide-react'
 import { Modal } from '../ui'
 import { useImportMembers } from '../../hooks/useImportMembers'
+import { useCheckImportDuplicates, getMatchTypeLabel, getConfidenceColor } from '../../hooks/useDuplicateDetection'
 
 interface ImportMembersModalProps {
   isOpen: boolean
@@ -31,18 +32,35 @@ interface ValidationError {
   message: string
 }
 
+interface ImportDuplicate {
+  input_index: number
+  existing_member_id: string
+  match_type: string
+  confidence: number
+  existing_first_name: string
+  existing_last_name: string
+  existing_email: string
+  // Parsed member data
+  parsed_member: ParsedMember
+  // User decision: 'skip' | 'add_new' | 'update'
+  action: 'skip' | 'add_new' | 'update'
+}
+
 export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps) {
   const [_file, setFile] = useState<File | null>(null)
   const [parsedData, setParsedData] = useState<ParsedMember[]>([])
   const [errors, setErrors] = useState<ValidationError[]>([])
-  const [step, setStep] = useState<'upload' | 'preview' | 'importing' | 'done'>('upload')
+  const [duplicates, setDuplicates] = useState<ImportDuplicate[]>([])
+  const [step, setStep] = useState<'upload' | 'checking' | 'duplicates' | 'preview' | 'importing' | 'done'>('upload')
 
   const { mutate: importMembers } = useImportMembers()
+  const { mutateAsync: checkDuplicates } = useCheckImportDuplicates()
 
   const resetState = () => {
     setFile(null)
     setParsedData([])
     setErrors([])
+    setDuplicates([])
     setStep('upload')
   }
 
@@ -166,29 +184,95 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
     return { data, errors }
   }, [])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
 
     setFile(selectedFile)
+    setStep('checking')
 
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const text = event.target?.result as string
       const { data, errors } = parseCSV(text)
       setParsedData(data)
       setErrors(errors)
-      setStep('preview')
+
+      // Check for duplicates against existing members
+      if (data.length > 0) {
+        try {
+          const emails = data.map(m => m.email).filter(Boolean)
+          const phones = data.map(m => m.phone).filter((p): p is string => !!p)
+
+          const duplicateResults = await checkDuplicates({ emails, phones })
+
+          if (duplicateResults && duplicateResults.length > 0) {
+            // Map duplicates to our interface with parsed member data
+            const mappedDuplicates: ImportDuplicate[] = duplicateResults.map(dup => ({
+              ...dup,
+              parsed_member: data[dup.input_index],
+              action: 'skip' as const, // Default action is skip
+            }))
+            setDuplicates(mappedDuplicates)
+            setStep('duplicates')
+          } else {
+            setDuplicates([])
+            setStep('preview')
+          }
+        } catch (err) {
+          console.error('Error checking duplicates:', err)
+          // Continue to preview even if duplicate check fails
+          setDuplicates([])
+          setStep('preview')
+        }
+      } else {
+        setStep('preview')
+      }
     }
     reader.readAsText(selectedFile)
   }
 
+  // Update duplicate action
+  const updateDuplicateAction = (index: number, action: 'skip' | 'add_new' | 'update') => {
+    setDuplicates(prev => prev.map((dup, i) =>
+      i === index ? { ...dup, action } : dup
+    ))
+  }
+
+  // Set all duplicates to same action
+  const setAllDuplicateActions = (action: 'skip' | 'add_new') => {
+    setDuplicates(prev => prev.map(dup => ({ ...dup, action })))
+  }
+
+  // Proceed from duplicates step to preview
+  const handleDuplicatesReviewed = () => {
+    setStep('preview')
+  }
+
+  // Get members to import (excluding skipped duplicates)
+  const getMembersToImport = () => {
+    // Get indices of members marked to skip
+    const skipIndices = new Set(
+      duplicates
+        .filter(d => d.action === 'skip')
+        .map(d => d.input_index)
+    )
+
+    // Filter out skipped members
+    return parsedData.filter((_, index) => !skipIndices.has(index))
+  }
+
   const handleImport = () => {
-    if (parsedData.length === 0) return
+    const membersToImport = getMembersToImport()
+    if (membersToImport.length === 0) {
+      // All members were skipped
+      setStep('done')
+      return
+    }
 
     setStep('importing')
 
-    const membersToImport = parsedData.map(member => ({
+    const formattedMembers = membersToImport.map(member => ({
       first_name: member.first_name,
       last_name: member.last_name,
       email: member.email,
@@ -207,7 +291,7 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
       role: 'fighter' as const,
     }))
 
-    importMembers(membersToImport, {
+    importMembers(formattedMembers, {
       onSuccess: () => {
         setStep('done')
       },
@@ -278,6 +362,160 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
         </div>
       )}
 
+      {step === 'checking' && (
+        <div className="py-12 text-center">
+          <Loader2 className="mx-auto text-amber-300 animate-spin mb-4" size={48} strokeWidth={1.5} />
+          <p className="text-[14px] font-medium text-neutral-50">Bestand controleren...</p>
+          <p className="text-[13px] text-neutral-500 mt-1">Even geduld, we checken op mogelijke duplicaten</p>
+        </div>
+      )}
+
+      {step === 'duplicates' && (
+        <div className="space-y-6">
+          {/* Warning header */}
+          <div className="p-4 bg-orange-500/10 border border-orange-500/40 rounded-2xl">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="text-orange-300 flex-shrink-0 mt-0.5" size={20} strokeWidth={1.5} />
+              <div>
+                <p className="text-[14px] font-medium text-orange-300">
+                  {duplicates.length} mogelijke duplica{duplicates.length === 1 ? 'at' : 'ten'} gevonden
+                </p>
+                <p className="text-[13px] text-orange-300/70 mt-1">
+                  Deze leden lijken al in je database te staan. Kies per lid wat je wilt doen.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bulk actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAllDuplicateActions('skip')}
+              className="flex-1 p-3 text-[13px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition flex items-center justify-center gap-2 text-neutral-300"
+            >
+              <SkipForward size={16} />
+              Alles overslaan
+            </button>
+            <button
+              onClick={() => setAllDuplicateActions('add_new')}
+              className="flex-1 p-3 text-[13px] font-medium bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition flex items-center justify-center gap-2 text-neutral-300"
+            >
+              <Users size={16} />
+              Alles toch toevoegen
+            </button>
+          </div>
+
+          {/* Duplicates list */}
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {duplicates.map((dup, index) => (
+              <div
+                key={index}
+                className={`p-4 rounded-2xl border transition ${
+                  dup.action === 'skip'
+                    ? 'bg-neutral-800/50 border-white/5'
+                    : 'bg-white/5 border-orange-500/30'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  {/* Duplicate info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${getConfidenceColor(dup.confidence)} bg-current/10`}>
+                        {dup.confidence}% match
+                      </span>
+                      <span className="text-[11px] text-neutral-500">
+                        {getMatchTypeLabel(dup.match_type)}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* CSV data */}
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-neutral-500 mb-1">CSV import</p>
+                        <p className="text-[14px] font-medium text-neutral-50">
+                          {dup.parsed_member.first_name} {dup.parsed_member.last_name}
+                        </p>
+                        <p className="text-[13px] text-neutral-400">{dup.parsed_member.email}</p>
+                      </div>
+
+                      {/* Existing data */}
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-neutral-500 mb-1">Bestaand lid</p>
+                        <p className="text-[14px] font-medium text-neutral-50">
+                          {dup.existing_first_name} {dup.existing_last_name}
+                        </p>
+                        <p className="text-[13px] text-neutral-400">{dup.existing_email}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => updateDuplicateAction(index, 'skip')}
+                      className={`px-3 py-1.5 text-[12px] font-medium rounded-lg transition ${
+                        dup.action === 'skip'
+                          ? 'bg-neutral-600 text-white'
+                          : 'bg-white/5 text-neutral-400 hover:bg-white/10'
+                      }`}
+                    >
+                      Overslaan
+                    </button>
+                    <button
+                      onClick={() => updateDuplicateAction(index, 'add_new')}
+                      className={`px-3 py-1.5 text-[12px] font-medium rounded-lg transition ${
+                        dup.action === 'add_new'
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-white/5 text-neutral-400 hover:bg-white/10'
+                      }`}
+                    >
+                      Toch toevoegen
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Summary */}
+          <div className="p-4 bg-white/5 rounded-2xl">
+            <div className="flex justify-between text-[13px]">
+              <span className="text-neutral-400">Totaal in CSV:</span>
+              <span className="text-neutral-50 font-medium">{parsedData.length} leden</span>
+            </div>
+            <div className="flex justify-between text-[13px] mt-1">
+              <span className="text-neutral-400">Duplicaten overslaan:</span>
+              <span className="text-orange-300 font-medium">{duplicates.filter(d => d.action === 'skip').length}</span>
+            </div>
+            <div className="flex justify-between text-[13px] mt-1">
+              <span className="text-neutral-400">Toch toevoegen:</span>
+              <span className="text-emerald-300 font-medium">{duplicates.filter(d => d.action === 'add_new').length}</span>
+            </div>
+            <div className="flex justify-between text-[13px] mt-2 pt-2 border-t border-white/10">
+              <span className="text-neutral-50 font-medium">Te importeren:</span>
+              <span className="text-amber-300 font-medium">{getMembersToImport().length} leden</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-between pt-4 border-t border-white/10">
+            <button
+              onClick={resetState}
+              className="text-[14px] text-neutral-400 hover:text-neutral-50 transition-colors"
+            >
+              Ander bestand kiezen
+            </button>
+            <button
+              onClick={handleDuplicatesReviewed}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_16px_40px_rgba(251,191,36,0.55)] hover:bg-amber-200 transition"
+            >
+              Doorgaan
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {step === 'preview' && (
         <div className="space-y-6">
           {/* Summary */}
@@ -286,11 +524,23 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="text-emerald-300" size={20} strokeWidth={1.5} />
                 <div>
-                  <p className="text-[14px] font-medium text-emerald-300">{parsedData.length} leden</p>
+                  <p className="text-[14px] font-medium text-emerald-300">{getMembersToImport().length} leden</p>
                   <p className="text-[11px] text-emerald-300/70">klaar om te importeren</p>
                 </div>
               </div>
             </div>
+
+            {duplicates.filter(d => d.action === 'skip').length > 0 && (
+              <div className="flex-1 p-4 bg-orange-500/10 border border-orange-500/40 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <SkipForward className="text-orange-300" size={20} strokeWidth={1.5} />
+                  <div>
+                    <p className="text-[14px] font-medium text-orange-300">{duplicates.filter(d => d.action === 'skip').length} duplicaten</p>
+                    <p className="text-[11px] text-orange-300/70">worden overgeslagen</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {errors.length > 0 && (
               <div className="flex-1 p-4 bg-rose-500/10 border border-rose-500/40 rounded-2xl">
@@ -338,7 +588,7 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {parsedData.slice(0, 10).map((member, i) => (
+                  {getMembersToImport().slice(0, 10).map((member, i) => (
                     <tr key={i} className="hover:bg-white/5">
                       <td className="px-4 py-3 text-[14px] text-neutral-50">
                         {member.first_name} {member.last_name}
@@ -358,9 +608,9 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
                 </tbody>
               </table>
             </div>
-            {parsedData.length > 10 && (
+            {getMembersToImport().length > 10 && (
               <div className="px-4 py-2 bg-white/5 text-[13px] text-neutral-500 text-center">
-                En {parsedData.length - 10} meer...
+                En {getMembersToImport().length - 10} meer...
               </div>
             )}
           </div>
@@ -387,10 +637,10 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
               </button>
               <button
                 onClick={handleImport}
-                disabled={parsedData.length === 0}
+                disabled={getMembersToImport().length === 0}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_16px_40px_rgba(251,191,36,0.55)] hover:bg-amber-200 transition disabled:opacity-50"
               >
-                {parsedData.length} leden importeren
+                {getMembersToImport().length} leden importeren
               </button>
             </div>
           </div>
@@ -411,7 +661,7 @@ export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps)
             <CheckCircle2 className="text-emerald-300" size={32} strokeWidth={1.5} />
           </div>
           <p className="text-[20px] font-medium text-neutral-50">Import succesvol!</p>
-          <p className="text-[14px] text-neutral-400 mt-1">{parsedData.length} leden zijn toegevoegd</p>
+          <p className="text-[14px] text-neutral-400 mt-1">{getMembersToImport().length} leden zijn toegevoegd</p>
           <button
             onClick={handleClose}
             className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_16px_40px_rgba(251,191,36,0.55)] hover:bg-amber-200 transition"
