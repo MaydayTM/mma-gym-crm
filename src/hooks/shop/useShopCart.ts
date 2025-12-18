@@ -8,7 +8,7 @@ const DELIVERY_METHOD_KEY = 'reconnect_delivery_method'
 interface UseShopCartReturn {
   cart: Cart
   itemCount: number
-  addItem: (product: ProductWithVariants, variantId: string, isPreorder: boolean) => void
+  addItem: (product: ProductWithVariants, variantId: string, isPreorder: boolean, quantity?: number) => void
   removeItem: (variantId: string) => void
   updateQuantity: (variantId: string, quantity: number) => void
   setDeliveryMethod: (method: DeliveryMethod) => void
@@ -90,9 +90,12 @@ export function useShopCart(): UseShopCartReturn {
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
-  const addItem = useCallback((product: ProductWithVariants, variantId: string, isPreorder: boolean) => {
+  const addItem = useCallback((product: ProductWithVariants, variantId: string, isPreorder: boolean, quantity: number = 1) => {
     const variant = product.variants.find(v => v.id === variantId)
     if (!variant) return
+
+    // Ensure quantity is at least 1
+    const addQuantity = Math.max(1, quantity)
 
     setItems(currentItems => {
       // Check if item already in cart (same variant + same preorder status)
@@ -103,11 +106,16 @@ export function useShopCart(): UseShopCartReturn {
       if (existingIndex >= 0) {
         // Update quantity
         const updated = [...currentItems]
-        const newQuantity = updated[existingIndex].quantity + 1
+        const newQuantity = updated[existingIndex].quantity + addQuantity
 
         // Check stock limit for non-preorder items
         if (!isPreorder && newQuantity > variant.stock_quantity) {
-          return currentItems // Don't exceed stock
+          // Add up to available stock
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            quantity: variant.stock_quantity,
+          }
+          return updated
         }
 
         updated[existingIndex] = {
@@ -121,6 +129,11 @@ export function useShopCart(): UseShopCartReturn {
       const basePrice = product.base_price + (variant.price_adjustment || 0)
       const price = isPreorder ? getPreorderPrice(product) + (variant.price_adjustment || 0) : basePrice
 
+      // Calculate final quantity (respect stock limits for non-preorder)
+      const finalQuantity = !isPreorder && addQuantity > variant.stock_quantity
+        ? variant.stock_quantity
+        : addQuantity
+
       // Add new item
       const newItem: CartItem = {
         product_id: product.id,
@@ -130,7 +143,7 @@ export function useShopCart(): UseShopCartReturn {
         variant_name: variant.name,
         price,
         original_price: basePrice,
-        quantity: 1,
+        quantity: finalQuantity,
         image_url: product.featured_image || product.images[0] || null,
         stock_available: variant.stock_quantity,
         is_preorder: isPreorder,

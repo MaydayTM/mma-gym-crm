@@ -89,7 +89,8 @@ export const ShopProductDetail: React.FC = () => {
   const handleAddToCart = () => {
     if (!selectedVariant || !product) return
 
-    addItem(product, selectedVariant.id, purchaseMode === 'preorder')
+    addItem(product, selectedVariant.id, purchaseMode === 'preorder', quantity)
+    setQuantity(1) // Reset quantity after adding
     setShowSuccess(true)
     setTimeout(() => setShowSuccess(false), 3000)
   }
