@@ -1,34 +1,25 @@
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useCreateMember } from '../../hooks/useCreateMember'
+import { useDisciplines } from '../../hooks/useDisciplines'
 
 interface NewMemberFormProps {
   onSuccess: () => void
   onCancel: () => void
 }
 
-const DISCIPLINES = [
-  { value: 'bjj', label: 'BJJ' },
-  { value: 'mma', label: 'MMA' },
-  { value: 'kickboxing', label: 'Kickboxing' },
-  { value: 'wrestling', label: 'Wrestling' },
-  { value: 'muay_thai', label: 'Muay Thai' },
-]
-
-const BELT_COLORS = [
-  { value: 'white', label: 'Wit' },
-  { value: 'grey', label: 'Grijs' },
-  { value: 'yellow', label: 'Geel' },
-  { value: 'orange', label: 'Oranje' },
-  { value: 'green', label: 'Groen' },
-  { value: 'blue', label: 'Blauw' },
-  { value: 'purple', label: 'Paars' },
-  { value: 'brown', label: 'Bruin' },
-  { value: 'black', label: 'Zwart' },
+const ROLES = [
+  { value: 'fighter', label: 'Fighter' },
+  { value: 'coach', label: 'Coach' },
+  { value: 'coordinator', label: 'Coördinator' },
+  { value: 'medewerker', label: 'Medewerker' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'fan', label: 'Fan (geen gym toegang)' },
 ]
 
 export function NewMemberForm({ onSuccess, onCancel }: NewMemberFormProps) {
   const { mutate: createMember, isPending, error } = useCreateMember()
+  const { data: disciplines = [], isLoading: disciplinesLoading } = useDisciplines()
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -41,8 +32,7 @@ export function NewMemberForm({ onSuccess, onCancel }: NewMemberFormProps) {
     city: '',
     zip_code: '',
     disciplines: [] as string[],
-    belt_color: '',
-    belt_stripes: 0,
+    role: 'fighter',
     notes: '',
   })
 
@@ -61,11 +51,9 @@ export function NewMemberForm({ onSuccess, onCancel }: NewMemberFormProps) {
         city: formData.city || null,
         zip_code: formData.zip_code || null,
         disciplines: formData.disciplines.length > 0 ? formData.disciplines : null,
-        belt_color: formData.belt_color || null,
-        belt_stripes: formData.belt_stripes,
         notes: formData.notes || null,
         status: 'active',
-        role: 'fighter',
+        role: formData.role,
       },
       {
         onSuccess: () => {
@@ -273,64 +261,49 @@ export function NewMemberForm({ onSuccess, onCancel }: NewMemberFormProps) {
         </h3>
 
         <div>
-          <label className={labelClasses}>Disciplines</label>
-          <div className="flex flex-wrap gap-2">
-            {DISCIPLINES.map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                onClick={() => handleDisciplineToggle(d.value)}
-                className={`px-4 py-2 rounded-full text-[13px] border transition-all ${
-                  formData.disciplines.includes(d.value)
-                    ? 'bg-amber-300 border-amber-300 text-neutral-950 font-medium'
-                    : 'bg-neutral-900 border-neutral-700 text-neutral-100 hover:border-amber-300/70'
-                }`}
-              >
-                {d.label}
-              </button>
+          <label htmlFor="role" className={labelClasses}>
+            Rol
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className={inputClasses}
+          >
+            {ROLES.map((role) => (
+              <option key={role.value} value={role.value}>
+                {role.label}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="belt_color" className={labelClasses}>
-              Gordel kleur
-            </label>
-            <select
-              id="belt_color"
-              name="belt_color"
-              value={formData.belt_color}
-              onChange={handleChange}
-              className={inputClasses}
-            >
-              <option value="">Geen gordel</option>
-              {BELT_COLORS.map((belt) => (
-                <option key={belt.value} value={belt.value}>
-                  {belt.label}
-                </option>
+        <div>
+          <label className={labelClasses}>Disciplines</label>
+          {disciplinesLoading ? (
+            <div className="flex items-center gap-2 text-neutral-500 text-sm">
+              <Loader2 size={16} className="animate-spin" />
+              <span>Disciplines laden...</span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {disciplines.map((d) => (
+                <button
+                  key={d.slug}
+                  type="button"
+                  onClick={() => handleDisciplineToggle(d.slug)}
+                  className={`px-4 py-2 rounded-full text-[13px] border transition-all ${
+                    formData.disciplines.includes(d.slug)
+                      ? 'bg-amber-300 border-amber-300 text-neutral-950 font-medium'
+                      : 'bg-neutral-900 border-neutral-700 text-neutral-100 hover:border-amber-300/70'
+                  }`}
+                >
+                  {d.name}
+                </button>
               ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="belt_stripes" className={labelClasses}>
-              Strepen
-            </label>
-            <select
-              id="belt_stripes"
-              name="belt_stripes"
-              value={formData.belt_stripes}
-              onChange={handleChange}
-              className={inputClasses}
-            >
-              {[0, 1, 2, 3, 4].map((n) => (
-                <option key={n} value={n}>
-                  {n} {n === 1 ? 'streep' : 'strepen'}
-                </option>
-              ))}
-            </select>
-          </div>
+            </div>
+          )}
         </div>
 
         <div>

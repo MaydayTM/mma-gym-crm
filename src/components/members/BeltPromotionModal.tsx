@@ -19,10 +19,11 @@ interface BeltPromotionModalProps {
   }
 }
 
-// Belt order for BJJ/Luta Livre (kids/youth): wit-geel-oranje-groen-blauw-paars-bruin-zwart
-const BELT_ORDER = ['white', 'yellow', 'orange', 'green', 'blue', 'purple', 'brown', 'black']
+// Belt order for BJJ/Luta Livre (kids/youth): wit-grijs-geel-oranje-groen-blauw-paars-bruin-zwart
+const BELT_ORDER = ['white', 'grey', 'yellow', 'orange', 'green', 'blue', 'purple', 'brown', 'black']
 const BELT_LABELS: Record<string, string> = {
   white: 'Wit',
+  grey: 'Grijs',
   yellow: 'Geel',
   orange: 'Oranje',
   green: 'Groen',
@@ -79,9 +80,11 @@ export function BeltPromotionModal({
 
   const isBlackBelt = toBelt === 'black'
   const currentBeltIndex = BELT_ORDER.indexOf(currentBelt.belt_color)
+  const newBeltIndex = BELT_ORDER.indexOf(toBelt)
+  const isDemotion = newBeltIndex < currentBeltIndex
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Gordel Promotie" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Gordel Aanpassen" size="md">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Member info */}
         <div className="p-4 bg-white/5 rounded-xl">
@@ -118,7 +121,7 @@ export function BeltPromotionModal({
               }}
               className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
             >
-              {BELT_ORDER.slice(currentBeltIndex).map((belt) => (
+              {BELT_ORDER.map((belt) => (
                 <option key={belt} value={belt}>
                   {BELT_LABELS[belt]}
                 </option>
@@ -196,6 +199,15 @@ export function BeltPromotionModal({
           />
         </div>
 
+        {/* Demotion warning */}
+        {isDemotion && (
+          <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <p className="text-[14px] text-red-400">
+              ⚠️ Let op: Je bent een gordel aan het <strong>degraderen</strong> (van {BELT_LABELS[currentBelt.belt_color]} naar {BELT_LABELS[toBelt]}).
+            </p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-2">
           <button
@@ -209,10 +221,14 @@ export function BeltPromotionModal({
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex items-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium hover:bg-amber-200 transition disabled:opacity-50"
+            className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-[15px] font-medium transition disabled:opacity-50 ${
+              isDemotion
+                ? 'bg-red-500 text-white hover:bg-red-400'
+                : 'bg-amber-300 text-neutral-950 hover:bg-amber-200'
+            }`}
           >
             {isPending && <Loader2 size={18} className="animate-spin" />}
-            {isPending ? 'Opslaan...' : 'Promotie Registreren'}
+            {isPending ? 'Opslaan...' : isDemotion ? 'Degradatie Bevestigen' : 'Promotie Registreren'}
           </button>
         </div>
       </form>

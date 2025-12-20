@@ -12,6 +12,7 @@ interface BeltProgressCardProps {
 
 const BELT_COLORS: Record<string, string> = {
   white: 'bg-white',
+  grey: 'bg-gray-400',
   yellow: 'bg-yellow-400',
   orange: 'bg-orange-500',
   green: 'bg-green-500',
@@ -21,8 +22,8 @@ const BELT_COLORS: Record<string, string> = {
   black: 'bg-black',
 }
 
-// Belt order for BJJ/Luta Livre (kids/youth): wit-geel-oranje-groen-blauw-paars-bruin-zwart
-const BELT_ORDER = ['white', 'yellow', 'orange', 'green', 'blue', 'purple', 'brown', 'black']
+// Belt order for BJJ/Luta Livre (kids/youth): wit-grijs-geel-oranje-groen-blauw-paars-bruin-zwart
+const BELT_ORDER = ['white', 'grey', 'yellow', 'orange', 'green', 'blue', 'purple', 'brown', 'black']
 
 export function BeltProgressCard({ memberId, memberName }: BeltProgressCardProps) {
   const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false)
@@ -125,7 +126,7 @@ export function BeltProgressCard({ memberId, memberName }: BeltProgressCardProps
                         onClick={() => handleOpenPromotion(belt.discipline_id)}
                         className="inline-flex items-center gap-1 text-[12px] text-amber-300 hover:text-amber-200 transition px-2 py-1 rounded-lg hover:bg-amber-500/10"
                       >
-                        Promotie
+                        Aanpassen
                         <ChevronRight size={14} strokeWidth={1.5} />
                       </button>
                     </div>

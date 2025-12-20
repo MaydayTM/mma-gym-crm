@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Loader2, Upload, Sparkles, X } from 'lucide-react'
 import { useUpdateMember } from '../../hooks/useUpdateMember'
 import { useUploadProfilePicture } from '../../hooks/useUploadProfilePicture'
+import { useDisciplines } from '../../hooks/useDisciplines'
 import type { Member } from '../../hooks/useMembers'
 
 interface EditMemberFormProps {
@@ -10,24 +11,13 @@ interface EditMemberFormProps {
   onCancel: () => void
 }
 
-const DISCIPLINES = [
-  { value: 'bjj', label: 'BJJ' },
-  { value: 'mma', label: 'MMA' },
-  { value: 'kickboxing', label: 'Kickboxing' },
-  { value: 'wrestling', label: 'Wrestling' },
-  { value: 'muay_thai', label: 'Muay Thai' },
-]
-
-const BELT_COLORS = [
-  { value: 'white', label: 'Wit' },
-  { value: 'grey', label: 'Grijs' },
-  { value: 'yellow', label: 'Geel' },
-  { value: 'orange', label: 'Oranje' },
-  { value: 'green', label: 'Groen' },
-  { value: 'blue', label: 'Blauw' },
-  { value: 'purple', label: 'Paars' },
-  { value: 'brown', label: 'Bruin' },
-  { value: 'black', label: 'Zwart' },
+const ROLES = [
+  { value: 'fighter', label: 'Fighter' },
+  { value: 'coach', label: 'Coach' },
+  { value: 'coordinator', label: 'Coördinator' },
+  { value: 'medewerker', label: 'Medewerker' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'fan', label: 'Fan (geen gym toegang)' },
 ]
 
 const STATUSES = [
@@ -40,6 +30,7 @@ const STATUSES = [
 export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormProps) {
   const { mutate: updateMember, isPending, error } = useUpdateMember()
   const { upload: uploadPicture, isUploading, progress } = useUploadProfilePicture()
+  const { data: disciplines = [], isLoading: disciplinesLoading } = useDisciplines()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
@@ -58,8 +49,7 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
     city: member.city ?? '',
     zip_code: member.zip_code ?? '',
     disciplines: member.disciplines ?? [],
-    belt_color: member.belt_color ?? '',
-    belt_stripes: member.belt_stripes ?? 0,
+    role: member.role ?? 'fighter',
     status: member.status ?? 'active',
     notes: member.notes ?? '',
   })
@@ -76,8 +66,7 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
       city: member.city ?? '',
       zip_code: member.zip_code ?? '',
       disciplines: member.disciplines ?? [],
-      belt_color: member.belt_color ?? '',
-      belt_stripes: member.belt_stripes ?? 0,
+      role: member.role ?? 'fighter',
       status: member.status ?? 'active',
       notes: member.notes ?? '',
     })
@@ -100,8 +89,7 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
           city: formData.city || null,
           zip_code: formData.zip_code || null,
           disciplines: formData.disciplines.length > 0 ? formData.disciplines : null,
-          belt_color: formData.belt_color || null,
-          belt_stripes: formData.belt_stripes,
+          role: formData.role,
           status: formData.status,
           notes: formData.notes || null,
         },
@@ -453,64 +441,49 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
         </h3>
 
         <div>
-          <label className={labelClasses}>Disciplines</label>
-          <div className="flex flex-wrap gap-2">
-            {DISCIPLINES.map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                onClick={() => handleDisciplineToggle(d.value)}
-                className={`px-4 py-2 rounded-full text-[13px] border transition-all ${
-                  formData.disciplines.includes(d.value)
-                    ? 'bg-amber-300 border-amber-300 text-neutral-950 font-medium'
-                    : 'bg-neutral-900 border-neutral-700 text-neutral-100 hover:border-amber-300/70'
-                }`}
-              >
-                {d.label}
-              </button>
+          <label htmlFor="role" className={labelClasses}>
+            Rol
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className={inputClasses}
+          >
+            {ROLES.map((role) => (
+              <option key={role.value} value={role.value}>
+                {role.label}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="belt_color" className={labelClasses}>
-              Gordel kleur
-            </label>
-            <select
-              id="belt_color"
-              name="belt_color"
-              value={formData.belt_color}
-              onChange={handleChange}
-              className={inputClasses}
-            >
-              <option value="">Geen gordel</option>
-              {BELT_COLORS.map((belt) => (
-                <option key={belt.value} value={belt.value}>
-                  {belt.label}
-                </option>
+        <div>
+          <label className={labelClasses}>Disciplines</label>
+          {disciplinesLoading ? (
+            <div className="flex items-center gap-2 text-neutral-500 text-sm">
+              <Loader2 size={16} className="animate-spin" />
+              <span>Disciplines laden...</span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {disciplines.map((d) => (
+                <button
+                  key={d.slug}
+                  type="button"
+                  onClick={() => handleDisciplineToggle(d.slug)}
+                  className={`px-4 py-2 rounded-full text-[13px] border transition-all ${
+                    formData.disciplines.includes(d.slug)
+                      ? 'bg-amber-300 border-amber-300 text-neutral-950 font-medium'
+                      : 'bg-neutral-900 border-neutral-700 text-neutral-100 hover:border-amber-300/70'
+                  }`}
+                >
+                  {d.name}
+                </button>
               ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="belt_stripes" className={labelClasses}>
-              Strepen
-            </label>
-            <select
-              id="belt_stripes"
-              name="belt_stripes"
-              value={formData.belt_stripes}
-              onChange={handleChange}
-              className={inputClasses}
-            >
-              {[0, 1, 2, 3, 4].map((n) => (
-                <option key={n} value={n}>
-                  {n} {n === 1 ? 'streep' : 'strepen'}
-                </option>
-              ))}
-            </select>
-          </div>
+            </div>
+          )}
         </div>
 
         <div>
