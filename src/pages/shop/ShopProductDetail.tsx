@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ShoppingBag, ArrowLeft, Clock, Check, Truck, Store } from 'lucide-react'
+import { ShoppingBag, ArrowLeft, Clock, Check, Truck, Store, X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
 import { useProduct, useShopCart } from '../../hooks/shop'
 import { VariantSelector } from '../../components/shop/public/VariantSelector'
 import { ShopCart } from '../../components/shop/public/ShopCart'
@@ -19,6 +19,8 @@ export const ShopProductDetail: React.FC = () => {
   const [quantity, setQuantity] = useState(1)
   const [showSuccess, setShowSuccess] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
 
   // Compute derived values using useMemo to avoid recalculation issues
   const { selectedVariant, effectivePrice, preorderPrice, showPresale, allowPreorder, canBuyStock, canBuyPreorder } = useMemo(() => {
@@ -85,6 +87,19 @@ export const ShopProductDetail: React.FC = () => {
   const finalPrice = selectedVariant
     ? (purchaseMode === 'preorder' ? preorderPrice : effectivePrice) + selectedVariant.price_adjustment
     : purchaseMode === 'preorder' ? preorderPrice : effectivePrice
+
+  // Combine featured image with gallery images
+  const allImages = useMemo(() => {
+    if (!product) return []
+    const images: string[] = []
+    if (product.featured_image) images.push(product.featured_image)
+    if (product.images) {
+      product.images.forEach(img => {
+        if (!images.includes(img)) images.push(img)
+      })
+    }
+    return images
+  }, [product])
 
   const handleAddToCart = () => {
     if (!selectedVariant || !product) return
@@ -153,15 +168,27 @@ export const ShopProductDetail: React.FC = () => {
       {/* Product Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8 bg-neutral-950 rounded-2xl shadow-sm p-6">
-          {/* Image */}
+          {/* Image Gallery */}
           <div>
-            <div className="aspect-square bg-neutral-800 rounded-xl overflow-hidden">
-              {product.featured_image || product.images[0] ? (
-                <img
-                  src={product.featured_image || product.images[0]}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+            {/* Main Image - Clickable */}
+            <div
+              className="aspect-square bg-neutral-800 rounded-xl overflow-hidden cursor-zoom-in relative group"
+              onClick={() => setIsLightboxOpen(true)}
+            >
+              {allImages.length > 0 ? (
+                <>
+                  <img
+                    src={allImages[selectedImageIndex]}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  {/* Zoom indicator */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full p-3">
+                      <ZoomIn className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                </>
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-neutral-600">
                   Geen afbeelding
@@ -170,12 +197,17 @@ export const ShopProductDetail: React.FC = () => {
             </div>
 
             {/* Thumbnail gallery */}
-            {product.images.length > 1 && (
+            {allImages.length > 1 && (
               <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-                {product.images.map((img, idx) => (
+                {allImages.map((img, idx) => (
                   <button
                     key={idx}
-                    className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 border-transparent hover:border-amber-400 transition"
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                      selectedImageIndex === idx
+                        ? 'border-amber-400'
+                        : 'border-transparent hover:border-neutral-600'
+                    }`}
                   >
                     <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
@@ -384,6 +416,89 @@ export const ShopProductDetail: React.FC = () => {
 
       {/* Shopping Cart Sidebar */}
       <ShopCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      {/* Lightbox */}
+      {isLightboxOpen && allImages.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-10"
+          >
+            <X className="w-8 h-8" />
+          </button>
+
+          {/* Previous button */}
+          {allImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedImageIndex(prev => (prev === 0 ? allImages.length - 1 : prev - 1))
+              }}
+              className="absolute left-4 p-2 text-white/70 hover:text-white transition-colors z-10"
+            >
+              <ChevronLeft className="w-10 h-10" />
+            </button>
+          )}
+
+          {/* Main image */}
+          <div
+            className="max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={allImages[selectedImageIndex]}
+              alt={product?.name}
+              className="max-w-full max-h-[90vh] object-contain"
+            />
+          </div>
+
+          {/* Next button */}
+          {allImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedImageIndex(prev => (prev === allImages.length - 1 ? 0 : prev + 1))
+              }}
+              className="absolute right-4 p-2 text-white/70 hover:text-white transition-colors z-10"
+            >
+              <ChevronRight className="w-10 h-10" />
+            </button>
+          )}
+
+          {/* Image counter */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">
+              {selectedImageIndex + 1} / {allImages.length}
+            </div>
+          )}
+
+          {/* Thumbnail strip */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-2">
+              {allImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedImageIndex(idx)
+                  }}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
+                    selectedImageIndex === idx
+                      ? 'border-amber-400'
+                      : 'border-transparent opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
