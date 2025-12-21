@@ -3,6 +3,10 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { CheckCircle, XCircle, Loader2, Package, Truck, Store } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
+// Check if we're on the shop subdomain
+const isShopSubdomain = window.location.hostname.startsWith('shop.') ||
+  window.location.hostname === 'shop.mmagym.be'
+
 interface OrderDetails {
   order_number: string
   customer_name: string
@@ -71,7 +75,7 @@ export function ShopOrderComplete() {
           <h1 className="text-2xl font-bold text-white mb-2">Oeps!</h1>
           <p className="text-neutral-400 mb-6">{error || 'Bestelling niet gevonden'}</p>
           <Link
-            to="/shop/products"
+            to={isShopSubdomain ? '/products' : '/shop/products'}
             className="px-6 py-3 bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold rounded-lg transition inline-block"
           >
             Terug naar shop
@@ -194,7 +198,7 @@ export function ShopOrderComplete() {
         {/* Action Buttons */}
         <div className="space-y-3">
           <Link
-            to="/shop/products"
+            to={isShopSubdomain ? '/products' : '/shop/products'}
             className="block w-full px-6 py-3 bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold rounded-lg transition"
           >
             Verder winkelen
@@ -202,7 +206,7 @@ export function ShopOrderComplete() {
 
           {isCancelled && (
             <Link
-              to="/shop/checkout"
+              to={isShopSubdomain ? '/checkout' : '/shop/checkout'}
               className="block w-full px-6 py-3 border border-neutral-600 text-white font-medium rounded-lg hover:bg-neutral-800 transition"
             >
               Opnieuw proberen

@@ -12,6 +12,10 @@ interface ShopCartProps {
   shippingConfig?: ShippingConfig
 }
 
+// Check if we're on the shop subdomain
+const isShopSubdomain = window.location.hostname.startsWith('shop.') ||
+  window.location.hostname === 'shop.mmagym.be'
+
 export const ShopCart: React.FC<ShopCartProps> = ({
   isOpen,
   onClose,
@@ -47,7 +51,8 @@ export const ShopCart: React.FC<ShopCartProps> = ({
 
   const handleCheckout = () => {
     onClose()
-    navigate('/shop/checkout')
+    // Use different path based on subdomain
+    navigate(isShopSubdomain ? '/checkout' : '/shop/checkout')
   }
 
   if (!isOpen) return null

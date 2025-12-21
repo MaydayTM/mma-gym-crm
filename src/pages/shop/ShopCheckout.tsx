@@ -7,6 +7,10 @@ import { DEFAULT_SHIPPING_CONFIG, calculateShipping } from '../../types/shop'
 const SHOP_SUPABASE_URL = import.meta.env.VITE_SHOP_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL
 const SHOP_TENANT_ID = import.meta.env.VITE_SHOP_TENANT_ID
 
+// Check if we're on the shop subdomain
+const isShopSubdomain = window.location.hostname.startsWith('shop.') ||
+  window.location.hostname === 'shop.mmagym.be'
+
 export function ShopCheckout() {
   const { cart, setDeliveryMethod, clearCart } = useShopCart()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -76,7 +80,7 @@ export function ShopCheckout() {
           delivery_method: cart.delivery_method,
           shipping_address: shippingAddress,
           notes: formData.notes || undefined,
-          redirect_url: `${window.location.origin}/shop/order-complete`,
+          redirect_url: `${window.location.origin}${isShopSubdomain ? '/order-complete' : '/shop/order-complete'}`,
         }),
       })
 
@@ -112,7 +116,7 @@ export function ShopCheckout() {
           <h1 className="text-2xl font-bold text-white mb-2">Je winkelwagen is leeg</h1>
           <p className="text-neutral-400 mb-6">Voeg eerst producten toe aan je winkelwagen</p>
           <Link
-            to="/shop/products"
+            to={isShopSubdomain ? '/products' : '/shop/products'}
             className="px-6 py-3 bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold rounded-lg transition inline-block"
           >
             Naar de shop
@@ -141,7 +145,7 @@ export function ShopCheckout() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            to="/shop/products"
+            to={isShopSubdomain ? '/products' : '/shop/products'}
             className="inline-flex items-center gap-2 text-neutral-400 hover:text-amber-400 mb-4"
           >
             <ArrowLeft size={20} />
