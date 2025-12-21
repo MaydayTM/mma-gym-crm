@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ExternalLink,
   Palette,
+  Monitor,
   type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
@@ -162,6 +163,12 @@ export function Sidebar() {
           },
         ]
         : []),
+      // GymScreen (core module - always visible)
+      {
+        name: 'GymScreen',
+        href: '/gymscreen',
+        icon: Monitor,
+      },
       // Creative Fighter Studio (external link - always visible)
       {
         name: 'Fighter Studio',

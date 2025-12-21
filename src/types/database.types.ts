@@ -85,6 +85,20 @@ export type Database = {
             foreignKeyName: "activity_log_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -93,6 +107,20 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -208,6 +236,20 @@ export type Database = {
             foreignKeyName: "belt_history_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "belt_history_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "belt_history_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -216,6 +258,20 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "belt_history_promoted_by_fkey"
+            columns: ["promoted_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "belt_history_promoted_by_fkey"
+            columns: ["promoted_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -289,6 +345,20 @@ export type Database = {
             foreignKeyName: "checkins_coach_id_fkey"
             columns: ["coach_id"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -304,6 +374,20 @@ export type Database = {
             columns: ["discipline_id"]
             isOneToOne: false
             referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -444,6 +528,20 @@ export type Database = {
             foreignKeyName: "checkout_sessions_created_member_id_fkey"
             columns: ["created_member_id"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_created_member_id_fkey"
+            columns: ["created_member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_sessions_created_member_id_fkey"
+            columns: ["created_member_id"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -537,6 +635,20 @@ export type Database = {
             foreignKeyName: "class_instances_coach_id_fkey"
             columns: ["coach_id"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_instances_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_instances_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -599,6 +711,20 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "classes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "classes_coach_id_fkey"
             columns: ["coach_id"]
@@ -1101,6 +1227,20 @@ export type Database = {
             foreignKeyName: "family_members_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: true
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -1108,6 +1248,146 @@ export type Database = {
             foreignKeyName: "family_members_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: true
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gymscreen_settings: {
+        Row: {
+          api_key: string | null
+          birthday_display_days: number | null
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          section_order: string[] | null
+          section_rotation_interval: number | null
+          show_announcements: boolean | null
+          show_belt_wall: boolean | null
+          show_birthdays: boolean | null
+          show_clock: boolean | null
+          show_logo: boolean | null
+          show_shop_banners: boolean | null
+          show_slideshow: boolean | null
+          slideshow_interval: number | null
+          tenant_id: string | null
+          theme: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          birthday_display_days?: number | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          section_order?: string[] | null
+          section_rotation_interval?: number | null
+          show_announcements?: boolean | null
+          show_belt_wall?: boolean | null
+          show_birthdays?: boolean | null
+          show_clock?: boolean | null
+          show_logo?: boolean | null
+          show_shop_banners?: boolean | null
+          show_slideshow?: boolean | null
+          slideshow_interval?: number | null
+          tenant_id?: string | null
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          birthday_display_days?: number | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          section_order?: string[] | null
+          section_rotation_interval?: number | null
+          show_announcements?: boolean | null
+          show_belt_wall?: boolean | null
+          show_birthdays?: boolean | null
+          show_clock?: boolean | null
+          show_logo?: boolean | null
+          show_shop_banners?: boolean | null
+          show_slideshow?: boolean | null
+          slideshow_interval?: number | null
+          tenant_id?: string | null
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      gymscreen_slides: {
+        Row: {
+          caption: string | null
+          category: string | null
+          created_at: string | null
+          display_duration: number | null
+          end_date: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          sort_order: number | null
+          start_date: string | null
+          title: string | null
+          updated_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          caption?: string | null
+          category?: string | null
+          created_at?: string | null
+          display_duration?: number | null
+          end_date?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          start_date?: string | null
+          title?: string | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          caption?: string | null
+          category?: string | null
+          created_at?: string | null
+          display_duration?: number | null
+          end_date?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          start_date?: string | null
+          title?: string | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gymscreen_slides_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gymscreen_slides_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gymscreen_slides_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gymscreen_slides_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
             referencedRelation: "members"
             referencedColumns: ["id"]
           },
@@ -1248,6 +1528,20 @@ export type Database = {
             foreignKeyName: "leads_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -1256,6 +1550,20 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_converted_member_id_fkey"
+            columns: ["converted_member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_converted_member_id_fkey"
+            columns: ["converted_member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -1311,6 +1619,20 @@ export type Database = {
             columns: ["discipline_id"]
             isOneToOne: false
             referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_belts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_belts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -1463,6 +1785,20 @@ export type Database = {
             columns: ["age_group_id"]
             isOneToOne: false
             referencedRelation: "age_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -2154,6 +2490,20 @@ export type Database = {
             foreignKeyName: "reservations_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -2216,6 +2566,20 @@ export type Database = {
           subscription_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "revenue_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "revenue_member_id_fkey"
             columns: ["member_id"]
@@ -2728,6 +3092,20 @@ export type Database = {
             foreignKeyName: "subscriptions_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -2809,6 +3187,20 @@ export type Database = {
             foreignKeyName: "tasks_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
             referencedRelation: "member_retention_status"
             referencedColumns: ["id"]
           },
@@ -2817,6 +3209,20 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -2838,6 +3244,20 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -3179,6 +3599,66 @@ export type Database = {
         }
         Relationships: []
       }
+      gymscreen_birthdays_today: {
+        Row: {
+          age: number | null
+          birth_date: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          profile_picture_url: string | null
+        }
+        Insert: {
+          age?: never
+          birth_date?: string | null
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          profile_picture_url?: string | null
+        }
+        Update: {
+          age?: never
+          birth_date?: string | null
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          profile_picture_url?: string | null
+        }
+        Relationships: []
+      }
+      gymscreen_birthdays_upcoming: {
+        Row: {
+          age: number | null
+          birth_date: string | null
+          birthday_display: string | null
+          days_until_birthday: number | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          profile_picture_url: string | null
+        }
+        Insert: {
+          age?: never
+          birth_date?: string | null
+          birthday_display?: never
+          days_until_birthday?: never
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          profile_picture_url?: string | null
+        }
+        Update: {
+          age?: never
+          birth_date?: string | null
+          birthday_display?: never
+          days_until_birthday?: never
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          profile_picture_url?: string | null
+        }
+        Relationships: []
+      }
       member_belt_summary: {
         Row: {
           belt_color: string | null
@@ -3200,6 +3680,20 @@ export type Database = {
             columns: ["discipline_id"]
             isOneToOne: false
             referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_belts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_belts_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
             referencedColumns: ["id"]
           },
           {
@@ -3262,6 +3756,20 @@ export type Database = {
           urgent_count: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_assigned_to_fkey"
             columns: ["assigned_to"]
@@ -3358,6 +3866,29 @@ export type Database = {
       }
       generate_order_number: { Args: { p_tenant_id: string }; Returns: string }
       generate_shop_order_number: { Args: never; Returns: string }
+      get_active_slides: {
+        Args: never
+        Returns: {
+          caption: string
+          category: string
+          display_duration: number
+          id: string
+          image_url: string
+          title: string
+        }[]
+      }
+      get_gymscreen_birthdays: {
+        Args: { p_days_ahead?: number }
+        Returns: {
+          age: number
+          birthday_display: string
+          first_name: string
+          id: string
+          is_today: boolean
+          last_name: string
+          profile_picture_url: string
+        }[]
+      }
       get_my_role: { Args: never; Returns: string }
       get_tenant_modules: {
         Args: { p_tenant_id: string }
