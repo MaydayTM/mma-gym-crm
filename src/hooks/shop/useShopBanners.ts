@@ -67,17 +67,29 @@ export function useShopBanners(type?: BannerType) {
         return []
       }
 
+      // Debug: log raw data
+      console.log('[useShopBanners] Raw data from DB:', data)
+
       // Filter by scheduling client-side (simpler and more reliable)
       const now = new Date()
       const filtered = (data || []).filter(banner => {
         const startsAt = banner.starts_at ? new Date(banner.starts_at) : null
         const endsAt = banner.ends_at ? new Date(banner.ends_at) : null
 
-        // If starts_at is set and is in the future, exclude
-        if (startsAt && startsAt > now) return false
-        // If ends_at is set and is in the past, exclude
-        if (endsAt && endsAt < now) return false
+        console.log(`[useShopBanners] Banner "${banner.title}" - starts_at: ${banner.starts_at} (parsed: ${startsAt}), ends_at: ${banner.ends_at} (parsed: ${endsAt}), now: ${now}`)
 
+        // If starts_at is set and is in the future, exclude
+        if (startsAt && startsAt > now) {
+          console.log(`[useShopBanners] Excluding "${banner.title}" - starts in future`)
+          return false
+        }
+        // If ends_at is set and is in the past, exclude
+        if (endsAt && endsAt < now) {
+          console.log(`[useShopBanners] Excluding "${banner.title}" - ended in past`)
+          return false
+        }
+
+        console.log(`[useShopBanners] Including "${banner.title}"`)
         return true
       })
 
