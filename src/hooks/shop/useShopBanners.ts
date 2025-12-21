@@ -60,11 +60,6 @@ export function useShopBanners(type?: BannerType) {
         query = query.eq('type', type)
       }
 
-      // Filter by scheduling (only show banners within valid date range)
-      const now = new Date().toISOString()
-      query = query.or(`starts_at.is.null,starts_at.lte.${now}`)
-      query = query.or(`ends_at.is.null,ends_at.gte.${now}`)
-
       const { data, error } = await query
 
       if (error) {
@@ -72,7 +67,21 @@ export function useShopBanners(type?: BannerType) {
         return []
       }
 
-      return (data || []) as ShopBanner[]
+      // Filter by scheduling client-side (simpler and more reliable)
+      const now = new Date()
+      const filtered = (data || []).filter(banner => {
+        const startsAt = banner.starts_at ? new Date(banner.starts_at) : null
+        const endsAt = banner.ends_at ? new Date(banner.ends_at) : null
+
+        // If starts_at is set and is in the future, exclude
+        if (startsAt && startsAt > now) return false
+        // If ends_at is set and is in the past, exclude
+        if (endsAt && endsAt < now) return false
+
+        return true
+      })
+
+      return filtered as ShopBanner[]
     },
     staleTime: 1000 * 60 * 5, // 5 minutes cache
   })
