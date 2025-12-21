@@ -5,6 +5,7 @@ import { useShopCart } from '../../hooks/shop/useShopCart'
 import { DEFAULT_SHIPPING_CONFIG, calculateShipping } from '../../types/shop'
 
 const SHOP_SUPABASE_URL = import.meta.env.VITE_SHOP_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL
+const SHOP_SUPABASE_ANON_KEY = import.meta.env.VITE_SHOP_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
 const SHOP_TENANT_ID = import.meta.env.VITE_SHOP_TENANT_ID
 
 // Check if we're on the shop subdomain
@@ -60,6 +61,8 @@ export function ShopCheckout() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SHOP_SUPABASE_ANON_KEY}`,
+          'apikey': SHOP_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           tenant_id: SHOP_TENANT_ID,
