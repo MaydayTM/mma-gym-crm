@@ -14,6 +14,7 @@ const DISCIPLINES = [
   { value: 'kickboxing', label: 'Kickboxing' },
   { value: 'wrestling', label: 'Wrestling' },
   { value: 'muay_thai', label: 'Muay Thai' },
+  { value: 'boksen', label: 'Boksen' },
   { value: 'kids', label: 'Jeugdlessen' },
 ]
 
@@ -205,11 +206,10 @@ export function NewLeadForm({ onSuccess, onCancel }: NewLeadFormProps) {
                 key={d.value}
                 type="button"
                 onClick={() => handleDisciplineToggle(d.value)}
-                className={`px-4 py-2 rounded-full text-[13px] border transition-all ${
-                  formData.interested_in.includes(d.value)
+                className={`px-4 py-2 rounded-full text-[13px] border transition-all ${formData.interested_in.includes(d.value)
                     ? 'bg-amber-300 border-amber-300 text-neutral-950 font-medium'
                     : 'bg-neutral-900 border-neutral-700 text-neutral-100 hover:border-amber-300/70'
-                }`}
+                  }`}
               >
                 {d.label}
               </button>

@@ -1,8 +1,10 @@
 // supabase/functions/create-shop-payment/index.ts
-// Edge function to create Mollie payment for shop orders
+// Edge function to create Stripe Checkout session for shop orders
+// Note: Shop uses Stripe (BV), Memberships use Mollie (VZW)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import Stripe from "https://esm.sh/stripe@14.14.0?target=deno"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,6 +50,16 @@ serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')
+
+    if (!STRIPE_SECRET_KEY) {
+      throw new Error('Stripe is not configured')
+    }
+
+    const stripe = new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
+      httpClient: Stripe.createFetchHttpClient(),
+    })
 
     // Use service role to bypass RLS for order creation
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -69,21 +81,6 @@ serve(async (req) => {
     if (!tenant_id || !items?.length || !customer_name || !customer_email) {
       throw new Error('Missing required fields')
     }
-
-    // Get tenant's Mollie API key from payment config
-    const { data: paymentConfig, error: configError } = await supabase
-      .from('tenant_payment_configs')
-      .select('mollie_api_key, is_test_mode')
-      .eq('tenant_id', tenant_id)
-      .eq('provider', 'mollie')
-      .eq('is_active', true)
-      .single()
-
-    if (configError || !paymentConfig?.mollie_api_key) {
-      throw new Error('Mollie payment not configured for this tenant')
-    }
-
-    const MOLLIE_API_KEY = paymentConfig.mollie_api_key
 
     // Get shipping settings for this tenant
     const { data: shippingSettings } = await supabase
@@ -137,7 +134,6 @@ serve(async (req) => {
     // Create order items
     const orderItems = items.map(item => ({
       order_id: order.id,
-      tenant_id,
       product_variant_id: item.variant_id,
       product_name: item.product_name,
       variant_name: item.variant_name,
@@ -149,70 +145,72 @@ serve(async (req) => {
     }))
 
     const { error: itemsError } = await supabase
-      .from('order_items')
+      .from('shop_order_items')
       .insert(orderItems)
 
     if (itemsError) {
-      console.error('Failed to create order items:', itemsError)
+      console.error('Failed to create order items:', JSON.stringify(itemsError))
+      console.error('Order items data:', JSON.stringify(orderItems))
       // Rollback order
       await supabase.from('shop_orders').delete().eq('id', order.id)
-      throw new Error('Failed to create order items')
+      throw new Error(`Failed to create order items: ${itemsError.message}`)
     }
 
-    // Build payment description
-    const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
-    const description = `Reconnect Shop - ${orderNumber} (${itemCount} ${itemCount === 1 ? 'item' : 'items'})`
-
-    // Webhook URL for Mollie to call after payment
-    const webhookUrl = `${SUPABASE_URL}/functions/v1/shop-payment-webhook`
-
-    // Create Mollie payment
-    const mollieResponse = await fetch('https://api.mollie.com/v2/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${MOLLIE_API_KEY}`,
-        'Content-Type': 'application/json',
+    // Build Stripe line items
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(item => ({
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: item.product_name,
+          description: item.variant_name !== 'Default' ? item.variant_name : undefined,
+        },
+        unit_amount: Math.round(item.price * 100), // Stripe uses cents
       },
-      body: JSON.stringify({
-        amount: {
-          currency: 'EUR',
-          value: totalAmount.toFixed(2),
+      quantity: item.quantity,
+    }))
+
+    // Add shipping as line item if applicable
+    if (shippingCost > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Verzendkosten',
+          },
+          unit_amount: Math.round(shippingCost * 100),
         },
-        description,
-        redirectUrl: `${redirect_url}?order=${orderNumber}`,
-        webhookUrl,
-        metadata: {
-          order_id: order.id,
-          order_number: orderNumber,
-          tenant_id,
-        },
-      }),
+        quantity: 1,
+      })
+    }
+
+    // Create Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card', 'bancontact', 'ideal'],
+      mode: 'payment',
+      line_items: lineItems,
+      customer_email,
+      metadata: {
+        order_id: order.id,
+        order_number: orderNumber,
+        tenant_id,
+      },
+      success_url: `${redirect_url}?order=${orderNumber}&status=success`,
+      cancel_url: `${redirect_url}?order=${orderNumber}&status=cancelled`,
     })
 
-    if (!mollieResponse.ok) {
-      const errorData = await mollieResponse.json()
-      console.error('Mollie API error:', errorData)
-      // Rollback order
-      await supabase.from('order_items').delete().eq('order_id', order.id)
-      await supabase.from('shop_orders').delete().eq('id', order.id)
-      throw new Error(`Mollie API error: ${errorData.detail || 'Unknown error'}`)
-    }
-
-    const molliePayment = await mollieResponse.json()
-
-    // Update order with Mollie payment ID
+    // Update order with Stripe session ID
     await supabase
       .from('shop_orders')
       .update({
-        mollie_payment_id: molliePayment.id,
+        stripe_session_id: session.id,
       })
       .eq('id', order.id)
 
     // Return checkout URL for redirect
     return new Response(
       JSON.stringify({
-        checkout_url: molliePayment._links.checkout.href,
-        payment_id: molliePayment.id,
+        checkout_url: session.url,
+        session_id: session.id,
         order_number: orderNumber,
         order_id: order.id,
       }),

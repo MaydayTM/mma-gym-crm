@@ -27,6 +27,7 @@ const DISCIPLINES = [
   { value: 'kickboxing', label: 'Kickboxing' },
   { value: 'wrestling', label: 'Wrestling' },
   { value: 'muay_thai', label: 'Muay Thai' },
+  { value: 'boksen', label: 'Boksen' },
   { value: 'kids', label: 'Jeugdlessen' },
 ]
 
@@ -163,11 +164,10 @@ export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps)
                   key={status.value}
                   type="button"
                   onClick={() => handleStatusChange(status.value)}
-                  className={`px-3 py-1.5 rounded-full text-[12px] border transition-all ${
-                    formData.status === status.value
+                  className={`px-3 py-1.5 rounded-full text-[12px] border transition-all ${formData.status === status.value
                       ? `bg-${status.color}-500/20 border-${status.color}-500/50 text-${status.color}-300`
                       : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-600'
-                  }`}
+                    }`}
                 >
                   {status.label}
                 </button>
@@ -285,11 +285,10 @@ export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps)
                     key={d.value}
                     type="button"
                     onClick={() => handleDisciplineToggle(d.value)}
-                    className={`px-3 py-1.5 rounded-full text-[12px] border transition-all ${
-                      formData.interested_in.includes(d.value)
+                    className={`px-3 py-1.5 rounded-full text-[12px] border transition-all ${formData.interested_in.includes(d.value)
                         ? 'bg-amber-300 border-amber-300 text-neutral-950 font-medium'
                         : 'bg-neutral-900 border-neutral-700 text-neutral-100 hover:border-amber-300/70'
-                    }`}
+                      }`}
                   >
                     {d.label}
                   </button>
