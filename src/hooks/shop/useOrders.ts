@@ -17,7 +17,7 @@ export const useOrders = (filters: OrderFilters = {}) => {
         .from('shop_orders')
         .select(`
           *,
-          items:shop_order_items(*)
+          items:shop_order_items!order_id(*)
         `)
         .eq('tenant_id', TENANT_ID)
         .order('created_at', { ascending: false });
