@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Plus, Loader2, Trash2 } from 'lucide-react'
+import { Plus, Loader2, Trash2, Filter } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { useClasses, useCreateClass, useCreateRecurringClass, useUpdateClass, useDeleteClass } from '../hooks/useClasses'
 import { useDisciplines } from '../hooks/useDisciplines'
 import { useMembers } from '../hooks/useMembers'
+import { useClassTracks } from '../hooks/useClassTracks'
+import { useRooms } from '../hooks/useRooms'
 
 const DAYS = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag']
 const DAYS_SHORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
@@ -13,6 +15,8 @@ type ClassWithRelations = {
   name: string
   discipline_id: string
   coach_id: string | null
+  track_id: string | null
+  room_id: string | null
   day_of_week: number
   start_time: string
   end_time: string
@@ -20,33 +24,65 @@ type ClassWithRelations = {
   room: string | null
   disciplines: { name: string; color: string; slug: string } | null
   coach: { first_name: string; last_name: string } | null
+  track: { id: string; name: string; color: string } | null
+  room_rel: { id: string; name: string; color: string } | null
 }
 
 export function Schedule() {
   const [isNewClassModalOpen, setIsNewClassModalOpen] = useState(false)
   const [editingClass, setEditingClass] = useState<ClassWithRelations | null>(null)
-  const { data: classes, isLoading } = useClasses()
+  const [filterRoom, setFilterRoom] = useState<string | null>(null)
 
-  // Group classes by day
-  const classesByDay = DAYS.map((_, dayIndex) =>
-    classes?.filter((c) => c.day_of_week === dayIndex) || []
-  )
+  const { data: classes, isLoading } = useClasses()
+  const { data: rooms } = useRooms()
+
+  // Filter classes by room if filter is active
+  const filteredClasses = filterRoom
+    ? classes?.filter((c) => c.room_id === filterRoom)
+    : classes
+
+  // Group classes by day and room
+  const getClassesForDayAndRoom = (dayIndex: number, roomId: string | null) => {
+    return filteredClasses
+      ?.filter((c) => c.day_of_week === dayIndex && c.room_id === roomId)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
+  }
+
+  const todayIndex = new Date().getDay()
 
   return (
-    <div className="space-y-6 max-w-[1600px]">
+    <div className="space-y-6 max-w-[1800px]">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-[30px] font-semibold text-neutral-50 tracking-tight">Rooster</h1>
           <p className="text-[14px] text-neutral-400 mt-1">Lesrooster en planning</p>
         </div>
-        <button
-          onClick={() => setIsNewClassModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
-        >
-          <Plus size={18} strokeWidth={1.5} />
-          <span>Nieuwe Les</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Room Filter */}
+          <div className="flex items-center gap-2 bg-neutral-900 rounded-full px-4 py-2 border border-neutral-800">
+            <Filter size={16} className="text-neutral-500" />
+            <select
+              value={filterRoom || ''}
+              onChange={(e) => setFilterRoom(e.target.value || null)}
+              className="bg-transparent text-[14px] text-neutral-300 focus:outline-none cursor-pointer"
+            >
+              <option value="">Alle zalen</option>
+              {rooms?.map((room) => (
+                <option key={room.id} value={room.id}>
+                  {room.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={() => setIsNewClassModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+          >
+            <Plus size={18} strokeWidth={1.5} />
+            <span>Nieuwe Les</span>
+          </button>
+        </div>
       </div>
 
       {/* Schedule Grid */}
@@ -63,59 +99,100 @@ export function Schedule() {
             '--border-radius-before': '24px',
           } as React.CSSProperties}
         >
-          {/* Day headers */}
+          {/* Day headers with room sub-headers */}
           <div className="grid grid-cols-7 border-b border-white/5">
             {DAYS.map((day, i) => (
               <div
                 key={day}
-                className={`p-4 text-center border-r border-white/5 last:border-r-0 ${
-                  i === new Date().getDay() ? 'bg-amber-500/10' : ''
+                className={`border-r border-white/5 last:border-r-0 ${
+                  i === todayIndex ? 'bg-amber-500/10' : ''
                 }`}
               >
-                <span className="hidden md:inline text-[14px] font-medium text-neutral-300">
-                  {day}
-                </span>
-                <span className="md:hidden text-[14px] font-medium text-neutral-300">
-                  {DAYS_SHORT[i]}
-                </span>
+                {/* Day name */}
+                <div className="p-3 text-center border-b border-white/5">
+                  <span className="hidden md:inline text-[14px] font-medium text-neutral-300">
+                    {day}
+                  </span>
+                  <span className="md:hidden text-[14px] font-medium text-neutral-300">
+                    {DAYS_SHORT[i]}
+                  </span>
+                </div>
+                {/* Room sub-headers */}
+                {!filterRoom && rooms && rooms.length > 0 && (
+                  <div className="grid grid-cols-2">
+                    {rooms.map((room, roomIdx) => (
+                      <div
+                        key={room.id}
+                        className={`p-2 text-center ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
+                      >
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider"
+                          style={{ color: room.color || '#6B7280' }}
+                        >
+                          <span className="hidden lg:inline">{room.name}</span>
+                          <span className="lg:hidden">{room.name.split(' ')[0]}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
-          {/* Classes grid */}
-          <div className="grid grid-cols-7 min-h-[400px]">
-            {classesByDay.map((dayClasses, dayIndex) => (
+          {/* Classes grid with split columns */}
+          <div className="grid grid-cols-7 min-h-[500px]">
+            {DAYS.map((_, dayIndex) => (
               <div
                 key={dayIndex}
-                className={`border-r border-white/5 last:border-r-0 p-2 space-y-2 ${
-                  dayIndex === new Date().getDay() ? 'bg-amber-500/5' : ''
+                className={`border-r border-white/5 last:border-r-0 ${
+                  dayIndex === todayIndex ? 'bg-amber-500/5' : ''
                 }`}
               >
-                {dayClasses
-                  .sort((a, b) => a.start_time.localeCompare(b.start_time))
-                  .map((cls) => (
-                    <div
-                      key={cls.id}
-                      onClick={() => setEditingClass(cls as ClassWithRelations)}
-                      className="p-3 rounded-xl cursor-pointer hover:ring-1 hover:ring-white/20 transition"
-                      style={{ backgroundColor: `${cls.disciplines?.color || '#3B82F6'}20` }}
-                    >
-                      <p
-                        className="text-[12px] font-medium truncate"
-                        style={{ color: cls.disciplines?.color || '#3B82F6' }}
+                {!filterRoom && rooms && rooms.length > 0 ? (
+                  // Split view: show both rooms
+                  <div className="grid grid-cols-2 h-full">
+                    {rooms.map((room, roomIdx) => (
+                      <div
+                        key={room.id}
+                        className={`p-1.5 space-y-1.5 ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
                       >
-                        {cls.name}
-                      </p>
-                      <p className="text-[11px] text-neutral-400 mt-1">
-                        {cls.start_time.slice(0, 5)} - {cls.end_time.slice(0, 5)}
-                      </p>
-                      {cls.coach && (
-                        <p className="text-[10px] text-neutral-500 mt-1 truncate">
-                          {cls.coach.first_name} {cls.coach.last_name}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                        {getClassesForDayAndRoom(dayIndex, room.id).map((cls) => (
+                          <ClassCard
+                            key={cls.id}
+                            cls={cls as ClassWithRelations}
+                            compact
+                            onClick={() => setEditingClass(cls as ClassWithRelations)}
+                          />
+                        ))}
+                        {/* Show unassigned classes in first column */}
+                        {roomIdx === 0 && getClassesForDayAndRoom(dayIndex, null).map((cls) => (
+                          <ClassCard
+                            key={cls.id}
+                            cls={cls as ClassWithRelations}
+                            compact
+                            unassigned
+                            onClick={() => setEditingClass(cls as ClassWithRelations)}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Single room view or no rooms
+                  <div className="p-2 space-y-2">
+                    {(filterRoom
+                      ? getClassesForDayAndRoom(dayIndex, filterRoom)
+                      : filteredClasses?.filter((c) => c.day_of_week === dayIndex).sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
+                    ).map((cls) => (
+                      <ClassCard
+                        key={cls.id}
+                        cls={cls as ClassWithRelations}
+                        onClick={() => setEditingClass(cls as ClassWithRelations)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -123,23 +200,44 @@ export function Schedule() {
       )}
 
       {/* Legend */}
-      {classes && classes.length > 0 && (
-        <div className="flex flex-wrap gap-4">
-          {Array.from(new Set(classes.map((c) => c.disciplines?.name))).map((name) => {
-            const discipline = classes.find((c) => c.disciplines?.name === name)?.disciplines
-            if (!discipline) return null
-            return (
-              <div key={name} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: discipline.color }}
-                />
-                <span className="text-[12px] text-neutral-400">{name}</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-6">
+        {/* Discipline legend */}
+        {classes && classes.length > 0 && (
+          <div className="flex flex-wrap gap-4">
+            {Array.from(new Set(classes.map((c) => c.disciplines?.name))).map((name) => {
+              const discipline = classes.find((c) => c.disciplines?.name === name)?.disciplines
+              if (!discipline) return null
+              return (
+                <div key={name} className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: discipline.color }}
+                  />
+                  <span className="text-[12px] text-neutral-400">{name}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Room legend */}
+        {rooms && rooms.length > 0 && (
+          <>
+            <div className="w-px h-4 bg-neutral-700" />
+            <div className="flex gap-4">
+              {rooms.map((room) => (
+                <div key={room.id} className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-sm"
+                    style={{ backgroundColor: room.color || '#6B7280' }}
+                  />
+                  <span className="text-[12px] text-neutral-400">{room.name}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* New Class Modal */}
       <NewClassModal
@@ -158,20 +256,75 @@ export function Schedule() {
   )
 }
 
+// Reusable Class Card component
+function ClassCard({
+  cls,
+  compact = false,
+  unassigned = false,
+  onClick,
+}: {
+  cls: ClassWithRelations
+  compact?: boolean
+  unassigned?: boolean
+  onClick: () => void
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className={`rounded-xl cursor-pointer hover:ring-1 hover:ring-white/20 transition ${
+        compact ? 'p-2' : 'p-3'
+      } ${unassigned ? 'opacity-60 border border-dashed border-neutral-600' : ''}`}
+      style={{ backgroundColor: `${cls.disciplines?.color || '#3B82F6'}20` }}
+    >
+      <p
+        className={`font-medium truncate ${compact ? 'text-[10px]' : 'text-[12px]'}`}
+        style={{ color: cls.disciplines?.color || '#3B82F6' }}
+      >
+        {cls.name}
+      </p>
+      <p className={`text-neutral-400 mt-0.5 ${compact ? 'text-[9px]' : 'text-[11px]'}`}>
+        {cls.start_time.slice(0, 5)} - {cls.end_time.slice(0, 5)}
+      </p>
+      {cls.track && (
+        <span
+          className={`inline-block font-medium px-1 py-0.5 rounded mt-1 ${compact ? 'text-[8px]' : 'text-[9px]'}`}
+          style={{
+            backgroundColor: `${cls.track.color}20`,
+            color: cls.track.color,
+          }}
+        >
+          {cls.track.name}
+        </span>
+      )}
+      {!compact && cls.coach && (
+        <p className="text-[10px] text-neutral-500 mt-1 truncate">
+          {cls.coach.first_name} {cls.coach.last_name}
+        </p>
+      )}
+      {unassigned && (
+        <p className="text-[8px] text-neutral-500 mt-1 italic">Geen zaal</p>
+      )}
+    </div>
+  )
+}
+
 function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [name, setName] = useState('')
   const [disciplineId, setDisciplineId] = useState('')
   const [coachId, setCoachId] = useState('')
+  const [trackId, setTrackId] = useState('')
+  const [roomId, setRoomId] = useState('')
   const [dayOfWeek, setDayOfWeek] = useState(1)
   const [startTime, setStartTime] = useState('19:00')
   const [endTime, setEndTime] = useState('20:00')
   const [maxCapacity, setMaxCapacity] = useState('')
-  const [room, setRoom] = useState('')
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('')
 
   const { data: disciplines } = useDisciplines()
   const { data: coaches } = useMembers({ role: 'coach' })
+  const { data: tracks } = useClassTracks()
+  const { data: rooms } = useRooms()
   const { mutate: createClass, isPending: isCreating } = useCreateClass()
   const { mutate: createRecurringClass, isPending: isCreatingRecurring } = useCreateRecurringClass()
 
@@ -189,22 +342,25 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
       name,
       discipline_id: disciplineId,
       coach_id: coachId || null,
+      track_id: trackId || null,
+      room_id: roomId || null,
       day_of_week: dayOfWeek,
       start_time: startTime,
       end_time: endTime,
       max_capacity: maxCapacity ? parseInt(maxCapacity) : null,
-      room: room || null,
+      room: null, // Legacy field, now using room_id
     }
 
     const resetForm = () => {
       setName('')
       setDisciplineId('')
       setCoachId('')
+      setTrackId('')
+      setRoomId('')
       setDayOfWeek(1)
       setStartTime('19:00')
       setEndTime('20:00')
       setMaxCapacity('')
-      setRoom('')
       setIsRecurring(false)
       setRecurrenceEndDate('')
       onClose()
@@ -276,6 +432,58 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           </div>
         </div>
 
+        {/* Room Selection - MK Themed! */}
+        <div>
+          <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+            Zaal *
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            {rooms?.map((room) => (
+              <button
+                key={room.id}
+                type="button"
+                onClick={() => setRoomId(room.id)}
+                className={`p-4 rounded-xl border-2 transition-all text-left ${
+                  roomId === room.id
+                    ? 'border-amber-400 bg-amber-400/10'
+                    : 'border-neutral-700 bg-neutral-900 hover:border-neutral-600'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: room.color || '#6B7280' }}
+                  />
+                  <div>
+                    <p className="text-[14px] font-medium text-neutral-100">{room.name}</p>
+                    {room.capacity && (
+                      <p className="text-[11px] text-neutral-500">Max {room.capacity} personen</p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+            Track
+          </label>
+          <select
+            value={trackId}
+            onChange={(e) => setTrackId(e.target.value)}
+            className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+          >
+            <option value="">Geen track (iedereen)</option>
+            {tracks?.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
             Dag *
@@ -320,32 +528,18 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
-              Max capaciteit
-            </label>
-            <input
-              type="number"
-              value={maxCapacity}
-              onChange={(e) => setMaxCapacity(e.target.value)}
-              placeholder="Onbeperkt"
-              min="1"
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
-            />
-          </div>
-          <div>
-            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
-              Zaal
-            </label>
-            <input
-              type="text"
-              value={room}
-              onChange={(e) => setRoom(e.target.value)}
-              placeholder="Zaal 1"
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
-            />
-          </div>
+        <div>
+          <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+            Max capaciteit
+          </label>
+          <input
+            type="number"
+            value={maxCapacity}
+            onChange={(e) => setMaxCapacity(e.target.value)}
+            placeholder="Onbeperkt"
+            min="1"
+            className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
+          />
         </div>
 
         {/* Recurring options */}
@@ -430,15 +624,18 @@ function EditClassModal({
   const [name, setName] = useState(classData.name)
   const [disciplineId, setDisciplineId] = useState(classData.discipline_id)
   const [coachId, setCoachId] = useState(classData.coach_id || '')
+  const [trackId, setTrackId] = useState(classData.track_id || '')
+  const [roomId, setRoomId] = useState(classData.room_id || '')
   const [dayOfWeek, setDayOfWeek] = useState(classData.day_of_week)
   const [startTime, setStartTime] = useState(classData.start_time.slice(0, 5))
   const [endTime, setEndTime] = useState(classData.end_time.slice(0, 5))
   const [maxCapacity, setMaxCapacity] = useState(classData.max_capacity?.toString() || '')
-  const [room, setRoom] = useState(classData.room || '')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const { data: disciplines } = useDisciplines()
   const { data: coaches } = useMembers({ role: 'coach' })
+  const { data: tracks } = useClassTracks()
+  const { data: rooms } = useRooms()
   const { mutate: updateClass, isPending: isUpdating } = useUpdateClass()
   const { mutate: deleteClass, isPending: isDeleting } = useDeleteClass()
 
@@ -451,11 +648,13 @@ function EditClassModal({
         name,
         discipline_id: disciplineId,
         coach_id: coachId || null,
+        track_id: trackId || null,
+        room_id: roomId || null,
         day_of_week: dayOfWeek,
         start_time: startTime,
         end_time: endTime,
         max_capacity: maxCapacity ? parseInt(maxCapacity) : null,
-        room: room || null,
+        room: null,
       },
       {
         onSuccess: () => {
@@ -560,6 +759,58 @@ function EditClassModal({
             </div>
           </div>
 
+          {/* Room Selection */}
+          <div>
+            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+              Zaal
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {rooms?.map((room) => (
+                <button
+                  key={room.id}
+                  type="button"
+                  onClick={() => setRoomId(room.id)}
+                  className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    roomId === room.id
+                      ? 'border-amber-400 bg-amber-400/10'
+                      : 'border-neutral-700 bg-neutral-900 hover:border-neutral-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: room.color || '#6B7280' }}
+                    />
+                    <div>
+                      <p className="text-[14px] font-medium text-neutral-100">{room.name}</p>
+                      {room.capacity && (
+                        <p className="text-[11px] text-neutral-500">Max {room.capacity} personen</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+              Track
+            </label>
+            <select
+              value={trackId}
+              onChange={(e) => setTrackId(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+            >
+              <option value="">Geen track (iedereen)</option>
+              {tracks?.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
               Dag *
@@ -604,32 +855,18 @@ function EditClassModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
-                Max capaciteit
-              </label>
-              <input
-                type="number"
-                value={maxCapacity}
-                onChange={(e) => setMaxCapacity(e.target.value)}
-                placeholder="Onbeperkt"
-                min="1"
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
-              />
-            </div>
-            <div>
-              <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
-                Zaal
-              </label>
-              <input
-                type="text"
-                value={room}
-                onChange={(e) => setRoom(e.target.value)}
-                placeholder="Zaal 1"
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
-              />
-            </div>
+          <div>
+            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+              Max capaciteit
+            </label>
+            <input
+              type="number"
+              value={maxCapacity}
+              onChange={(e) => setMaxCapacity(e.target.value)}
+              placeholder="Onbeperkt"
+              min="1"
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
+            />
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-neutral-800">

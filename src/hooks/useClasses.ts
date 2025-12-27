@@ -9,6 +9,8 @@ type ClassUpdate = Database['public']['Tables']['classes']['Update']
 type ClassWithRelations = Class & {
   disciplines: { name: string; color: string; slug: string } | null
   coach: { first_name: string; last_name: string } | null
+  track: { id: string; name: string; color: string } | null
+  room_rel: { id: string; name: string; color: string } | null
 }
 
 export function useClasses(dayOfWeek?: number) {
@@ -20,7 +22,9 @@ export function useClasses(dayOfWeek?: number) {
         .select(`
           *,
           disciplines:discipline_id (name, color, slug),
-          coach:coach_id (first_name, last_name)
+          coach:coach_id (first_name, last_name),
+          track:track_id (id, name, color),
+          room_rel:room_id (id, name, color)
         `)
         .eq('is_active', true)
         .order('start_time')

@@ -661,6 +661,39 @@ export type Database = {
           },
         ]
       }
+      class_tracks: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           coach_id: string | null
@@ -675,7 +708,9 @@ export type Database = {
           name: string
           recurrence_end_date: string | null
           room: string | null
+          room_id: string | null
           start_time: string
+          track_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -691,7 +726,9 @@ export type Database = {
           name: string
           recurrence_end_date?: string | null
           room?: string | null
+          room_id?: string | null
           start_time: string
+          track_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -707,7 +744,9 @@ export type Database = {
           name?: string
           recurrence_end_date?: string | null
           room?: string | null
+          room_id?: string | null
           start_time?: string
+          track_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -744,6 +783,20 @@ export type Database = {
             columns: ["discipline_id"]
             isOneToOne: false
             referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "class_tracks"
             referencedColumns: ["id"]
           },
         ]
@@ -2336,6 +2389,7 @@ export type Database = {
           sku: string | null
           stock_quantity: number
           tenant_id: string
+          updated_at: string | null
         }
         Insert: {
           color?: string | null
@@ -2350,6 +2404,7 @@ export type Database = {
           sku?: string | null
           stock_quantity?: number
           tenant_id?: string
+          updated_at?: string | null
         }
         Update: {
           color?: string | null
@@ -2364,6 +2419,7 @@ export type Database = {
           sku?: string | null
           stock_quantity?: number
           tenant_id?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -2603,6 +2659,42 @@ export type Database = {
           },
         ]
       }
+      rooms: {
+        Row: {
+          capacity: number | null
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       shipping_settings: {
         Row: {
           created_at: string | null
@@ -2808,13 +2900,6 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "shop_orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shop_order_items_product_variant_id_fkey"
-            columns: ["product_variant_id"]
-            isOneToOne: false
-            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
         ]

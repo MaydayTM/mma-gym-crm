@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Settings as SettingsIcon, Building2, Users, Bell, Palette, Shield, CreditCard } from 'lucide-react'
+import { Settings as SettingsIcon, Building2, Users, Bell, Palette, Shield, CreditCard, Calendar } from 'lucide-react'
 import { PaymentSettings } from '../components/settings/PaymentSettings'
+import { ScheduleSettings } from '../components/settings/ScheduleSettings'
 
-type SettingsTab = 'overview' | 'payments' | 'profile' | 'users' | 'notifications' | 'branding' | 'security'
+type SettingsTab = 'overview' | 'payments' | 'schedule' | 'profile' | 'users' | 'notifications' | 'branding' | 'security'
 
 const settingsSections = [
   {
@@ -11,6 +12,14 @@ const settingsSections = [
     description: 'Stripe/Mollie configuratie voor shop en abonnementen',
     icon: CreditCard,
     color: 'amber',
+    available: true,
+  },
+  {
+    id: 'schedule' as SettingsTab,
+    title: 'Rooster',
+    description: 'Tracks, disciplines en rooster instellingen',
+    icon: Calendar,
+    color: 'sky',
     available: true,
   },
   {
@@ -78,6 +87,8 @@ export function Settings() {
     switch (activeTab) {
       case 'payments':
         return <PaymentSettings />
+      case 'schedule':
+        return <ScheduleSettings />
       case 'overview':
       default:
         return <SettingsOverview onSectionClick={handleSectionClick} />
