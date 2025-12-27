@@ -32,9 +32,20 @@ export function Schedule() {
   const [isNewClassModalOpen, setIsNewClassModalOpen] = useState(false)
   const [editingClass, setEditingClass] = useState<ClassWithRelations | null>(null)
   const [filterRoom, setFilterRoom] = useState<string | null>(null)
+  const [dragOverZone, setDragOverZone] = useState<string | null>(null)
 
   const { data: classes, isLoading } = useClasses()
   const { data: rooms } = useRooms()
+  const { mutate: updateClass } = useUpdateClass()
+
+  // Handle drop of a class to a new day/room
+  const handleDrop = (classId: string, newDayOfWeek: number, newRoomId: string | null) => {
+    updateClass({
+      id: classId,
+      day_of_week: newDayOfWeek,
+      room_id: newRoomId,
+    })
+  }
 
   // Filter classes by room if filter is active
   const filteredClasses = filterRoom
@@ -152,46 +163,70 @@ export function Schedule() {
                 {!filterRoom && rooms && rooms.length > 0 ? (
                   // Split view: show both rooms
                   <div className="grid grid-cols-2 h-full">
-                    {rooms.map((room, roomIdx) => (
-                      <div
-                        key={room.id}
-                        className={`p-1.5 space-y-1.5 ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
-                      >
-                        {getClassesForDayAndRoom(dayIndex, room.id).map((cls) => (
-                          <ClassCard
-                            key={cls.id}
-                            cls={cls as ClassWithRelations}
-                            compact
-                            onClick={() => setEditingClass(cls as ClassWithRelations)}
-                          />
-                        ))}
-                        {/* Show unassigned classes in first column */}
-                        {roomIdx === 0 && getClassesForDayAndRoom(dayIndex, null).map((cls) => (
-                          <ClassCard
-                            key={cls.id}
-                            cls={cls as ClassWithRelations}
-                            compact
-                            unassigned
-                            onClick={() => setEditingClass(cls as ClassWithRelations)}
-                          />
-                        ))}
-                      </div>
-                    ))}
+                    {rooms.map((room, roomIdx) => {
+                      const zoneId = `${dayIndex}-${room.id}`
+                      return (
+                        <DropZone
+                          key={room.id}
+                          zoneId={zoneId}
+                          dayIndex={dayIndex}
+                          roomId={room.id}
+                          isOver={dragOverZone === zoneId}
+                          onDragOver={() => setDragOverZone(zoneId)}
+                          onDragLeave={() => setDragOverZone(null)}
+                          onDrop={handleDrop}
+                          className={`p-1.5 space-y-1.5 min-h-[100px] ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
+                        >
+                          {getClassesForDayAndRoom(dayIndex, room.id).map((cls) => (
+                            <DraggableClassCard
+                              key={cls.id}
+                              cls={cls as ClassWithRelations}
+                              compact
+                              onClick={() => setEditingClass(cls as ClassWithRelations)}
+                            />
+                          ))}
+                          {/* Show unassigned classes in first column */}
+                          {roomIdx === 0 && getClassesForDayAndRoom(dayIndex, null).map((cls) => (
+                            <DraggableClassCard
+                              key={cls.id}
+                              cls={cls as ClassWithRelations}
+                              compact
+                              unassigned
+                              onClick={() => setEditingClass(cls as ClassWithRelations)}
+                            />
+                          ))}
+                        </DropZone>
+                      )
+                    })}
                   </div>
                 ) : (
                   // Single room view or no rooms
-                  <div className="p-2 space-y-2">
-                    {(filterRoom
-                      ? getClassesForDayAndRoom(dayIndex, filterRoom)
-                      : filteredClasses?.filter((c) => c.day_of_week === dayIndex).sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
-                    ).map((cls) => (
-                      <ClassCard
-                        key={cls.id}
-                        cls={cls as ClassWithRelations}
-                        onClick={() => setEditingClass(cls as ClassWithRelations)}
-                      />
-                    ))}
-                  </div>
+                  (() => {
+                    const zoneId = `${dayIndex}-${filterRoom || 'all'}`
+                    return (
+                      <DropZone
+                        zoneId={zoneId}
+                        dayIndex={dayIndex}
+                        roomId={filterRoom}
+                        isOver={dragOverZone === zoneId}
+                        onDragOver={() => setDragOverZone(zoneId)}
+                        onDragLeave={() => setDragOverZone(null)}
+                        onDrop={handleDrop}
+                        className="p-2 space-y-2 min-h-[100px]"
+                      >
+                        {(filterRoom
+                          ? getClassesForDayAndRoom(dayIndex, filterRoom)
+                          : filteredClasses?.filter((c) => c.day_of_week === dayIndex).sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
+                        ).map((cls) => (
+                          <DraggableClassCard
+                            key={cls.id}
+                            cls={cls as ClassWithRelations}
+                            onClick={() => setEditingClass(cls as ClassWithRelations)}
+                          />
+                        ))}
+                      </DropZone>
+                    )
+                  })()
                 )}
               </div>
             ))}
@@ -256,8 +291,64 @@ export function Schedule() {
   )
 }
 
-// Reusable Class Card component
-function ClassCard({
+// Drop Zone component for drag & drop
+function DropZone({
+  dayIndex,
+  roomId,
+  isOver,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  className,
+  children,
+}: {
+  zoneId: string // Used by parent for tracking which zone is hovered
+  dayIndex: number
+  roomId: string | null
+  isOver: boolean
+  onDragOver: () => void
+  onDragLeave: () => void
+  onDrop: (classId: string, dayOfWeek: number, roomId: string | null) => void
+  className?: string
+  children: React.ReactNode
+}) {
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    onDragOver()
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only trigger if leaving the actual element, not children
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return
+    onDragLeave()
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    onDragLeave()
+    const classId = e.dataTransfer.getData('text/plain')
+    if (classId) {
+      onDrop(classId, dayIndex, roomId)
+    }
+  }
+
+  return (
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`transition-colors ${className} ${
+        isOver ? 'bg-amber-500/10 ring-2 ring-amber-400/50 ring-inset' : ''
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Draggable Class Card component
+function DraggableClassCard({
   cls,
   compact = false,
   unassigned = false,
@@ -268,12 +359,38 @@ function ClassCard({
   unassigned?: boolean
   onClick: () => void
 }) {
+  const [isDragging, setIsDragging] = useState(false)
+
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', cls.id)
+    e.dataTransfer.effectAllowed = 'move'
+    setIsDragging(true)
+
+    // Create a custom drag image
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement
+    dragImage.style.opacity = '0.8'
+    dragImage.style.position = 'absolute'
+    dragImage.style.top = '-1000px'
+    document.body.appendChild(dragImage)
+    e.dataTransfer.setDragImage(dragImage, 0, 0)
+    setTimeout(() => document.body.removeChild(dragImage), 0)
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
+  }
+
   return (
     <div
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onClick={onClick}
-      className={`rounded-xl cursor-pointer hover:ring-1 hover:ring-white/20 transition ${
+      className={`rounded-xl cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-white/20 transition select-none ${
         compact ? 'p-2' : 'p-3'
-      } ${unassigned ? 'opacity-60 border border-dashed border-neutral-600' : ''}`}
+      } ${unassigned ? 'opacity-60 border border-dashed border-neutral-600' : ''} ${
+        isDragging ? 'opacity-50 ring-2 ring-amber-400' : ''
+      }`}
       style={{ backgroundColor: `${cls.disciplines?.color || '#3B82F6'}20` }}
     >
       <p
