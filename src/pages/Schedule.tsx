@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Loader2, Trash2, Filter } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Plus, Loader2, Trash2, Filter, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { useClasses, useCreateClass, useCreateRecurringClass, useUpdateClass, useDeleteClass } from '../hooks/useClasses'
 import { useDisciplines } from '../hooks/useDisciplines'
@@ -9,6 +9,72 @@ import { useRooms } from '../hooks/useRooms'
 
 const DAYS = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag']
 const DAYS_SHORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
+const MONTHS = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
+
+type ViewMode = 'day' | 'week' | 'month'
+
+// Helper functions for date calculations
+function getWeekDates(date: Date): Date[] {
+  const day = date.getDay()
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
+  const monday = new Date(date)
+  monday.setDate(diff)
+
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    return d
+  })
+}
+
+function getMonthDates(date: Date): Date[] {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+
+  // Start from the Monday of the first week
+  const startDate = new Date(firstDay)
+  const dayOfWeek = firstDay.getDay()
+  startDate.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+
+  // End on the Sunday of the last week
+  const endDate = new Date(lastDay)
+  const lastDayOfWeek = lastDay.getDay()
+  endDate.setDate(lastDay.getDate() + (lastDayOfWeek === 0 ? 0 : 7 - lastDayOfWeek))
+
+  const dates: Date[] = []
+  const current = new Date(startDate)
+  while (current <= endDate) {
+    dates.push(new Date(current))
+    current.setDate(current.getDate() + 1)
+  }
+
+  return dates
+}
+
+function isSameDay(d1: Date, d2: Date): boolean {
+  return d1.getDate() === d2.getDate() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getFullYear() === d2.getFullYear()
+}
+
+function formatDateRange(viewMode: ViewMode, date: Date): string {
+  if (viewMode === 'day') {
+    return `${DAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+  } else if (viewMode === 'week') {
+    const weekDates = getWeekDates(date)
+    const start = weekDates[0]
+    const end = weekDates[6]
+    if (start.getMonth() === end.getMonth()) {
+      return `${start.getDate()} - ${end.getDate()} ${MONTHS[start.getMonth()]} ${start.getFullYear()}`
+    } else {
+      return `${start.getDate()} ${MONTHS[start.getMonth()].slice(0, 3)} - ${end.getDate()} ${MONTHS[end.getMonth()].slice(0, 3)} ${end.getFullYear()}`
+    }
+  } else {
+    return `${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+  }
+}
 
 type ClassWithRelations = {
   id: string
@@ -33,10 +99,47 @@ export function Schedule() {
   const [editingClass, setEditingClass] = useState<ClassWithRelations | null>(null)
   const [filterRoom, setFilterRoom] = useState<string | null>(null)
   const [dragOverZone, setDragOverZone] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('week')
+  const [currentDate, setCurrentDate] = useState(new Date())
 
   const { data: classes, isLoading } = useClasses()
   const { data: rooms } = useRooms()
   const { mutate: updateClass } = useUpdateClass()
+
+  const today = useMemo(() => new Date(), [])
+
+  // Check if a date is today
+  const isToday = (date: Date) => isSameDay(date, today)
+
+  // Navigation functions
+  const navigate = (direction: 'prev' | 'next') => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev)
+      if (viewMode === 'day') {
+        newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1))
+      } else if (viewMode === 'week') {
+        newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7))
+      } else {
+        newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1))
+      }
+      return newDate
+    })
+  }
+
+  const goToToday = () => {
+    setCurrentDate(new Date())
+  }
+
+  // Get dates for current view
+  const viewDates = useMemo(() => {
+    if (viewMode === 'day') {
+      return [currentDate]
+    } else if (viewMode === 'week') {
+      return getWeekDates(currentDate)
+    } else {
+      return getMonthDates(currentDate)
+    }
+  }, [viewMode, currentDate])
 
   // Handle drop of a class to a new day/room
   const handleDrop = (classId: string, newDayOfWeek: number, newRoomId: string | null) => {
@@ -59,40 +162,88 @@ export function Schedule() {
       .sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
   }
 
-  const todayIndex = new Date().getDay()
-
   return (
     <div className="space-y-6 max-w-[1800px]">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[30px] font-semibold text-neutral-50 tracking-tight">Rooster</h1>
-          <p className="text-[14px] text-neutral-400 mt-1">Lesrooster en planning</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Room Filter */}
-          <div className="flex items-center gap-2 bg-neutral-900 rounded-full px-4 py-2 border border-neutral-800">
-            <Filter size={16} className="text-neutral-500" />
-            <select
-              value={filterRoom || ''}
-              onChange={(e) => setFilterRoom(e.target.value || null)}
-              className="bg-transparent text-[14px] text-neutral-300 focus:outline-none cursor-pointer"
-            >
-              <option value="">Alle zalen</option>
-              {rooms?.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {room.name}
-                </option>
-              ))}
-            </select>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-[30px] font-semibold text-neutral-50 tracking-tight">Rooster</h1>
+            <p className="text-[14px] text-neutral-400 mt-1">Lesrooster en planning</p>
           </div>
-          <button
-            onClick={() => setIsNewClassModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
-          >
-            <Plus size={18} strokeWidth={1.5} />
-            <span>Nieuwe Les</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Room Filter */}
+            <div className="flex items-center gap-2 bg-neutral-900 rounded-full px-4 py-2 border border-neutral-800">
+              <Filter size={16} className="text-neutral-500" />
+              <select
+                value={filterRoom || ''}
+                onChange={(e) => setFilterRoom(e.target.value || null)}
+                className="bg-transparent text-[14px] text-neutral-300 focus:outline-none cursor-pointer"
+              >
+                <option value="">Alle zalen</option>
+                {rooms?.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {room.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => setIsNewClassModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+            >
+              <Plus size={18} strokeWidth={1.5} />
+              <span>Nieuwe Les</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-neutral-900/50 rounded-2xl p-3 border border-neutral-800">
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-neutral-800 rounded-xl p-1">
+            {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-4 py-2 text-[13px] font-medium rounded-lg transition ${
+                  viewMode === mode
+                    ? 'bg-amber-400 text-neutral-900'
+                    : 'text-neutral-400 hover:text-neutral-200'
+                }`}
+              >
+                {mode === 'day' ? 'Dag' : mode === 'week' ? 'Week' : 'Maand'}
+              </button>
+            ))}
+          </div>
+
+          {/* Date Navigation */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={goToToday}
+              className="px-4 py-2 text-[13px] font-medium text-neutral-300 bg-neutral-800 hover:bg-neutral-700 rounded-lg transition flex items-center gap-2"
+            >
+              <Calendar size={14} />
+              Vandaag
+            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => navigate('prev')}
+                className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 rounded-lg transition"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span className="px-4 py-2 text-[14px] font-medium text-neutral-200 min-w-[200px] text-center">
+                {formatDateRange(viewMode, currentDate)}
+              </span>
+              <button
+                onClick={() => navigate('next')}
+                className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 rounded-lg transition"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -101,7 +252,71 @@ export function Schedule() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="animate-spin text-neutral-500" size={32} />
         </div>
+      ) : viewMode === 'month' ? (
+        // Month View - Calendar Grid
+        <div
+          className="bg-gradient-to-br from-white/5 to-white/0 rounded-3xl overflow-hidden"
+          style={{
+            position: 'relative',
+            '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
+            '--border-radius-before': '24px',
+          } as React.CSSProperties}
+        >
+          {/* Day name headers */}
+          <div className="grid grid-cols-7 border-b border-white/5">
+            {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((day) => (
+              <div key={day} className="p-3 text-center border-r border-white/5 last:border-r-0">
+                <span className="text-[14px] font-medium text-neutral-300">{day}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7">
+            {viewDates.map((date, idx) => {
+              const dayOfWeek = date.getDay()
+              const isCurrentMonth = date.getMonth() === currentDate.getMonth()
+              const dayClasses = filteredClasses?.filter((c) => c.day_of_week === dayOfWeek) || []
+
+              return (
+                <div
+                  key={idx}
+                  className={`min-h-[120px] border-r border-b border-white/5 last:border-r-0 p-2 ${
+                    isToday(date) ? 'bg-amber-500/10' : ''
+                  } ${!isCurrentMonth ? 'opacity-40' : ''}`}
+                >
+                  <div className={`text-[13px] font-medium mb-2 ${
+                    isToday(date) ? 'text-amber-400' : 'text-neutral-400'
+                  }`}>
+                    {date.getDate()}
+                  </div>
+                  <div className="space-y-1">
+                    {dayClasses.slice(0, 3).map((cls) => (
+                      <div
+                        key={cls.id}
+                        onClick={() => setEditingClass(cls as ClassWithRelations)}
+                        className="text-[10px] px-1.5 py-0.5 rounded truncate cursor-pointer hover:ring-1 hover:ring-white/20"
+                        style={{
+                          backgroundColor: `${cls.disciplines?.color || '#3B82F6'}20`,
+                          color: cls.disciplines?.color || '#3B82F6',
+                        }}
+                      >
+                        {cls.start_time.slice(0, 5)} {cls.name}
+                      </div>
+                    ))}
+                    {dayClasses.length > 3 && (
+                      <div className="text-[10px] text-neutral-500">
+                        +{dayClasses.length - 3} meer
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       ) : (
+        // Day and Week View
         <div
           className="bg-gradient-to-br from-white/5 to-white/0 rounded-3xl overflow-hidden"
           style={{
@@ -111,125 +326,137 @@ export function Schedule() {
           } as React.CSSProperties}
         >
           {/* Day headers with room sub-headers */}
-          <div className="grid grid-cols-7 border-b border-white/5">
-            {DAYS.map((day, i) => (
-              <div
-                key={day}
-                className={`border-r border-white/5 last:border-r-0 ${
-                  i === todayIndex ? 'bg-amber-500/10' : ''
-                }`}
-              >
-                {/* Day name */}
-                <div className="p-3 text-center border-b border-white/5">
-                  <span className="hidden md:inline text-[14px] font-medium text-neutral-300">
-                    {day}
-                  </span>
-                  <span className="md:hidden text-[14px] font-medium text-neutral-300">
-                    {DAYS_SHORT[i]}
-                  </span>
-                </div>
-                {/* Room sub-headers */}
-                {!filterRoom && rooms && rooms.length > 0 && (
-                  <div className="grid grid-cols-2">
-                    {rooms.map((room, roomIdx) => (
-                      <div
-                        key={room.id}
-                        className={`p-2 text-center ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
-                      >
-                        <span
-                          className="text-[10px] font-bold uppercase tracking-wider"
-                          style={{ color: room.color || '#6B7280' }}
-                        >
-                          <span className="hidden lg:inline">{room.name}</span>
-                          <span className="lg:hidden">{room.name.split(' ')[0]}</span>
-                        </span>
-                      </div>
-                    ))}
+          <div className={`grid border-b border-white/5 ${viewMode === 'day' ? 'grid-cols-1' : 'grid-cols-7'}`}>
+            {viewDates.map((date, i) => {
+              const dayOfWeek = date.getDay()
+              return (
+                <div
+                  key={i}
+                  className={`border-r border-white/5 last:border-r-0 ${
+                    isToday(date) ? 'bg-amber-500/10' : ''
+                  }`}
+                >
+                  {/* Day name and date */}
+                  <div className="p-3 text-center border-b border-white/5">
+                    <span className={`text-[14px] font-medium ${isToday(date) ? 'text-amber-400' : 'text-neutral-300'}`}>
+                      {viewMode === 'day' ? (
+                        `${DAYS[dayOfWeek]} ${date.getDate()} ${MONTHS[date.getMonth()]}`
+                      ) : (
+                        <>
+                          <span className="hidden md:inline">{DAYS[dayOfWeek]}</span>
+                          <span className="md:hidden">{DAYS_SHORT[dayOfWeek]}</span>
+                          <span className="ml-1 text-neutral-500">{date.getDate()}</span>
+                        </>
+                      )}
+                    </span>
                   </div>
-                )}
-              </div>
-            ))}
+                  {/* Room sub-headers */}
+                  {!filterRoom && rooms && rooms.length > 0 && (
+                    <div className="grid grid-cols-2">
+                      {rooms.map((room, roomIdx) => (
+                        <div
+                          key={room.id}
+                          className={`p-2 text-center ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
+                        >
+                          <span
+                            className="text-[10px] font-bold uppercase tracking-wider"
+                            style={{ color: room.color || '#6B7280' }}
+                          >
+                            <span className="hidden lg:inline">{room.name}</span>
+                            <span className="lg:hidden">{room.name.split(' ')[0]}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           {/* Classes grid with split columns */}
-          <div className="grid grid-cols-7 min-h-[500px]">
-            {DAYS.map((_, dayIndex) => (
-              <div
-                key={dayIndex}
-                className={`border-r border-white/5 last:border-r-0 ${
-                  dayIndex === todayIndex ? 'bg-amber-500/5' : ''
-                }`}
-              >
-                {!filterRoom && rooms && rooms.length > 0 ? (
-                  // Split view: show both rooms
-                  <div className="grid grid-cols-2 h-full">
-                    {rooms.map((room, roomIdx) => {
-                      const zoneId = `${dayIndex}-${room.id}`
+          <div className={`grid min-h-[500px] ${viewMode === 'day' ? 'grid-cols-1' : 'grid-cols-7'}`}>
+            {viewDates.map((date, idx) => {
+              const dayOfWeek = date.getDay()
+              return (
+                <div
+                  key={idx}
+                  className={`border-r border-white/5 last:border-r-0 ${
+                    isToday(date) ? 'bg-amber-500/5' : ''
+                  }`}
+                >
+                  {!filterRoom && rooms && rooms.length > 0 ? (
+                    // Split view: show both rooms
+                    <div className="grid grid-cols-2 h-full">
+                      {rooms.map((room, roomIdx) => {
+                        const zoneId = `${idx}-${room.id}`
+                        return (
+                          <DropZone
+                            key={room.id}
+                            zoneId={zoneId}
+                            dayIndex={dayOfWeek}
+                            roomId={room.id}
+                            isOver={dragOverZone === zoneId}
+                            onDragOver={() => setDragOverZone(zoneId)}
+                            onDragLeave={() => setDragOverZone(null)}
+                            onDrop={handleDrop}
+                            className={`p-1.5 space-y-1.5 min-h-[100px] ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
+                          >
+                            {getClassesForDayAndRoom(dayOfWeek, room.id).map((cls) => (
+                              <DraggableClassCard
+                                key={cls.id}
+                                cls={cls as ClassWithRelations}
+                                compact={viewMode === 'week'}
+                                onClick={() => setEditingClass(cls as ClassWithRelations)}
+                              />
+                            ))}
+                            {/* Show unassigned classes in first column */}
+                            {roomIdx === 0 && getClassesForDayAndRoom(dayOfWeek, null).map((cls) => (
+                              <DraggableClassCard
+                                key={cls.id}
+                                cls={cls as ClassWithRelations}
+                                compact={viewMode === 'week'}
+                                unassigned
+                                onClick={() => setEditingClass(cls as ClassWithRelations)}
+                              />
+                            ))}
+                          </DropZone>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    // Single room view or no rooms
+                    (() => {
+                      const zoneId = `${idx}-${filterRoom || 'all'}`
                       return (
                         <DropZone
-                          key={room.id}
                           zoneId={zoneId}
-                          dayIndex={dayIndex}
-                          roomId={room.id}
+                          dayIndex={dayOfWeek}
+                          roomId={filterRoom}
                           isOver={dragOverZone === zoneId}
                           onDragOver={() => setDragOverZone(zoneId)}
                           onDragLeave={() => setDragOverZone(null)}
                           onDrop={handleDrop}
-                          className={`p-1.5 space-y-1.5 min-h-[100px] ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
+                          className="p-2 space-y-2 min-h-[100px]"
                         >
-                          {getClassesForDayAndRoom(dayIndex, room.id).map((cls) => (
+                          {(filterRoom
+                            ? getClassesForDayAndRoom(dayOfWeek, filterRoom)
+                            : filteredClasses?.filter((c) => c.day_of_week === dayOfWeek).sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
+                          ).map((cls) => (
                             <DraggableClassCard
                               key={cls.id}
                               cls={cls as ClassWithRelations}
-                              compact
-                              onClick={() => setEditingClass(cls as ClassWithRelations)}
-                            />
-                          ))}
-                          {/* Show unassigned classes in first column */}
-                          {roomIdx === 0 && getClassesForDayAndRoom(dayIndex, null).map((cls) => (
-                            <DraggableClassCard
-                              key={cls.id}
-                              cls={cls as ClassWithRelations}
-                              compact
-                              unassigned
+                              compact={viewMode === 'week'}
                               onClick={() => setEditingClass(cls as ClassWithRelations)}
                             />
                           ))}
                         </DropZone>
                       )
-                    })}
-                  </div>
-                ) : (
-                  // Single room view or no rooms
-                  (() => {
-                    const zoneId = `${dayIndex}-${filterRoom || 'all'}`
-                    return (
-                      <DropZone
-                        zoneId={zoneId}
-                        dayIndex={dayIndex}
-                        roomId={filterRoom}
-                        isOver={dragOverZone === zoneId}
-                        onDragOver={() => setDragOverZone(zoneId)}
-                        onDragLeave={() => setDragOverZone(null)}
-                        onDrop={handleDrop}
-                        className="p-2 space-y-2 min-h-[100px]"
-                      >
-                        {(filterRoom
-                          ? getClassesForDayAndRoom(dayIndex, filterRoom)
-                          : filteredClasses?.filter((c) => c.day_of_week === dayIndex).sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
-                        ).map((cls) => (
-                          <DraggableClassCard
-                            key={cls.id}
-                            cls={cls as ClassWithRelations}
-                            onClick={() => setEditingClass(cls as ClassWithRelations)}
-                          />
-                        ))}
-                      </DropZone>
-                    )
-                  })()
-                )}
-              </div>
-            ))}
+                    })()
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
