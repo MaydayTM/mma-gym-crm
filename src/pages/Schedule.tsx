@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import { Plus, Loader2, Trash2, Filter, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { Plus, Loader2, Trash2, Filter, ChevronLeft, ChevronRight, Calendar, CheckSquare, Square, X } from 'lucide-react'
 import { Modal } from '../components/ui'
-import { useClasses, useCreateClass, useCreateRecurringClass, useUpdateClass, useDeleteClass } from '../hooks/useClasses'
+import { useClasses, useCreateClass, useCreateRecurringClass, useUpdateClass, useDeleteClass, useBulkDeleteClasses } from '../hooks/useClasses'
 import { useDisciplines } from '../hooks/useDisciplines'
 import { useMembers } from '../hooks/useMembers'
 import { useClassTracks } from '../hooks/useClassTracks'
@@ -88,10 +88,30 @@ type ClassWithRelations = {
   end_time: string
   max_capacity: number | null
   room: string | null
+  start_date: string | null
+  recurrence_end_date: string | null
+  is_recurring: boolean | null
   disciplines: { name: string; color: string; slug: string } | null
   coach: { first_name: string; last_name: string } | null
   track: { id: string; name: string; color: string } | null
   room_rel: { id: string; name: string; color: string } | null
+}
+
+// Check if a class is active on a given date
+function isClassActiveOnDate(cls: ClassWithRelations, date: Date): boolean {
+  const dateStr = date.toISOString().split('T')[0]
+
+  // Check start_date: class must have started
+  if (cls.start_date && cls.start_date > dateStr) {
+    return false
+  }
+
+  // Check recurrence_end_date: class must not have ended
+  if (cls.recurrence_end_date && cls.recurrence_end_date < dateStr) {
+    return false
+  }
+
+  return true
 }
 
 export function Schedule() {
@@ -101,10 +121,42 @@ export function Schedule() {
   const [dragOverZone, setDragOverZone] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set())
 
   const { data: classes, isLoading } = useClasses()
   const { data: rooms } = useRooms()
   const { mutate: updateClass } = useUpdateClass()
+  const { mutate: bulkDeleteClasses, isPending: isBulkDeleting } = useBulkDeleteClasses()
+
+  // Toggle class selection
+  const toggleClassSelection = (classId: string) => {
+    setSelectedClasses((prev) => {
+      const next = new Set(prev)
+      if (next.has(classId)) {
+        next.delete(classId)
+      } else {
+        next.add(classId)
+      }
+      return next
+    })
+  }
+
+  // Exit selection mode
+  const exitSelectionMode = () => {
+    setSelectionMode(false)
+    setSelectedClasses(new Set())
+  }
+
+  // Bulk delete selected classes
+  const handleBulkDelete = () => {
+    if (selectedClasses.size === 0) return
+    bulkDeleteClasses(Array.from(selectedClasses), {
+      onSuccess: () => {
+        exitSelectionMode()
+      },
+    })
+  }
 
   const today = useMemo(() => new Date(), [])
 
@@ -155,10 +207,26 @@ export function Schedule() {
     ? classes?.filter((c) => c.room_id === filterRoom)
     : classes
 
-  // Group classes by day and room
-  const getClassesForDayAndRoom = (dayIndex: number, roomId: string | null) => {
+  // Group classes by day, room, and check if active on the given date
+  const getClassesForDayAndRoom = (date: Date, roomId: string | null) => {
+    const dayOfWeek = date.getDay()
     return filteredClasses
-      ?.filter((c) => c.day_of_week === dayIndex && c.room_id === roomId)
+      ?.filter((c) =>
+        c.day_of_week === dayOfWeek &&
+        c.room_id === roomId &&
+        isClassActiveOnDate(c as ClassWithRelations, date)
+      )
+      .sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
+  }
+
+  // Get classes for a specific date (for month view)
+  const getClassesForDate = (date: Date) => {
+    const dayOfWeek = date.getDay()
+    return filteredClasses
+      ?.filter((c) =>
+        c.day_of_week === dayOfWeek &&
+        isClassActiveOnDate(c as ClassWithRelations, date)
+      )
       .sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
   }
 
@@ -172,29 +240,67 @@ export function Schedule() {
             <p className="text-[14px] text-neutral-400 mt-1">Lesrooster en planning</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Room Filter */}
-            <div className="flex items-center gap-2 bg-neutral-900 rounded-full px-4 py-2 border border-neutral-800">
-              <Filter size={16} className="text-neutral-500" />
-              <select
-                value={filterRoom || ''}
-                onChange={(e) => setFilterRoom(e.target.value || null)}
-                className="bg-transparent text-[14px] text-neutral-300 focus:outline-none cursor-pointer"
-              >
-                <option value="">Alle zalen</option>
-                {rooms?.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={() => setIsNewClassModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
-            >
-              <Plus size={18} strokeWidth={1.5} />
-              <span>Nieuwe Les</span>
-            </button>
+            {selectionMode ? (
+              // Selection mode controls
+              <>
+                <span className="text-[14px] text-neutral-300">
+                  {selectedClasses.size} geselecteerd
+                </span>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={selectedClasses.size === 0 || isBulkDeleting}
+                  className="inline-flex items-center gap-2 rounded-full bg-rose-500 text-white px-5 py-2.5 text-[14px] font-medium hover:bg-rose-400 transition disabled:opacity-50"
+                >
+                  {isBulkDeleting ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={16} />
+                  )}
+                  Verwijderen
+                </button>
+                <button
+                  onClick={exitSelectionMode}
+                  className="inline-flex items-center gap-2 rounded-full bg-neutral-700 text-neutral-200 px-5 py-2.5 text-[14px] font-medium hover:bg-neutral-600 transition"
+                >
+                  <X size={16} />
+                  Annuleren
+                </button>
+              </>
+            ) : (
+              // Normal mode controls
+              <>
+                {/* Room Filter */}
+                <div className="flex items-center gap-2 bg-neutral-900 rounded-full px-4 py-2 border border-neutral-800">
+                  <Filter size={16} className="text-neutral-500" />
+                  <select
+                    value={filterRoom || ''}
+                    onChange={(e) => setFilterRoom(e.target.value || null)}
+                    className="bg-transparent text-[14px] text-neutral-300 focus:outline-none cursor-pointer"
+                  >
+                    <option value="">Alle zalen</option>
+                    {rooms?.map((room) => (
+                      <option key={room.id} value={room.id}>
+                        {room.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => setSelectionMode(true)}
+                  className="inline-flex items-center gap-2 rounded-full bg-neutral-800 text-neutral-300 px-4 py-2.5 text-[14px] font-medium hover:bg-neutral-700 transition border border-neutral-700"
+                >
+                  <CheckSquare size={16} />
+                  Selecteren
+                </button>
+                <button
+                  onClick={() => setIsNewClassModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+                >
+                  <Plus size={18} strokeWidth={1.5} />
+                  <span>Nieuwe Les</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -274,9 +380,8 @@ export function Schedule() {
           {/* Calendar grid */}
           <div className="grid grid-cols-7">
             {viewDates.map((date, idx) => {
-              const dayOfWeek = date.getDay()
               const isCurrentMonth = date.getMonth() === currentDate.getMonth()
-              const dayClasses = filteredClasses?.filter((c) => c.day_of_week === dayOfWeek) || []
+              const dayClasses = getClassesForDate(date)
 
               return (
                 <div
@@ -402,22 +507,28 @@ export function Schedule() {
                             onDrop={handleDrop}
                             className={`p-1.5 space-y-1.5 min-h-[100px] ${roomIdx === 0 ? 'border-r border-white/5' : ''}`}
                           >
-                            {getClassesForDayAndRoom(dayOfWeek, room.id).map((cls) => (
+                            {getClassesForDayAndRoom(date, room.id).map((cls) => (
                               <DraggableClassCard
                                 key={cls.id}
                                 cls={cls as ClassWithRelations}
                                 compact={viewMode === 'week'}
+                                selectionMode={selectionMode}
+                                isSelected={selectedClasses.has(cls.id)}
                                 onClick={() => setEditingClass(cls as ClassWithRelations)}
+                                onToggleSelect={() => toggleClassSelection(cls.id)}
                               />
                             ))}
                             {/* Show unassigned classes in first column */}
-                            {roomIdx === 0 && getClassesForDayAndRoom(dayOfWeek, null).map((cls) => (
+                            {roomIdx === 0 && getClassesForDayAndRoom(date, null).map((cls) => (
                               <DraggableClassCard
                                 key={cls.id}
                                 cls={cls as ClassWithRelations}
                                 compact={viewMode === 'week'}
                                 unassigned
+                                selectionMode={selectionMode}
+                                isSelected={selectedClasses.has(cls.id)}
                                 onClick={() => setEditingClass(cls as ClassWithRelations)}
+                                onToggleSelect={() => toggleClassSelection(cls.id)}
                               />
                             ))}
                           </DropZone>
@@ -440,14 +551,17 @@ export function Schedule() {
                           className="p-2 space-y-2 min-h-[100px]"
                         >
                           {(filterRoom
-                            ? getClassesForDayAndRoom(dayOfWeek, filterRoom)
-                            : filteredClasses?.filter((c) => c.day_of_week === dayOfWeek).sort((a, b) => a.start_time.localeCompare(b.start_time)) || []
+                            ? getClassesForDayAndRoom(date, filterRoom)
+                            : getClassesForDate(date)
                           ).map((cls) => (
                             <DraggableClassCard
                               key={cls.id}
                               cls={cls as ClassWithRelations}
                               compact={viewMode === 'week'}
+                              selectionMode={selectionMode}
+                              isSelected={selectedClasses.has(cls.id)}
                               onClick={() => setEditingClass(cls as ClassWithRelations)}
+                              onToggleSelect={() => toggleClassSelection(cls.id)}
                             />
                           ))}
                         </DropZone>
@@ -579,16 +693,26 @@ function DraggableClassCard({
   cls,
   compact = false,
   unassigned = false,
+  selectionMode = false,
+  isSelected = false,
   onClick,
+  onToggleSelect,
 }: {
   cls: ClassWithRelations
   compact?: boolean
   unassigned?: boolean
+  selectionMode?: boolean
+  isSelected?: boolean
   onClick: () => void
+  onToggleSelect?: () => void
 }) {
   const [isDragging, setIsDragging] = useState(false)
 
   const handleDragStart = (e: React.DragEvent) => {
+    if (selectionMode) {
+      e.preventDefault()
+      return
+    }
     e.dataTransfer.setData('text/plain', cls.id)
     e.dataTransfer.effectAllowed = 'move'
     setIsDragging(true)
@@ -607,21 +731,41 @@ function DraggableClassCard({
     setIsDragging(false)
   }
 
+  const handleClick = () => {
+    if (selectionMode && onToggleSelect) {
+      onToggleSelect()
+    } else {
+      onClick()
+    }
+  }
+
   return (
     <div
-      draggable
+      draggable={!selectionMode}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onClick={onClick}
-      className={`rounded-xl cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-white/20 transition select-none ${
-        compact ? 'p-2' : 'p-3'
-      } ${unassigned ? 'opacity-60 border border-dashed border-neutral-600' : ''} ${
-        isDragging ? 'opacity-50 ring-2 ring-amber-400' : ''
+      onClick={handleClick}
+      className={`rounded-xl transition select-none relative ${
+        selectionMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+      } ${compact ? 'p-2' : 'p-3'} ${
+        unassigned ? 'opacity-60 border border-dashed border-neutral-600' : ''
+      } ${isDragging ? 'opacity-50 ring-2 ring-amber-400' : ''} ${
+        isSelected ? 'ring-2 ring-amber-400' : 'hover:ring-1 hover:ring-white/20'
       }`}
       style={{ backgroundColor: `${cls.disciplines?.color || '#3B82F6'}20` }}
     >
+      {/* Selection checkbox */}
+      {selectionMode && (
+        <div className="absolute top-1 right-1">
+          {isSelected ? (
+            <CheckSquare size={14} className="text-amber-400" />
+          ) : (
+            <Square size={14} className="text-neutral-500" />
+          )}
+        </div>
+      )}
       <p
-        className={`font-medium truncate ${compact ? 'text-[10px]' : 'text-[12px]'}`}
+        className={`font-medium truncate ${compact ? 'text-[10px] pr-4' : 'text-[12px]'}`}
         style={{ color: cls.disciplines?.color || '#3B82F6' }}
       >
         {cls.name}
@@ -664,6 +808,7 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
   const [maxCapacity, setMaxCapacity] = useState('')
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('')
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
 
   const { data: disciplines } = useDisciplines()
   const { data: coaches } = useMembers({ role: 'coach' })
@@ -693,6 +838,7 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
       end_time: endTime,
       max_capacity: maxCapacity ? parseInt(maxCapacity) : null,
       room: null, // Legacy field, now using room_id
+      start_date: startDate,
     }
 
     const resetForm = () => {
@@ -707,6 +853,7 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
       setMaxCapacity('')
       setIsRecurring(false)
       setRecurrenceEndDate('')
+      setStartDate(new Date().toISOString().split('T')[0])
       onClose()
     }
 
@@ -886,8 +1033,24 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           />
         </div>
 
-        {/* Recurring options */}
+        {/* Date range */}
         <div className="p-4 bg-white/5 rounded-xl space-y-4">
+          <div>
+            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+              Startdatum *
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+            />
+            <p className="text-[11px] text-neutral-500 mt-1">
+              Vanaf deze datum is de les zichtbaar in het rooster
+            </p>
+          </div>
+
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"

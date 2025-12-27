@@ -111,6 +111,28 @@ export function useDeleteClass() {
   })
 }
 
+export function useBulkDeleteClasses() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('classes')
+        .update({ is_active: false })
+        .in('id', ids)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return ids.length
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes'] })
+    },
+  })
+}
+
 // Helper: genereer datums voor recurring classes
 function generateRecurringDates(
   startDate: Date,
