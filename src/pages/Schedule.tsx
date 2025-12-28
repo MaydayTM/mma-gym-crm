@@ -863,7 +863,12 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
         { onSuccess: resetForm }
       )
     } else {
-      createClass(classData, { onSuccess: resetForm })
+      // Voor een éénmalige class: zet recurrence_end_date gelijk aan start_date
+      // zodat de class alleen op die ene datum verschijnt
+      createClass(
+        { ...classData, recurrence_end_date: startDate },
+        { onSuccess: resetForm }
+      )
     }
   }
 
