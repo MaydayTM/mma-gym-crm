@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -709,6 +710,7 @@ export type Database = {
           recurrence_end_date: string | null
           room: string | null
           room_id: string | null
+          start_date: string | null
           start_time: string
           track_id: string | null
           updated_at: string | null
@@ -727,6 +729,7 @@ export type Database = {
           recurrence_end_date?: string | null
           room?: string | null
           room_id?: string | null
+          start_date?: string | null
           start_time: string
           track_id?: string | null
           updated_at?: string | null
@@ -745,6 +748,7 @@ export type Database = {
           recurrence_end_date?: string | null
           room?: string | null
           room_id?: string | null
+          start_date?: string | null
           start_time?: string
           track_id?: string | null
           updated_at?: string | null
@@ -1198,6 +1202,98 @@ export type Database = {
           updated_at?: string | null
           valid_from?: string | null
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      door_access_logs: {
+        Row: {
+          allowed: boolean
+          created_at: string | null
+          denial_reason: string | null
+          door_location: string | null
+          id: string
+          member_id: string | null
+          qr_token_hash: string | null
+          scanned_at: string | null
+        }
+        Insert: {
+          allowed: boolean
+          created_at?: string | null
+          denial_reason?: string | null
+          door_location?: string | null
+          id?: string
+          member_id?: string | null
+          qr_token_hash?: string | null
+          scanned_at?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string | null
+          denial_reason?: string | null
+          door_location?: string | null
+          id?: string
+          member_id?: string | null
+          qr_token_hash?: string | null
+          scanned_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "door_access_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_access_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_access_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_access_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doors: {
+        Row: {
+          created_at: string | null
+          esp32_device_id: string | null
+          id: string
+          is_active: boolean | null
+          last_seen_at: string | null
+          location: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          esp32_device_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_seen_at?: string | null
+          location?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          esp32_device_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_seen_at?: string | null
+          location?: string | null
+          name?: string
         }
         Relationships: []
       }
@@ -1909,6 +2005,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           disciplines: string[] | null
+          door_access_enabled: boolean | null
           email: string
           first_name: string
           gender: string | null
@@ -1928,6 +2025,7 @@ export type Database = {
           phone_landline: string | null
           phone_mobile: string | null
           profile_picture_url: string | null
+          qr_token: string | null
           retention_status: string | null
           role: string
           status: string | null
@@ -1955,6 +2053,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           disciplines?: string[] | null
+          door_access_enabled?: boolean | null
           email: string
           first_name: string
           gender?: string | null
@@ -1974,6 +2073,7 @@ export type Database = {
           phone_landline?: string | null
           phone_mobile?: string | null
           profile_picture_url?: string | null
+          qr_token?: string | null
           retention_status?: string | null
           role?: string
           status?: string | null
@@ -2001,6 +2101,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           disciplines?: string[] | null
+          door_access_enabled?: boolean | null
           email?: string
           first_name?: string
           gender?: string | null
@@ -2020,6 +2121,7 @@ export type Database = {
           phone_landline?: string | null
           phone_mobile?: string | null
           profile_picture_url?: string | null
+          qr_token?: string | null
           retention_status?: string | null
           role?: string
           status?: string | null
@@ -3910,6 +4012,14 @@ export type Database = {
           match_type: string
         }[]
       }
+      check_member_door_access: {
+        Args: { p_member_id: string }
+        Returns: {
+          allowed: boolean
+          denial_reason: string
+          member_name: string
+        }[]
+      }
       create_profile_on_signup: {
         Args: {
           p_auth_user_id: string
@@ -3962,6 +4072,15 @@ export type Database = {
           title: string
         }[]
       }
+      get_door_access_stats: {
+        Args: { p_days?: number }
+        Returns: {
+          denied_scans: number
+          successful_scans: number
+          total_scans: number
+          unique_members: number
+        }[]
+      }
       get_gymscreen_birthdays: {
         Args: { p_days_ahead?: number }
         Returns: {
@@ -3972,6 +4091,16 @@ export type Database = {
           is_today: boolean
           last_name: string
           profile_picture_url: string
+        }[]
+      }
+      get_member_access_logs: {
+        Args: { p_limit?: number; p_member_id: string }
+        Returns: {
+          allowed: boolean
+          denial_reason: string
+          door_location: string
+          id: string
+          scanned_at: string
         }[]
       }
       get_my_role: { Args: never; Returns: string }
@@ -3999,6 +4128,10 @@ export type Database = {
       get_user_tenant_ids: { Args: never; Returns: string[] }
       has_module_access: {
         Args: { p_module_slug: string; p_tenant_id: string }
+        Returns: boolean
+      }
+      is_member_publicly_visible: {
+        Args: { member_row: Database["public"]["Tables"]["members"]["Row"] }
         Returns: boolean
       }
       is_tenant_owner: { Args: { check_tenant_id: string }; Returns: boolean }

@@ -18,6 +18,7 @@ import {
 import { Modal } from '../components/ui'
 import { EditMemberForm } from '../components/members/EditMemberForm'
 import { BeltProgressCard } from '../components/members/BeltProgressCard'
+import { DoorAccessCard } from '../components/members/DoorAccessCard'
 import { AssignSubscriptionModal } from '../components/members/AssignSubscriptionModal'
 import { useMember } from '../hooks/useMember'
 import { useMemberSubscriptions } from '../hooks/useMemberSubscriptions'
@@ -239,11 +240,19 @@ export function MemberDetail() {
         />
       </div>
 
-      {/* Belt Progress */}
-      <BeltProgressCard
-        memberId={member.id}
-        memberName={`${member.first_name} ${member.last_name}`}
-      />
+      {/* Belt Progress & Door Access */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BeltProgressCard
+          memberId={member.id}
+          memberName={`${member.first_name} ${member.last_name}`}
+        />
+        <DoorAccessCard
+          memberId={member.id}
+          memberName={`${member.first_name} ${member.last_name}`}
+          memberStatus={member.status}
+          doorAccessEnabled={member.door_access_enabled ?? true}
+        />
+      </div>
 
       {/* Subscriptions */}
       <div
