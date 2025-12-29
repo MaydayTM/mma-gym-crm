@@ -1,6 +1,6 @@
 export { useProducts, useProduct } from './useProducts';
 export { useOrders } from './useOrders';
-export { useShopCart } from './useShopCart';
+// useShopCart is now exported from contexts/ShopCartContext
 export {
   useShopBanners,
   useHeroBanner,

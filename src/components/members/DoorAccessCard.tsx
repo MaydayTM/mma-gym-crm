@@ -5,20 +5,19 @@ import { supabase } from '../../lib/supabase'
 
 interface DoorAccessCardProps {
   memberId: string
-  memberName: string
   memberStatus: string
   doorAccessEnabled?: boolean
 }
 
 interface AccessLog {
   id: string
-  scanned_at: string
+  scanned_at: string | null
   allowed: boolean
   denial_reason: string | null
-  door_location: string
+  door_location: string | null
 }
 
-export function DoorAccessCard({ memberId, memberName, memberStatus, doorAccessEnabled = true }: DoorAccessCardProps) {
+export function DoorAccessCard({ memberId, memberStatus, doorAccessEnabled = true }: DoorAccessCardProps) {
   const [qrToken, setQrToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -281,7 +280,8 @@ function formatDenialReason(reason: string): string {
   return reasons[reason] || reason
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString: string | null): string {
+  if (!dateString) return 'Onbekend'
   const date = new Date(dateString)
   const now = new Date()
   const diff = now.getTime() - date.getTime()

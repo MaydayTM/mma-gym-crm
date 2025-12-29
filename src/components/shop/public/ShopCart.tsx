@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Truck, Store, Clock } from 'lucide-react'
-import { useShopCart } from '../../../hooks/shop'
+import { useShopCart } from '../../../contexts/ShopCartContext'
 import { CartItem } from './CartItem'
 import { DEFAULT_SHIPPING_CONFIG, calculateShipping } from '../../../types/shop'
 import type { ShippingConfig } from '../../../types/shop'

@@ -248,8 +248,7 @@ export function MemberDetail() {
         />
         <DoorAccessCard
           memberId={member.id}
-          memberName={`${member.first_name} ${member.last_name}`}
-          memberStatus={member.status}
+          memberStatus={member.status ?? 'active'}
           doorAccessEnabled={member.door_access_enabled ?? true}
         />
       </div>

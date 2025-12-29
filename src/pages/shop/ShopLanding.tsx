@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom'
 import { ChevronRight, Truck, Shield, Headphones, ArrowRight, ShoppingBag } from 'lucide-react'
 import {
   useProducts,
-  useShopCart,
   useHeroBanner,
   usePromoBanner,
   useCategoryBanners,
   useSpotlightBanner,
 } from '../../hooks/shop'
+import { useShopCart } from '../../contexts/ShopCartContext'
 import { ProductCard } from '../../components/shop/public/ProductCard'
 import { ShopCart } from '../../components/shop/public/ShopCart'
 import type { ProductCategory } from '../../types/shop'

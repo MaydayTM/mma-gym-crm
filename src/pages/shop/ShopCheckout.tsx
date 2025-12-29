@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingBag, Loader2, ArrowLeft, Clock } from 'lucide-react'
-import { useShopCart } from '../../hooks/shop/useShopCart'
+import { useShopCart } from '../../contexts/ShopCartContext'
 import { DEFAULT_SHIPPING_CONFIG, calculateShipping } from '../../types/shop'
 
 const SHOP_SUPABASE_URL = import.meta.env.VITE_SHOP_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL

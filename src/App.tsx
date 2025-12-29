@@ -2,6 +2,7 @@ import React, { Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
+import { ShopCartProvider } from './contexts/ShopCartContext'
 import { ProtectedRoute } from './components/auth'
 import { Layout } from './components/layout'
 import {
@@ -98,17 +99,19 @@ function ShopApp() {
   }, [])
 
   return (
-    <Routes>
-      {/* Root shows shop landing */}
-      <Route path="/" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
-      <Route path="/products" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
-      <Route path="/products/:slug" element={<Suspense fallback={<ShopLoadingFallback />}><ShopProductDetail /></Suspense>} />
-      <Route path="/cart" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
-      <Route path="/checkout" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
-      <Route path="/order-complete" element={<Suspense fallback={<ShopLoadingFallback />}><ShopOrderComplete /></Suspense>} />
-      {/* Fallback - redirect unknown routes to shop */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <ShopCartProvider>
+      <Routes>
+        {/* Root shows shop landing */}
+        <Route path="/" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
+        <Route path="/products" element={<Suspense fallback={<ShopLoadingFallback />}><ShopLanding /></Suspense>} />
+        <Route path="/products/:slug" element={<Suspense fallback={<ShopLoadingFallback />}><ShopProductDetail /></Suspense>} />
+        <Route path="/cart" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
+        <Route path="/checkout" element={<Suspense fallback={<ShopLoadingFallback />}><ShopCheckout /></Suspense>} />
+        <Route path="/order-complete" element={<Suspense fallback={<ShopLoadingFallback />}><ShopOrderComplete /></Suspense>} />
+        {/* Fallback - redirect unknown routes to shop */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ShopCartProvider>
   )
 }
 
@@ -119,8 +122,9 @@ function CRMApp() {
   }, [])
 
   return (
-    <AuthProvider>
-      <Routes>
+    <ShopCartProvider>
+      <AuthProvider>
+        <Routes>
         {/* Public routes - no auth required */}
         <Route path="/login" element={<Login />} />
         <Route path="/app.html/login" element={<Login />} />
@@ -190,8 +194,9 @@ function CRMApp() {
           <Route path="shop" element={<Shop />} />
           <Route path="gymscreen" element={<GymScreen />} />
         </Route>
-      </Routes>
-    </AuthProvider>
+        </Routes>
+      </AuthProvider>
+    </ShopCartProvider>
   )
 }
 
