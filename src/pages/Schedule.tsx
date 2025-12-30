@@ -1181,6 +1181,11 @@ function EditClassModal({
   const [maxCapacity, setMaxCapacity] = useState(classData.max_capacity?.toString() || '')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  // Recurring velden
+  const [startDate, setStartDate] = useState(classData.start_date || new Date().toISOString().split('T')[0])
+  const [isRecurring, setIsRecurring] = useState(classData.is_recurring || false)
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState(classData.recurrence_end_date || '')
+
   const { data: disciplines } = useDisciplines()
   const { data: coaches } = useMembers({ role: 'coach' })
   const { data: tracks } = useClassTracks()
@@ -1188,8 +1193,18 @@ function EditClassModal({
   const { mutate: updateClass, isPending: isUpdating } = useUpdateClass()
   const { mutate: deleteClass, isPending: isDeleting } = useDeleteClass()
 
+  // Bereken minimum einddatum (vandaag)
+  const today = new Date().toISOString().split('T')[0]
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Bepaal de einddatum
+    let finalEndDate: string | null = recurrenceEndDate || null
+    if (!isRecurring) {
+      // Éénmalige les: einddatum = startdatum
+      finalEndDate = startDate
+    }
 
     updateClass(
       {
@@ -1204,6 +1219,9 @@ function EditClassModal({
         end_time: endTime,
         max_capacity: maxCapacity ? parseInt(maxCapacity) : null,
         room: null,
+        start_date: startDate,
+        is_recurring: isRecurring,
+        recurrence_end_date: finalEndDate,
       },
       {
         onSuccess: () => {
@@ -1416,6 +1434,76 @@ function EditClassModal({
               min="1"
               className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
             />
+          </div>
+
+          {/* Datum & Herhaling */}
+          <div className="p-4 bg-white/5 rounded-xl space-y-4">
+            <div>
+              <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+                Startdatum
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+              />
+              <p className="text-[11px] text-neutral-500 mt-1">
+                Vanaf deze datum is de les zichtbaar in het rooster
+              </p>
+            </div>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(e) => {
+                  setIsRecurring(e.target.checked)
+                  if (e.target.checked && !recurrenceEndDate) {
+                    // Default: 3 maanden vanaf nu
+                    const defaultEnd = new Date()
+                    defaultEnd.setMonth(defaultEnd.getMonth() + 3)
+                    setRecurrenceEndDate(defaultEnd.toISOString().split('T')[0])
+                  }
+                }}
+                className="w-5 h-5 rounded border-neutral-600 bg-neutral-900 text-amber-300 focus:ring-amber-300/50 focus:ring-offset-0"
+              />
+              <div>
+                <span className="text-[14px] text-neutral-200">Wekelijks herhalen</span>
+                <p className="text-[12px] text-neutral-500 mt-0.5">
+                  Les wordt elke week herhaald tot de einddatum
+                </p>
+              </div>
+            </label>
+
+            {isRecurring && (
+              <div>
+                <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+                  Herhalen tot en met
+                </label>
+                <input
+                  type="date"
+                  value={recurrenceEndDate}
+                  onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                  min={today}
+                  required={isRecurring}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+                />
+                {recurrenceEndDate && startDate && (
+                  <p className="text-[11px] text-neutral-500 mt-2">
+                    Deze les loopt nog {Math.max(0, Math.ceil(
+                      (new Date(recurrenceEndDate).getTime() - new Date().getTime()) / (7 * 24 * 60 * 60 * 1000)
+                    ))} weken
+                  </p>
+                )}
+              </div>
+            )}
+
+            {!isRecurring && (
+              <p className="text-[12px] text-amber-400/80 bg-amber-400/10 rounded-lg px-3 py-2">
+                Éénmalige les: verschijnt alleen op de startdatum
+              </p>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
