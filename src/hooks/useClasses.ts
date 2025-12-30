@@ -182,8 +182,8 @@ export function useCreateRecurringClass() {
         throw new Error(classError.message)
       }
 
-      // 2. Genereer alle instances
-      const startDate = new Date()
+      // 2. Genereer alle instances vanaf de opgegeven startDate
+      const startDate = classData.start_date ? new Date(classData.start_date) : new Date()
       const endDate = new Date(recurrenceEndDate)
       const dates = generateRecurringDates(
         startDate,

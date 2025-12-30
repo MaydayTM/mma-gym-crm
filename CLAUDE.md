@@ -570,6 +570,10 @@ vercel --prod                     # Deploy naar Vercel
 3. **Genereer database types** na schema wijzigingen
 4. **Schrijf RLS policies** voor elke tabel
 5. **Test lokaal** voor deployment
+6. **Commit en deploy na elke taak** - Na het afronden van een taak ALTIJD:
+   - `git add .` + `git commit` met duidelijke message
+   - `vercel --prod` om naar productie te deployen
+   - Zodat wijzigingen direct live staan voor Mehdi om te testen
 
 ### NOOIT doen:
 1. **Geen `SERVICE_ROLE_KEY` in frontend** - alleen in Edge Functions

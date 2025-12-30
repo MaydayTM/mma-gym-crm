@@ -101,13 +101,34 @@ type ClassWithRelations = {
 function isClassActiveOnDate(cls: ClassWithRelations, date: Date): boolean {
   const dateStr = date.toISOString().split('T')[0]
 
-  // Check start_date: class must have started
-  if (cls.start_date && cls.start_date > dateStr) {
+  // BELANGRIJK: Als start_date niet is ingesteld, kan de class niet worden getoond
+  // Dit voorkomt dat oude classes zonder datum op elke week verschijnen
+  if (!cls.start_date) {
     return false
   }
 
-  // Check recurrence_end_date: class must not have ended
-  if (cls.recurrence_end_date && cls.recurrence_end_date < dateStr) {
+  // Check start_date: class moet gestart zijn
+  if (cls.start_date > dateStr) {
+    return false
+  }
+
+  // Check recurrence_end_date: class mag niet beëindigd zijn
+  // BELANGRIJK: Als recurrence_end_date NULL is EN het GEEN recurring class is,
+  // dan is het een éénmalige class en mag alleen op de start_date getoond worden
+  if (!cls.recurrence_end_date) {
+    // Geen einddatum: alleen tonen als de datum exact overeenkomt met start_date
+    // OF als is_recurring expliciet true is (dan is het een bug in de data)
+    if (!cls.is_recurring) {
+      // Éénmalige class: alleen op start_date tonen
+      return cls.start_date === dateStr
+    }
+    // Recurring zonder einddatum: dit is een data-probleem, toon niet
+    // (classes moeten altijd een einddatum hebben)
+    return false
+  }
+
+  // Check of de datum binnen de einddatum valt
+  if (cls.recurrence_end_date < dateStr) {
     return false
   }
 
@@ -863,10 +884,26 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
         { onSuccess: resetForm }
       )
     } else {
-      // Voor een éénmalige class: zet recurrence_end_date gelijk aan start_date
+      // Voor een éénmalige class: bereken de eerste datum die overeenkomt met day_of_week
+      // vanaf de geselecteerde startDate
+      const selectedDate = new Date(startDate)
+      const targetDayOfWeek = dayOfWeek
+
+      // Vind de eerste dag die overeenkomt met de geselecteerde dag van de week
+      while (selectedDate.getDay() !== targetDayOfWeek) {
+        selectedDate.setDate(selectedDate.getDate() + 1)
+      }
+
+      const actualStartDate = selectedDate.toISOString().split('T')[0]
+
+      // Zet zowel start_date als recurrence_end_date op dezelfde datum
       // zodat de class alleen op die ene datum verschijnt
       createClass(
-        { ...classData, recurrence_end_date: startDate },
+        {
+          ...classData,
+          start_date: actualStartDate,
+          recurrence_end_date: actualStartDate
+        },
         { onSuccess: resetForm }
       )
     }
