@@ -234,6 +234,25 @@ export function useUpdatePlanType() {
   })
 }
 
+export function useDeletePlanType() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('plan_types')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plan-types'] })
+      queryClient.invalidateQueries({ queryKey: ['pricing-matrix'] })
+    }
+  })
+}
+
 // ============================================
 // Pricing Matrix
 // ============================================

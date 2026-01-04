@@ -21,6 +21,7 @@ import {
   Login,
   Shop,
   GymScreen,
+  DoorTest,
 } from './pages'
 import { SubscriptionsManage } from './pages/SubscriptionsManage'
 import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
@@ -169,6 +170,7 @@ function CRMApp() {
           <Route path="settings" element={<Settings />} />
           <Route path="shop" element={<Shop />} />
           <Route path="gymscreen" element={<GymScreen />} />
+          <Route path="door-test" element={<DoorTest />} />
         </Route>
         <Route
           path="/app.html"
@@ -193,6 +195,7 @@ function CRMApp() {
           <Route path="settings" element={<Settings />} />
           <Route path="shop" element={<Shop />} />
           <Route path="gymscreen" element={<GymScreen />} />
+          <Route path="door-test" element={<DoorTest />} />
         </Route>
         </Routes>
       </AuthProvider>

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Package, Percent, Users, Gift, Settings } from 'lucide-react'
+import { ArrowLeft, Package, Percent, Users, Gift, Settings, Layers } from 'lucide-react'
 import { PricingMatrixTab } from '../components/subscriptions/PricingMatrixTab'
 import { OneTimeProductsTab } from '../components/subscriptions/OneTimeProductsTab'
 import { DiscountsTab } from '../components/subscriptions/DiscountsTab'
 import { AgeGroupsTab } from '../components/subscriptions/AgeGroupsTab'
+import { PlanTypesTab } from '../components/subscriptions/PlanTypesTab'
 import { AddonsTab } from '../components/subscriptions/AddonsTab'
 
-type TabId = 'pricing' | 'one-time' | 'discounts' | 'groups' | 'addons'
+type TabId = 'groups' | 'types' | 'pricing' | 'one-time' | 'discounts' | 'addons'
 
 interface Tab {
   id: TabId
@@ -18,14 +19,26 @@ interface Tab {
 
 const tabs: Tab[] = [
   {
+    id: 'groups',
+    label: '1. Leeftijdsgroepen',
+    icon: <Users size={18} />,
+    description: 'Eerst: Kids, Studenten, Volwassenen'
+  },
+  {
+    id: 'types',
+    label: '2. Types',
+    icon: <Layers size={18} />,
+    description: 'Dan: Basis, All-In, etc.'
+  },
+  {
     id: 'pricing',
-    label: 'Abonnementen',
+    label: '3. Prijzen',
     icon: <Package size={18} />,
-    description: 'Prijzen en looptijden beheren'
+    description: 'Tot slot: Prijzen per combinatie'
   },
   {
     id: 'one-time',
-    label: 'Dagpassen & Beurten',
+    label: 'Dagpassen',
     icon: <Gift size={18} />,
     description: 'Eenmalige producten'
   },
@@ -36,12 +49,6 @@ const tabs: Tab[] = [
     description: 'Kortingen en acties'
   },
   {
-    id: 'groups',
-    label: 'Leeftijdsgroepen',
-    icon: <Users size={18} />,
-    description: 'Kids, Studenten, Volwassenen'
-  },
-  {
     id: 'addons',
     label: 'Add-ons',
     icon: <Settings size={18} />,
@@ -50,7 +57,7 @@ const tabs: Tab[] = [
 ]
 
 export function SubscriptionsManage() {
-  const [activeTab, setActiveTab] = useState<TabId>('pricing')
+  const [activeTab, setActiveTab] = useState<TabId>('groups')
 
   return (
     <div className="space-y-6 max-w-[1600px]">
@@ -92,10 +99,11 @@ export function SubscriptionsManage() {
 
       {/* Tab Content */}
       <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl border border-white/10 p-6">
+        {activeTab === 'groups' && <AgeGroupsTab />}
+        {activeTab === 'types' && <PlanTypesTab />}
         {activeTab === 'pricing' && <PricingMatrixTab />}
         {activeTab === 'one-time' && <OneTimeProductsTab />}
         {activeTab === 'discounts' && <DiscountsTab />}
-        {activeTab === 'groups' && <AgeGroupsTab />}
         {activeTab === 'addons' && <AddonsTab />}
       </div>
     </div>
