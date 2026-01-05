@@ -115,9 +115,16 @@ export function PlanCheckout() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {planTypes?.map((planType) => {
-              const basePricing = pricing?.find(
-                p => p.plan_type_id === planType.id && p.duration_months === 1
-              )
+              // Get all pricing for this plan type to show price range
+              const planPricingOptions = pricing?.filter(p => p.plan_type_id === planType.id) || []
+              const minPrice = planPricingOptions.length > 0
+                ? Math.min(...planPricingOptions.map(p => p.price_per_month || 0))
+                : null
+              const maxPrice = planPricingOptions.length > 0
+                ? Math.max(...planPricingOptions.map(p => p.price_per_month || 0))
+                : null
+              const basePricing = planPricingOptions.find(p => p.duration_months === 1)
+              const yearPricing = planPricingOptions.find(p => p.duration_months === 12)
               const isSelected = selectedPlanType === planType.id
 
               return (
@@ -155,12 +162,35 @@ export function PlanCheckout() {
                     )}
                   </div>
 
+                  {/* Price display - show range if available */}
                   <div className="mt-4">
-                    <span className="text-[28px] font-bold text-amber-300">
-                      €{basePricing?.price_per_month}
-                    </span>
-                    <span className="text-neutral-400">/maand</span>
+                    {minPrice !== null && maxPrice !== null ? (
+                      minPrice === maxPrice ? (
+                        <>
+                          <span className="text-[28px] font-bold text-amber-300">
+                            €{minPrice}
+                          </span>
+                          <span className="text-neutral-400">/maand</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[28px] font-bold text-amber-300">
+                            €{minPrice}
+                          </span>
+                          <span className="text-neutral-400"> - €{maxPrice}/maand</span>
+                        </>
+                      )
+                    ) : (
+                      <span className="text-[16px] text-neutral-500">Prijzen instellen...</span>
+                    )}
                   </div>
+
+                  {/* Show year discount if available */}
+                  {yearPricing?.price_per_month && basePricing?.price_per_month && yearPricing.price_per_month < basePricing.price_per_month && (
+                    <p className="text-[12px] text-emerald-400 mt-1">
+                      Vanaf €{yearPricing.price_per_month}/maand bij jaarpas
+                    </p>
+                  )}
 
                   {/* Features */}
                   <ul className="mt-4 space-y-2">
@@ -222,60 +252,89 @@ export function PlanCheckout() {
             <h2 className="text-[18px] font-medium text-neutral-200 mb-4">
               2. Kies je looptijd
             </h2>
-            <div className="space-y-3">
-              {planPricing.map((price) => {
-                const isSelected = selectedDuration === price.duration_months
-                const durationLabel = price.duration_months === 1
-                  ? 'Maandelijks'
-                  : price.duration_months === 3
-                    ? '3 maanden prepaid'
-                    : 'Jaarpas (12 maanden)'
 
-                return (
-                  <button
-                    key={price.id}
-                    onClick={() => {
-                      setSelectedDuration(price.duration_months)
-                    }}
-                    className={`w-full p-5 rounded-2xl border text-left transition-all ${
-                      isSelected
-                        ? 'border-amber-300 bg-amber-500/10'
-                        : 'border-white/10 bg-white/5 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-[16px] font-medium text-neutral-50">
-                          {durationLabel}
-                        </h3>
-                        {(price.savings ?? 0) > 0 && (
-                          <p className="text-[13px] text-emerald-400 mt-1">
-                            Bespaar €{price.savings}
-                          </p>
-                        )}
-                        {price.includes_insurance && (
-                          <p className="text-[12px] text-amber-300 mt-1 flex items-center gap-1">
-                            <Shield size={12} />
-                            Inclusief verzekering
-                          </p>
-                        )}
+            {planPricing.length > 0 ? (
+              <div className="space-y-3">
+                {planPricing.map((price) => {
+                  const isSelected = selectedDuration === price.duration_months
+                  const durationLabel = price.duration_months === 1
+                    ? 'Maandelijks'
+                    : price.duration_months === 3
+                      ? '3 maanden prepaid'
+                      : price.duration_months === 12
+                        ? 'Jaarpas (12 maanden)'
+                        : `${price.duration_months} maanden`
+
+                  return (
+                    <button
+                      key={price.id}
+                      onClick={() => {
+                        setSelectedDuration(price.duration_months)
+                      }}
+                      className={`w-full p-5 rounded-2xl border text-left transition-all ${
+                        isSelected
+                          ? 'border-amber-300 bg-amber-500/10'
+                          : 'border-white/10 bg-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-[16px] font-medium text-neutral-50">
+                            {durationLabel}
+                          </h3>
+                          {(price.savings ?? 0) > 0 && (
+                            <p className="text-[13px] text-emerald-400 mt-1">
+                              Bespaar €{price.savings}
+                            </p>
+                          )}
+                          {price.includes_insurance && (
+                            <p className="text-[12px] text-amber-300 mt-1 flex items-center gap-1">
+                              <Shield size={12} />
+                              Inclusief verzekering
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[24px] font-bold text-amber-300">
+                            €{price.price_per_month}
+                          </span>
+                          <span className="text-neutral-400">/maand</span>
+                          {price.duration_months > 1 && (
+                            <p className="text-[12px] text-neutral-500">
+                              €{price.price} totaal
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[24px] font-bold text-amber-300">
-                          €{price.price_per_month}
-                        </span>
-                        <span className="text-neutral-400">/maand</span>
-                        {price.duration_months > 1 && (
-                          <p className="text-[12px] text-neutral-500">
-                            €{price.price} totaal
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              /* No pricing data yet - show message */
+              <div className="p-6 rounded-2xl border border-amber-500/30 bg-amber-500/5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <Shield className="text-amber-300" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-[15px] font-medium text-amber-300">
+                      Prijzen nog niet ingesteld
+                    </h3>
+                    <p className="text-[13px] text-neutral-400 mt-1">
+                      Voor deze leeftijdsgroep en formule zijn nog geen prijzen geconfigureerd.
+                      Neem contact op met de gym of kies een andere optie.
+                    </p>
+                    <a
+                      href="/settings"
+                      className="inline-flex items-center gap-1 text-[13px] text-amber-300 hover:underline mt-3"
+                    >
+                      → Prijzen instellen (admin)
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
