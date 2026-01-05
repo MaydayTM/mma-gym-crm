@@ -235,7 +235,11 @@ export function MemberDetail() {
         />
         <QuickStat
           label="Actief abo"
-          value={activeSubscription?.name ?? 'Geen'}
+          value={activeSubscription
+            ? (activeSubscription.age_group_name && activeSubscription.plan_type_name
+                ? `${activeSubscription.plan_type_name}`
+                : activeSubscription.plan_type_name || 'Ja')
+            : 'Geen'}
           icon={CreditCard}
         />
       </div>
@@ -275,36 +279,49 @@ export function MemberDetail() {
         </div>
         {subscriptions && subscriptions.length > 0 ? (
           <div className="divide-y divide-white/5">
-            {subscriptions.map((sub) => (
-              <div
-                key={sub.id}
-                className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                    <CreditCard size={18} className="text-amber-300" strokeWidth={1.5} />
+            {subscriptions.map((sub) => {
+              // Build display name from age_group and plan_type, or use plan_type_name for legacy
+              const displayName = sub.age_group_name && sub.plan_type_name
+                ? `${sub.age_group_name} - ${sub.plan_type_name}`
+                : sub.plan_type_name || 'Abonnement'
+
+              // Build duration label
+              const durationLabel = sub.duration_months === 1 ? 'maand' :
+                                   sub.duration_months === 3 ? '3 maanden' :
+                                   sub.duration_months === 12 ? 'jaar' :
+                                   sub.duration_months ? `${sub.duration_months} maanden` : 'maand'
+
+              return (
+                <div
+                  key={sub.id}
+                  className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                      <CreditCard size={18} className="text-amber-300" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-medium text-neutral-50">{displayName}</p>
+                      <p className="text-[11px] text-neutral-500">
+                        {formatDate(sub.start_date)} - {sub.end_date ? formatDate(sub.end_date) : 'Doorlopend'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[14px] font-medium text-neutral-50">{sub.name}</p>
-                    <p className="text-[11px] text-neutral-500">
-                      {formatDate(sub.start_date)} - {sub.end_date ? formatDate(sub.end_date) : 'Doorlopend'}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[14px] text-neutral-300">
+                      {formatCurrency(sub.final_price)}/{durationLabel}
+                    </span>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] border ${getSubscriptionStatusClasses(
+                        sub.status
+                      )}`}
+                    >
+                      {sub.status}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-[14px] text-neutral-300">
-                    {formatCurrency(sub.price)}/{sub.billing_interval ?? 'maand'}
-                  </span>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] border ${getSubscriptionStatusClasses(
-                      sub.status
-                    )}`}
-                  >
-                    {sub.status}
-                  </span>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <div className="p-12 text-center">
