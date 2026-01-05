@@ -4,12 +4,21 @@ import { useAuth } from './useAuth'
 /**
  * Rol hiërarchie voor Reconnect Academy CRM
  *
- * admin       → Volledige toegang, kan alles
- * medewerker  → Leden beheer, check-ins, geen financiën
- * coordinator → Rooster, groepen, communicatie
- * coach       → Eigen lessen zien, aanwezigheid
- * fighter     → Eigen profiel, check-in (met actief abo)
- * fan         → Alleen bekijken, geen gym toegang
+ * TEAM ROLLEN (onbeperkte gym toegang, geen abonnement nodig):
+ *   admin       → Volledige toegang, kan alles
+ *   medewerker  → Leden beheer, check-ins, geen financiën
+ *   coordinator → Rooster, groepen, communicatie
+ *   coach       → Eigen lessen zien, aanwezigheid
+ *
+ * LEDEN ROLLEN (gym toegang afhankelijk van abonnement):
+ *   fighter     → Eigen profiel, check-in (vereist actief abonnement)
+ *   fan         → Supporter zonder gym toegang
+ *
+ * TOEGANGSREGELS:
+ *   - Team rollen hebben ALTIJD gym toegang (QR/deur) zonder abonnement
+ *   - Team rollen hoeven NIET te reserveren voor lessen
+ *   - Fighters hebben gym toegang ALLEEN met actief abonnement
+ *   - Fans hebben GEEN gym toegang
  */
 
 export type Role = 'admin' | 'medewerker' | 'coordinator' | 'coach' | 'fighter' | 'fan'
@@ -180,4 +189,28 @@ export function getRoleLevel(role: Role): number {
 
 export function isValidRole(role: string): role is Role {
   return role in ROLE_HIERARCHY
+}
+
+/**
+ * Check of een rol een abonnement nodig heeft voor gym toegang
+ * Team rollen (admin, medewerker, coordinator, coach) hebben GEEN abonnement nodig
+ */
+export function requiresSubscription(role: Role): boolean {
+  return !TEAM_ROLES.includes(role)
+}
+
+/**
+ * Check of een rol reservaties nodig heeft voor lessen
+ * Team rollen hoeven niet te reserveren
+ */
+export function requiresReservation(role: Role): boolean {
+  return !TEAM_ROLES.includes(role)
+}
+
+/**
+ * Check of een rol onbeperkte gym toegang heeft
+ * Team rollen hebben altijd toegang, ongeacht abonnement status
+ */
+export function hasUnlimitedGymAccess(role: Role): boolean {
+  return TEAM_ROLES.includes(role)
 }

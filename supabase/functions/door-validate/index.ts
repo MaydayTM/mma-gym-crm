@@ -67,7 +67,7 @@ serve(async (req) => {
     // Check if token matches stored token
     const { data: member } = await supabase
       .from('members')
-      .select('id, first_name, last_name, status, qr_token, door_access_enabled')
+      .select('id, first_name, last_name, status, role, qr_token, door_access_enabled')
       .eq('id', memberId)
       .single()
 
@@ -102,24 +102,31 @@ serve(async (req) => {
       })
     }
 
-    // Check for active subscription
-    const { data: subscription } = await supabase
-      .from('member_subscriptions')
-      .select('id, end_date')
-      .eq('member_id', memberId)
-      .eq('status', 'active')
-      .gte('end_date', new Date().toISOString().split('T')[0])
-      .order('end_date', { ascending: false })
-      .limit(1)
-      .single()
+    // Team roles (admin, medewerker, coordinator, coach) have unlimited access
+    // They don't need an active subscription or reservation
+    const TEAM_ROLES = ['admin', 'medewerker', 'coordinator', 'coach']
+    const isTeamMember = TEAM_ROLES.includes(member.role)
 
-    if (!subscription) {
-      await logAccess(supabase, memberId, qrToken, false, 'no_active_subscription', doorLocation)
-      return jsonResponse({
-        allowed: false,
-        reason: 'no_subscription',
-        member_name: `${member.first_name} ${member.last_name}`
-      })
+    // Only check subscription for non-team members (fighters)
+    if (!isTeamMember) {
+      const { data: subscription } = await supabase
+        .from('member_subscriptions')
+        .select('id, end_date')
+        .eq('member_id', memberId)
+        .eq('status', 'active')
+        .gte('end_date', new Date().toISOString().split('T')[0])
+        .order('end_date', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (!subscription) {
+        await logAccess(supabase, memberId, qrToken, false, 'no_active_subscription', doorLocation)
+        return jsonResponse({
+          allowed: false,
+          reason: 'no_subscription',
+          member_name: `${member.first_name} ${member.last_name}`
+        })
+      }
     }
 
     // All checks passed - grant access!
