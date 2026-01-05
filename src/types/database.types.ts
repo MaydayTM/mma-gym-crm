@@ -1868,8 +1868,10 @@ export type Database = {
           frozen_until: string | null
           id: string
           member_id: string
+          notes: string | null
           one_time_product_id: string | null
           payment_provider: string | null
+          payment_status: string | null
           plan_type_id: string | null
           selected_discipline_id: string | null
           sessions_remaining: number | null
@@ -1893,8 +1895,10 @@ export type Database = {
           frozen_until?: string | null
           id?: string
           member_id: string
+          notes?: string | null
           one_time_product_id?: string | null
           payment_provider?: string | null
+          payment_status?: string | null
           plan_type_id?: string | null
           selected_discipline_id?: string | null
           sessions_remaining?: number | null
@@ -1918,8 +1922,10 @@ export type Database = {
           frozen_until?: string | null
           id?: string
           member_id?: string
+          notes?: string | null
           one_time_product_id?: string | null
           payment_provider?: string | null
+          payment_status?: string | null
           plan_type_id?: string | null
           selected_discipline_id?: string | null
           sessions_remaining?: number | null
