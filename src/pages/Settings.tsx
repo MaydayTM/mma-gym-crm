@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Settings as SettingsIcon, Building2, Users, Bell, Palette, Shield, CreditCard, Calendar } from 'lucide-react'
 import { PaymentSettings } from '../components/settings/PaymentSettings'
 import { ScheduleSettings } from '../components/settings/ScheduleSettings'
+import { RolesSettings } from '../components/settings/RolesSettings'
 
 type SettingsTab = 'overview' | 'payments' | 'schedule' | 'profile' | 'users' | 'notifications' | 'branding' | 'security'
 
@@ -36,7 +37,7 @@ const settingsSections = [
     description: 'Team toegang en permissies beheren',
     icon: Users,
     color: 'sky',
-    available: false,
+    available: true,
   },
   {
     id: 'notifications' as SettingsTab,
@@ -89,6 +90,8 @@ export function Settings() {
         return <PaymentSettings />
       case 'schedule':
         return <ScheduleSettings />
+      case 'users':
+        return <RolesSettings />
       case 'overview':
       default:
         return <SettingsOverview onSectionClick={handleSectionClick} />
@@ -200,7 +203,7 @@ function SettingsOverview({ onSectionClick }: { onSectionClick: (section: typeof
           <SettingsIcon className="text-neutral-500" size={22} strokeWidth={1.5} />
         </div>
         <p className="text-[14px] text-neutral-500 max-w-md mx-auto">
-          Meer instellingen worden momenteel ontwikkeld. <strong className="text-amber-300">Betalingen</strong> is nu beschikbaar!
+          Meer instellingen worden momenteel ontwikkeld. <strong className="text-amber-300">Betalingen</strong>, <strong className="text-amber-300">Rooster</strong> en <strong className="text-amber-300">Gebruikers & Rollen</strong> zijn nu beschikbaar!
         </p>
         <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/40">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-300 animate-pulse"></span>

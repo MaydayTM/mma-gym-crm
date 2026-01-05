@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { Loader2, Upload, Sparkles, X } from 'lucide-react'
+import { Loader2, Upload, Sparkles, X, Lock } from 'lucide-react'
 import { useUpdateMember } from '../../hooks/useUpdateMember'
 import { useUploadProfilePicture } from '../../hooks/useUploadProfilePicture'
 import { useDisciplines } from '../../hooks/useDisciplines'
+import { usePermissions, ROLE_INFO, type Role } from '../../hooks/usePermissions'
 import type { Member } from '../../hooks/useMembers'
 
 interface EditMemberFormProps {
@@ -11,13 +12,14 @@ interface EditMemberFormProps {
   onCancel: () => void
 }
 
-const ROLES = [
-  { value: 'fighter', label: 'Fighter' },
-  { value: 'coach', label: 'Coach' },
-  { value: 'coordinator', label: 'Coördinator' },
-  { value: 'medewerker', label: 'Medewerker' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'fan', label: 'Fan (geen gym toegang)' },
+// Gebruik ROLE_INFO van usePermissions voor consistentie
+const ROLES: { value: Role; label: string }[] = [
+  { value: 'fighter', label: ROLE_INFO.fighter.label },
+  { value: 'coach', label: ROLE_INFO.coach.label },
+  { value: 'coordinator', label: ROLE_INFO.coordinator.label },
+  { value: 'medewerker', label: ROLE_INFO.medewerker.label },
+  { value: 'admin', label: ROLE_INFO.admin.label },
+  { value: 'fan', label: `${ROLE_INFO.fan.label} (geen gym toegang)` },
 ]
 
 const STATUSES = [
@@ -31,6 +33,7 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
   const { mutate: updateMember, isPending, error } = useUpdateMember()
   const { upload: uploadPicture, isUploading, progress } = useUploadProfilePicture()
   const { data: disciplines = [], isLoading: disciplinesLoading } = useDisciplines()
+  const { canManageRoles, canAssignRole } = usePermissions()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
@@ -443,20 +446,42 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
         <div>
           <label htmlFor="role" className={labelClasses}>
             Rol
+            {!canManageRoles && (
+              <span className="ml-2 text-neutral-600 normal-case tracking-normal">
+                (alleen admin)
+              </span>
+            )}
           </label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className={inputClasses}
-          >
-            {ROLES.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
-              </option>
-            ))}
-          </select>
+          {canManageRoles ? (
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className={inputClasses}
+            >
+              {ROLES.map((role) => (
+                <option
+                  key={role.value}
+                  value={role.value}
+                  disabled={!canAssignRole(role.value)}
+                >
+                  {role.label}
+                  {!canAssignRole(role.value) ? ' (geen toegang)' : ''}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="relative">
+              <div className={`${inputClasses} flex items-center justify-between cursor-not-allowed opacity-75`}>
+                <span>{ROLE_INFO[formData.role as Role]?.label || formData.role}</span>
+                <Lock size={16} className="text-neutral-500" />
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-1.5">
+                Neem contact op met een administrator om de rol te wijzigen.
+              </p>
+            </div>
+          )}
         </div>
 
         <div>
