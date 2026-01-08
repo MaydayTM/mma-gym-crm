@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react'
-import { X, Send, Plus, Trash2, MessageSquare, Sparkles, Loader2 } from 'lucide-react'
+import { X, Send, Plus, Trash2, MessageSquare, Loader2 } from 'lucide-react'
 import { useAIChat, SUGGESTED_QUESTIONS, type AIMessage } from '../../hooks/useAIChat'
+
+// Kitana avatar path - place image at public/images/kitana.png
+const KITANA_AVATAR = '/images/kitana.png'
 
 interface AIChatPanelProps {
   isOpen: boolean
@@ -89,15 +92,17 @@ export function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
 
       {/* Panel */}
       <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-neutral-900 border-l border-white/10 flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
+        {/* Header with Kitana */}
+        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-purple-900/30 to-transparent">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-500/20 rounded-xl">
-              <Sparkles size={20} className="text-purple-400" />
-            </div>
+            <img
+              src={KITANA_AVATAR}
+              alt="Kitana"
+              className="w-12 h-12 rounded-full object-cover border-2 border-purple-400/50 shadow-lg shadow-purple-500/20"
+            />
             <div>
-              <h2 className="text-lg font-medium text-neutral-50">AI Assistent</h2>
-              <p className="text-xs text-neutral-400">Stel een vraag over je gym</p>
+              <h2 className="text-lg font-medium text-neutral-50">Kitana</h2>
+              <p className="text-xs text-purple-300">Jouw gym assistent</p>
             </div>
           </div>
           <button
@@ -165,14 +170,16 @@ export function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
           {messages.length === 0 && !isLoadingMessages && (
             <div className="space-y-4">
               <div className="text-center py-8">
-                <div className="inline-flex p-4 bg-purple-500/10 rounded-2xl mb-4">
-                  <Sparkles size={32} className="text-purple-400" />
-                </div>
+                <img
+                  src={KITANA_AVATAR}
+                  alt="Kitana"
+                  className="w-24 h-24 rounded-full object-cover border-4 border-purple-400/30 shadow-xl shadow-purple-500/20 mx-auto mb-4"
+                />
                 <h3 className="text-lg font-medium text-neutral-50 mb-2">
-                  Hoe kan ik helpen?
+                  Hoi, ik ben Kitana!
                 </h3>
                 <p className="text-sm text-neutral-400">
-                  Stel een vraag over je leden, leads of gym statistieken
+                  Stel me een vraag over je leden, leads of gym statistieken
                 </p>
               </div>
 
@@ -215,9 +222,11 @@ export function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
           {/* Typing indicator */}
           {isSending && (
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-purple-500/20 rounded-xl">
-                <Sparkles size={16} className="text-purple-400" />
-              </div>
+              <img
+                src={KITANA_AVATAR}
+                alt="Kitana"
+                className="w-8 h-8 rounded-full object-cover border border-purple-400/30 flex-shrink-0"
+              />
               <div className="bg-white/5 rounded-2xl rounded-tl-sm px-4 py-3">
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -239,7 +248,7 @@ export function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Stel een vraag..."
+              placeholder="Stel Kitana een vraag..."
               disabled={isSending}
               className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-neutral-50 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 disabled:opacity-50"
             />
@@ -268,9 +277,11 @@ function MessageBubble({ message }: { message: AIMessage }) {
   return (
     <div className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
       {!isUser && (
-        <div className="p-2 bg-purple-500/20 rounded-xl flex-shrink-0">
-          <Sparkles size={16} className="text-purple-400" />
-        </div>
+        <img
+          src={KITANA_AVATAR}
+          alt="Kitana"
+          className="w-8 h-8 rounded-full object-cover border border-purple-400/30 flex-shrink-0"
+        />
       )}
 
       <div
