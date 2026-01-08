@@ -6,12 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Query type definitions
+// Query type definitions - now includes actions
 const QUERY_TYPES = {
   CHURN_RISK: 'churn_risk',
   TRAINING_LEADERBOARD: 'training_leaderboard',
   LEAD_FOLLOWUP: 'lead_followup',
   COMPARISON: 'comparison',
+  SCHEDULE: 'schedule',
+  BOOK_CLASS: 'book_class',
+  CANCEL_BOOKING: 'cancel_booking',
+  SEND_EMAIL: 'send_email',
   GENERAL: 'general',
 } as const
 
@@ -22,16 +26,25 @@ interface ChatRequest {
   conversation_id?: string
 }
 
-// System prompt for Claude - Kitana persona
+// System prompt for Claude - Kitana persona with expanded capabilities
 const SYSTEM_PROMPT = `Je bent Kitana, de AI assistent van Reconnect Academy, een MMA/BJJ gym in Aalst, België.
 Je naam is geïnspireerd door het Mortal Kombat personage - je bent sterk, slim en altijd klaar om te helpen.
 Je helpt gym eigenaren en coaches met inzichten over hun leden, leads en business.
 
-Je hebt toegang tot de volgende data:
+Je hebt toegang tot de volgende data EN acties:
+
+**DATA (read-only):**
 - Members: leden met hun check-in historie, abonnementen, gordels
 - Leads: potentiële leden in de sales pipeline
 - Check-ins: trainingsbezoeken per lid
 - Subscriptions: abonnementen en prijzen
+- Classes: lesrooster met disciplines en coaches
+- Reservations: boekingen voor lessen
+
+**ACTIES (je kunt uitvoeren):**
+- Lessen boeken voor leden (reservaties aanmaken)
+- Reservaties annuleren
+- Emails opstellen en verzenden naar leden
 
 Persoonlijkheid:
 - Je bent vriendelijk, behulpzaam en professioneel
@@ -41,10 +54,11 @@ Persoonlijkheid:
 
 Communicatie richtlijnen:
 - Antwoord altijd in het Nederlands
-- Gebruik emoji's spaarzaam (alleen voor belangrijke highlights: ⚠️ voor risico, 🏆 voor prestaties, 📞 voor follow-up)
+- Gebruik emoji's spaarzaam (alleen voor highlights: ⚠️ risico, 🏆 prestaties, 📞 follow-up, 📅 rooster, ✉️ email)
 - Bij lijsten, beperk tot top 10 tenzij anders gevraagd
 - Noem specifieke namen en cijfers
 - Als je geen data hebt, zeg dat eerlijk
+- Bij acties: bevestig altijd wat je hebt gedaan
 
 Formatteer je antwoorden overzichtelijk met:
 - Duidelijke kopjes waar nodig
@@ -62,6 +76,7 @@ serve(async (req) => {
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const resendApiKey = Deno.env.get('RESEND_API_KEY')
 
     if (!anthropicApiKey) {
       throw new Error('ANTHROPIC_API_KEY not configured')
@@ -86,6 +101,15 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
+    // Get user's member profile for context
+    const { data: userMember } = await supabase
+      .from('members')
+      .select('role, first_name, last_name')
+      .eq('id', user.id)
+      .single()
+
+    const isStaff = ['admin', 'medewerker', 'coordinator', 'coach'].includes(userMember?.role || '')
+
     // Parse request body
     const { question, conversation_id }: ChatRequest = await req.json()
 
@@ -97,9 +121,10 @@ serve(async (req) => {
     const queryType = await classifyQuestion(question, anthropicApiKey)
     console.log(`Classified question as: ${queryType}`)
 
-    // Step 2: Execute appropriate database query
+    // Step 2: Execute appropriate database query or action
     let queryResults: unknown = null
     let queryContext = ''
+    let actionPerformed = false
 
     switch (queryType) {
       case QUERY_TYPES.CHURN_RISK: {
@@ -143,7 +168,6 @@ serve(async (req) => {
       }
 
       case QUERY_TYPES.COMPARISON: {
-        // Try to extract dates from question, otherwise use defaults (this month vs same month last year)
         const { data, error } = await supabase.rpc('get_period_comparison', {
           p_metric: extractMetric(question),
         })
@@ -153,6 +177,180 @@ serve(async (req) => {
         } else {
           queryResults = data?.[0] || { period1_value: 0, period2_value: 0, change_absolute: 0, change_percentage: 0 }
           queryContext = `Vergelijking tussen periodes`
+        }
+        break
+      }
+
+      case QUERY_TYPES.SCHEDULE: {
+        // Get upcoming classes for the next 7 days
+        const today = new Date()
+        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+        const { data, error } = await supabase
+          .from('classes')
+          .select(`
+            *,
+            disciplines:discipline_id (name, color),
+            coach:coach_id (first_name, last_name)
+          `)
+          .eq('is_active', true)
+          .order('day_of_week')
+          .order('start_time')
+
+        if (error) {
+          console.error('Schedule query error:', error)
+          queryResults = []
+        } else {
+          queryResults = data
+          queryContext = `Lesrooster - ${data?.length || 0} actieve lessen gevonden`
+        }
+        break
+      }
+
+      case QUERY_TYPES.BOOK_CLASS: {
+        if (!isStaff) {
+          queryResults = { error: 'Alleen staff kan lessen boeken via Kitana' }
+          queryContext = 'Geen toestemming'
+          break
+        }
+
+        // Parse the booking request
+        const bookingInfo = await parseBookingRequest(question, supabase, anthropicApiKey)
+
+        if (bookingInfo.error) {
+          queryResults = { error: bookingInfo.error, availableClasses: bookingInfo.availableClasses, availableMembers: bookingInfo.availableMembers }
+          queryContext = 'Kon boeking niet verwerken'
+        } else if (bookingInfo.memberId && bookingInfo.classId && bookingInfo.date) {
+          // Check if already booked
+          const { data: existing } = await supabase
+            .from('reservations')
+            .select('id')
+            .eq('member_id', bookingInfo.memberId)
+            .eq('class_id', bookingInfo.classId)
+            .eq('reservation_date', bookingInfo.date)
+            .neq('status', 'cancelled')
+            .single()
+
+          if (existing) {
+            queryResults = { error: 'Dit lid is al ingeschreven voor deze les', booking: null }
+            queryContext = 'Dubbele boeking voorkomen'
+          } else {
+            // Create reservation
+            const { data: reservation, error: bookError } = await supabase
+              .from('reservations')
+              .insert({
+                member_id: bookingInfo.memberId,
+                class_id: bookingInfo.classId,
+                reservation_date: bookingInfo.date,
+                status: 'reserved',
+              })
+              .select(`
+                *,
+                member:member_id (first_name, last_name),
+                classes:class_id (name, start_time, disciplines:discipline_id (name))
+              `)
+              .single()
+
+            if (bookError) {
+              queryResults = { error: bookError.message }
+              queryContext = 'Boeking mislukt'
+            } else {
+              queryResults = { success: true, reservation }
+              queryContext = 'Boeking succesvol aangemaakt'
+              actionPerformed = true
+            }
+          }
+        }
+        break
+      }
+
+      case QUERY_TYPES.CANCEL_BOOKING: {
+        if (!isStaff) {
+          queryResults = { error: 'Alleen staff kan reservaties annuleren via Kitana' }
+          queryContext = 'Geen toestemming'
+          break
+        }
+
+        // Parse cancellation request
+        const cancelInfo = await parseCancelRequest(question, supabase, anthropicApiKey)
+
+        if (cancelInfo.error) {
+          queryResults = { error: cancelInfo.error, reservations: cancelInfo.reservations }
+          queryContext = 'Kon annulering niet verwerken'
+        } else if (cancelInfo.reservationId) {
+          const { data, error: cancelError } = await supabase
+            .from('reservations')
+            .update({
+              status: 'cancelled',
+              cancelled_at: new Date().toISOString(),
+            })
+            .eq('id', cancelInfo.reservationId)
+            .select(`
+              *,
+              member:member_id (first_name, last_name),
+              classes:class_id (name, start_time)
+            `)
+            .single()
+
+          if (cancelError) {
+            queryResults = { error: cancelError.message }
+            queryContext = 'Annulering mislukt'
+          } else {
+            queryResults = { success: true, cancelled: data }
+            queryContext = 'Reservatie succesvol geannuleerd'
+            actionPerformed = true
+          }
+        }
+        break
+      }
+
+      case QUERY_TYPES.SEND_EMAIL: {
+        if (!isStaff) {
+          queryResults = { error: 'Alleen staff kan emails versturen via Kitana' }
+          queryContext = 'Geen toestemming'
+          break
+        }
+
+        if (!resendApiKey) {
+          queryResults = { error: 'Email functionaliteit is niet geconfigureerd (RESEND_API_KEY ontbreekt)' }
+          queryContext = 'Email niet beschikbaar'
+          break
+        }
+
+        // Parse email request
+        const emailInfo = await parseEmailRequest(question, supabase, anthropicApiKey)
+
+        if (emailInfo.needsConfirmation) {
+          // Return draft for approval
+          queryResults = {
+            draft: true,
+            to: emailInfo.recipientEmail,
+            recipientName: emailInfo.recipientName,
+            subject: emailInfo.subject,
+            body: emailInfo.body,
+            instructions: 'Zeg "verstuur" of "verzend" om deze email te versturen, of geef aan wat je wilt aanpassen.'
+          }
+          queryContext = 'Email concept opgesteld - wacht op bevestiging'
+        } else if (emailInfo.confirmed && emailInfo.recipientEmail) {
+          // Send the email via Resend
+          const sendResult = await sendEmail(
+            resendApiKey,
+            emailInfo.recipientEmail,
+            emailInfo.subject || 'Bericht van Reconnect Academy',
+            emailInfo.body || ''
+          )
+
+          if (sendResult.error) {
+            queryResults = { error: sendResult.error }
+            queryContext = 'Email verzenden mislukt'
+          } else {
+            queryResults = { success: true, sent: { to: emailInfo.recipientEmail, subject: emailInfo.subject } }
+            queryContext = 'Email succesvol verzonden'
+            actionPerformed = true
+          }
+        } else {
+          queryResults = { error: emailInfo.error || 'Kon email niet verwerken' }
+          queryContext = 'Email verwerking mislukt'
         }
         break
       }
@@ -170,19 +368,19 @@ serve(async (req) => {
       }
     }
 
-    // Step 3: Generate response with Sonnet (better quality for user-facing responses)
+    // Step 3: Generate response with Sonnet
     const response = await generateResponse(
       question,
       queryType,
       queryResults,
       queryContext,
+      actionPerformed,
       anthropicApiKey
     )
 
     // Step 4: Save conversation to database
     let convId = conversation_id
     if (!convId) {
-      // Create new conversation
       const { data: newConv, error: convError } = await supabase
         .from('ai_conversations')
         .insert({
@@ -215,6 +413,7 @@ serve(async (req) => {
           query_type: queryType,
           metadata: {
             results_count: Array.isArray(queryResults) ? queryResults.length : 1,
+            action_performed: actionPerformed,
           },
         },
       ])
@@ -229,6 +428,7 @@ serve(async (req) => {
         response,
         conversation_id: convId,
         query_type: queryType,
+        action_performed: actionPerformed,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -268,11 +468,15 @@ async function classifyQuestion(question: string, apiKey: string): Promise<Query
             content: `Classify this gym CRM question into ONE category. Reply with ONLY the category name, nothing else.
 
 Categories:
-- churn_risk: Questions about members at risk of leaving, inactive members, who might cancel, retention problems
-- training_leaderboard: Questions about who trained most, attendance rankings, top performers, meest getraind
-- lead_followup: Questions about leads, follow-ups needed, sales pipeline, potentiële leden
-- comparison: Questions comparing two time periods, year-over-year, month comparisons
-- general: Everything else (stats, overview, how many members, etc.)
+- churn_risk: Questions about members at risk of leaving, inactive members, who might cancel
+- training_leaderboard: Questions about who trained most, attendance rankings, top performers
+- lead_followup: Questions about leads, follow-ups needed, sales pipeline
+- comparison: Questions comparing two time periods, year-over-year
+- schedule: Questions about class schedule, rooster, what classes are when
+- book_class: ACTIONS to book/reserve a class for someone (inschrijven, boeken, reserveren)
+- cancel_booking: ACTIONS to cancel a reservation (annuleren, afmelden, uitschrijven)
+- send_email: ACTIONS to compose or send an email (email, mail, bericht sturen)
+- general: Everything else
 
 Question: "${question}"`,
           },
@@ -290,9 +494,13 @@ Question: "${question}"`,
 
     // Map to valid query type
     if (classification?.includes('churn')) return QUERY_TYPES.CHURN_RISK
-    if (classification?.includes('leaderboard') || classification?.includes('training')) return QUERY_TYPES.TRAINING_LEADERBOARD
-    if (classification?.includes('lead') || classification?.includes('followup')) return QUERY_TYPES.LEAD_FOLLOWUP
+    if (classification?.includes('leaderboard') || classification?.includes('training_leaderboard')) return QUERY_TYPES.TRAINING_LEADERBOARD
+    if (classification?.includes('lead')) return QUERY_TYPES.LEAD_FOLLOWUP
     if (classification?.includes('comparison')) return QUERY_TYPES.COMPARISON
+    if (classification?.includes('schedule')) return QUERY_TYPES.SCHEDULE
+    if (classification?.includes('book')) return QUERY_TYPES.BOOK_CLASS
+    if (classification?.includes('cancel')) return QUERY_TYPES.CANCEL_BOOKING
+    if (classification?.includes('email') || classification?.includes('send_email')) return QUERY_TYPES.SEND_EMAIL
 
     return QUERY_TYPES.GENERAL
   } catch (error) {
@@ -302,8 +510,233 @@ Question: "${question}"`,
 }
 
 /**
- * Extract time period from question
+ * Parse booking request to extract member, class, and date
  */
+async function parseBookingRequest(question: string, supabase: any, apiKey: string) {
+  // Get available members and classes for context
+  const [membersRes, classesRes] = await Promise.all([
+    supabase.from('members').select('id, first_name, last_name, email').eq('status', 'active').limit(100),
+    supabase.from('classes').select('id, name, day_of_week, start_time, disciplines:discipline_id (name)').eq('is_active', true),
+  ])
+
+  const members = membersRes.data || []
+  const classes = classesRes.data || []
+
+  // Use Claude to extract booking details
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 500,
+      messages: [{
+        role: 'user',
+        content: `Extract booking details from this request. Return ONLY valid JSON.
+
+Request: "${question}"
+
+Available members (name -> id):
+${members.slice(0, 30).map((m: any) => `- ${m.first_name} ${m.last_name}: ${m.id}`).join('\n')}
+
+Available classes (name -> id, day):
+${classes.map((c: any) => `- ${c.name} (${c.disciplines?.name || 'onbekend'}): ${c.id}, dag ${c.day_of_week}`).join('\n')}
+
+Today is: ${new Date().toISOString().split('T')[0]}
+
+Return JSON format:
+{
+  "memberId": "uuid or null if unclear",
+  "memberName": "name mentioned or null",
+  "classId": "uuid or null if unclear",
+  "className": "class name or null",
+  "date": "YYYY-MM-DD or null if not specified",
+  "error": "error message if cannot parse, null otherwise"
+}`,
+      }],
+    }),
+  })
+
+  const data = await response.json()
+  const text = data.content?.[0]?.text || '{}'
+
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '{}')
+
+    // If no date specified, use next occurrence of the class day
+    if (parsed.classId && !parsed.date) {
+      const classInfo = classes.find((c: any) => c.id === parsed.classId)
+      if (classInfo) {
+        const today = new Date()
+        const targetDay = classInfo.day_of_week
+        const daysUntil = (targetDay - today.getDay() + 7) % 7 || 7
+        const nextDate = new Date(today.getTime() + daysUntil * 24 * 60 * 60 * 1000)
+        parsed.date = nextDate.toISOString().split('T')[0]
+      }
+    }
+
+    return {
+      ...parsed,
+      availableClasses: classes.slice(0, 10),
+      availableMembers: members.slice(0, 10),
+    }
+  } catch (e) {
+    return { error: 'Kon de boeking niet verwerken. Specificeer het lid en de les duidelijker.', availableClasses: classes.slice(0, 10), availableMembers: members.slice(0, 10) }
+  }
+}
+
+/**
+ * Parse cancellation request
+ */
+async function parseCancelRequest(question: string, supabase: any, apiKey: string) {
+  // Get recent reservations
+  const today = new Date().toISOString().split('T')[0]
+  const { data: reservations } = await supabase
+    .from('reservations')
+    .select(`
+      id,
+      reservation_date,
+      member:member_id (first_name, last_name),
+      classes:class_id (name, start_time)
+    `)
+    .gte('reservation_date', today)
+    .neq('status', 'cancelled')
+    .order('reservation_date')
+    .limit(50)
+
+  // Use Claude to find the reservation to cancel
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: `Find the reservation to cancel. Return ONLY valid JSON.
+
+Request: "${question}"
+
+Active reservations:
+${(reservations || []).map((r: any) =>
+  `- ${r.member?.first_name} ${r.member?.last_name} voor ${r.classes?.name} op ${r.reservation_date}: ${r.id}`
+).join('\n')}
+
+Return: {"reservationId": "uuid or null", "error": "message if unclear"}`,
+      }],
+    }),
+  })
+
+  const data = await response.json()
+  const text = data.content?.[0]?.text || '{}'
+
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    return { ...JSON.parse(jsonMatch ? jsonMatch[0] : '{}'), reservations }
+  } catch {
+    return { error: 'Kon de reservatie niet vinden.', reservations }
+  }
+}
+
+/**
+ * Parse email request
+ */
+async function parseEmailRequest(question: string, supabase: any, apiKey: string) {
+  const lowerQ = question.toLowerCase()
+  const isConfirmation = lowerQ.includes('verstuur') || lowerQ.includes('verzend') || lowerQ.includes('send')
+
+  // Get members for recipient lookup
+  const { data: members } = await supabase
+    .from('members')
+    .select('id, first_name, last_name, email')
+    .eq('status', 'active')
+    .not('email', 'is', null)
+    .limit(100)
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: `Parse this email request and compose the email. Return ONLY valid JSON.
+
+Request: "${question}"
+
+Available recipients:
+${(members || []).slice(0, 30).map((m: any) => `- ${m.first_name} ${m.last_name}: ${m.email}`).join('\n')}
+
+Return JSON:
+{
+  "recipientEmail": "email@example.com or null",
+  "recipientName": "Name or null",
+  "subject": "Email subject line",
+  "body": "Full email body text in Dutch, professional but friendly. Include greeting and signature from Reconnect Academy.",
+  "needsConfirmation": true,
+  "error": "error if can't parse"
+}
+
+Make the email professional but warm, in Dutch. Sign off as "Team Reconnect Academy".`,
+      }],
+    }),
+  })
+
+  const data = await response.json()
+  const text = data.content?.[0]?.text || '{}'
+
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : '{}')
+    return { ...parsed, confirmed: isConfirmation && !parsed.needsConfirmation }
+  } catch {
+    return { error: 'Kon het email verzoek niet verwerken.' }
+  }
+}
+
+/**
+ * Send email via Resend
+ */
+async function sendEmail(apiKey: string, to: string, subject: string, body: string) {
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: 'Reconnect Academy <noreply@reconnect.academy>',
+        to: [to],
+        subject: subject,
+        text: body,
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      return { error: error.message || 'Email verzenden mislukt' }
+    }
+
+    return { success: true }
+  } catch (e) {
+    return { error: 'Email verzenden mislukt: ' + (e as Error).message }
+  }
+}
+
 function extractPeriod(question: string): 'week' | 'month' | 'year' {
   const q = question.toLowerCase()
   if (q.includes('week') || q.includes('7 dagen')) return 'week'
@@ -311,27 +744,26 @@ function extractPeriod(question: string): 'week' | 'month' | 'year' {
   return 'month'
 }
 
-/**
- * Extract metric type from comparison question
- */
 function extractMetric(question: string): 'signups' | 'cancellations' | 'checkins' {
   const q = question.toLowerCase()
   if (q.includes('opzeg') || q.includes('cancel') || q.includes('stop')) return 'cancellations'
   if (q.includes('checkin') || q.includes('bezoek') || q.includes('training')) return 'checkins'
-  return 'signups' // Default to signups for "nieuwe leden", "inschrijvingen", etc.
+  return 'signups'
 }
 
-/**
- * Generate natural language response using Claude Sonnet
- */
 async function generateResponse(
   question: string,
   queryType: QueryType,
   results: unknown,
   context: string,
+  actionPerformed: boolean,
   apiKey: string
 ): Promise<string> {
   try {
+    const actionContext = actionPerformed
+      ? '\n\nBELANGRIJK: Een actie is succesvol uitgevoerd. Bevestig dit duidelijk aan de gebruiker.'
+      : ''
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -349,15 +781,16 @@ async function generateResponse(
             content: `Vraag van de gebruiker: "${question}"
 
 Query type: ${queryType}
-Context: ${context}
+Context: ${context}${actionContext}
 
-Data uit de database:
+Data/resultaat:
 ${JSON.stringify(results, null, 2)}
 
-Geef een duidelijk, actionable antwoord gebaseerd op deze data.
-- Wees specifiek met namen en cijfers
-- Als de data leeg is, geef aan dat er geen resultaten zijn en waarom dat positief of neutraal kan zijn
-- Geef waar relevant een concrete aanbeveling`,
+Geef een duidelijk antwoord:
+- Als het een actie was (boeking, annulering, email), bevestig wat er is gebeurd
+- Als het een vraag was, geef informatief antwoord
+- Als er een fout was, leg uit wat er mis ging en hoe het opgelost kan worden
+- Wees specifiek met namen, datums en tijden`,
           },
         ],
       }),

@@ -171,8 +171,8 @@ export const SUGGESTED_QUESTIONS = [
     icon: '📞',
   },
   {
-    label: 'Gym overzicht',
-    question: 'Geef me een overzicht van de gym statistieken',
-    icon: '📊',
+    label: 'Lesrooster',
+    question: 'Welke lessen hebben we deze week?',
+    icon: '📅',
   },
 ]
