@@ -19,6 +19,8 @@ import {
   Team,
   Settings,
   Login,
+  ForgotPassword,
+  ResetPassword,
   Shop,
   GymScreen,
   DoorTest,
@@ -128,7 +130,11 @@ function CRMApp() {
         <Routes>
         {/* Public routes - no auth required */}
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/app.html/login" element={<Login />} />
+        <Route path="/app.html/forgot-password" element={<ForgotPassword />} />
+        <Route path="/app.html/reset-password" element={<ResetPassword />} />
 
         {/* Public checkout routes */}
         <Route path="/checkout/plans" element={<PlansOverview />} />

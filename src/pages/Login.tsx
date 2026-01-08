@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 export function Login() {
@@ -93,9 +93,17 @@ export function Login() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-[13px] font-medium text-neutral-400 mb-2">
-                Wachtwoord
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="text-[13px] font-medium text-neutral-400">
+                  Wachtwoord
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-[12px] text-amber-400 hover:text-amber-300 transition-colors"
+                >
+                  Wachtwoord vergeten?
+                </Link>
+              </div>
               <input
                 id="password"
                 type="password"
