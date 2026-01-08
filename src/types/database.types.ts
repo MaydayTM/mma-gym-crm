@@ -178,6 +178,68 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_messages: {
+        Row: {
+          content: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          query_type: string | null
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          query_type?: string | null
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          query_type?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       belt_history: {
         Row: {
           created_at: string | null
@@ -4077,6 +4139,22 @@ export type Database = {
           title: string
         }[]
       }
+      get_churn_risk_members: {
+        Args: never
+        Returns: {
+          avg_checkins_per_week: number
+          days_since_checkin: number
+          email: string
+          first_name: string
+          last_checkin: string
+          last_name: string
+          member_id: string
+          risk_factors: string[]
+          risk_score: number
+          subscription_status: string
+          total_checkins_last_90_days: number
+        }[]
+      }
       get_door_access_stats: {
         Args: { p_days?: number }
         Returns: {
@@ -4084,6 +4162,18 @@ export type Database = {
           successful_scans: number
           total_scans: number
           unique_members: number
+        }[]
+      }
+      get_gym_stats: {
+        Args: never
+        Returns: {
+          active_members: number
+          avg_checkins_per_member: number
+          cancelled_this_month: number
+          checkins_last_month: number
+          checkins_this_month: number
+          new_members_this_month: number
+          open_leads: number
         }[]
       }
       get_gymscreen_birthdays: {
@@ -4098,6 +4188,22 @@ export type Database = {
           profile_picture_url: string
         }[]
       }
+      get_leads_needing_followup: {
+        Args: never
+        Returns: {
+          days_since_created: number
+          days_since_last_contact: number
+          email: string
+          first_name: string
+          interested_in: string[]
+          last_name: string
+          lead_id: string
+          phone: string
+          source: string
+          status: string
+          urgency: string
+        }[]
+      }
       get_member_access_logs: {
         Args: { p_limit?: number; p_member_id: string }
         Returns: {
@@ -4109,6 +4215,21 @@ export type Database = {
         }[]
       }
       get_my_role: { Args: never; Returns: string }
+      get_period_comparison: {
+        Args: {
+          p_metric?: string
+          p_period1_end?: string
+          p_period1_start?: string
+          p_period2_end?: string
+          p_period2_start?: string
+        }
+        Returns: {
+          change_absolute: number
+          change_percentage: number
+          period1_value: number
+          period2_value: number
+        }[]
+      }
       get_tenant_modules: {
         Args: { p_tenant_id: string }
         Returns: {
@@ -4125,6 +4246,17 @@ export type Database = {
       get_training_count: {
         Args: { p_discipline_id?: string; p_member_id: string }
         Returns: number
+      }
+      get_training_leaderboard: {
+        Args: { p_limit?: number; p_period?: string }
+        Returns: {
+          disciplines: string[]
+          first_name: string
+          last_name: string
+          member_id: string
+          rank: number
+          total_checkins: number
+        }[]
       }
       get_trainings_since_promotion: {
         Args: { p_discipline_id: string; p_member_id: string }
