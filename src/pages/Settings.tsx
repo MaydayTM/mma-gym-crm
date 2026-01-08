@@ -3,6 +3,7 @@ import { Settings as SettingsIcon, Building2, Users, Bell, Palette, Shield, Cred
 import { PaymentSettings } from '../components/settings/PaymentSettings'
 import { ScheduleSettings } from '../components/settings/ScheduleSettings'
 import { RolesSettings } from '../components/settings/RolesSettings'
+import { SecuritySettings } from '../components/settings/SecuritySettings'
 
 type SettingsTab = 'overview' | 'payments' | 'schedule' | 'profile' | 'users' | 'notifications' | 'branding' | 'security'
 
@@ -58,10 +59,10 @@ const settingsSections = [
   {
     id: 'security' as SettingsTab,
     title: 'Beveiliging',
-    description: 'Wachtwoord, 2FA en sessie beheer',
+    description: 'Wachtwoord beheer voor gebruikers',
     icon: Shield,
     color: 'orange',
-    available: false,
+    available: true,
   },
 ]
 
@@ -92,6 +93,8 @@ export function Settings() {
         return <ScheduleSettings />
       case 'users':
         return <RolesSettings />
+      case 'security':
+        return <SecuritySettings />
       case 'overview':
       default:
         return <SettingsOverview onSectionClick={handleSectionClick} />
