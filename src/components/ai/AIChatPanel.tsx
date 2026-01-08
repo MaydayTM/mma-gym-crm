@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { X, Send, Plus, Trash2, MessageSquare, Loader2 } from 'lucide-react'
 import { useAIChat, SUGGESTED_QUESTIONS, type AIMessage } from '../../hooks/useAIChat'
 
-// Kitana avatar path - place image at public/images/kitana.png
-const KITANA_AVATAR = '/images/kitana.png'
+// Kitana avatar
+const KITANA_AVATAR = '/images/rcn_assistent.png'
 
 interface AIChatPanelProps {
   isOpen: boolean

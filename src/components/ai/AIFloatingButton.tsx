@@ -1,5 +1,5 @@
-// Kitana avatar path - place image at public/images/kitana.png
-const KITANA_AVATAR = '/images/kitana.png'
+// Kitana avatar
+const KITANA_AVATAR = '/images/rcn_assistent.png'
 
 interface AIFloatingButtonProps {
   onClick: () => void
