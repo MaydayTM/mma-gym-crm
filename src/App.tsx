@@ -24,6 +24,7 @@ import {
   Shop,
   GymScreen,
   DoorTest,
+  KitanaHub,
 } from './pages'
 import { SubscriptionsManage } from './pages/SubscriptionsManage'
 import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
@@ -162,6 +163,7 @@ function CRMApp() {
           }
         >
           <Route index element={<Dashboard />} />
+          <Route path="kitana" element={<KitanaHub />} />
           <Route path="members" element={<Members />} />
           <Route path="members/:id" element={<MemberDetail />} />
           <Route path="leads" element={<Leads />} />
@@ -187,6 +189,7 @@ function CRMApp() {
           }
         >
           <Route index element={<Dashboard />} />
+          <Route path="kitana" element={<KitanaHub />} />
           <Route path="members" element={<Members />} />
           <Route path="members/:id" element={<MemberDetail />} />
           <Route path="leads" element={<Leads />} />

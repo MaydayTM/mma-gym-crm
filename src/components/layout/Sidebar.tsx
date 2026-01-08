@@ -23,6 +23,8 @@ import {
 import { useAuth } from '../../hooks/useAuth'
 import { useModules } from '../../hooks/useModules'
 
+const KITANA_AVATAR = '/images/rcn_assistent.png'
+
 // Navigation item type
 interface NavItem {
   name: string
@@ -216,6 +218,50 @@ export function Sidebar() {
             </li>
           ))}
         </ul>
+
+        {/* Kitana AI Section - Premium Smart Feature */}
+        <div className="my-4">
+          <NavLink
+            to="/kitana"
+            className={({ isActive }) =>
+              `relative flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 group ${
+                isActive
+                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-500/40'
+                  : 'bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:from-amber-500/15 hover:to-orange-500/10 hover:border-amber-500/30'
+              }`
+            }
+          >
+            {/* Glow effect */}
+            <div className="absolute inset-0 rounded-2xl bg-amber-500/10 blur-xl opacity-0 group-hover:opacity-50 transition-opacity" />
+
+            {/* Avatar */}
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-500/50 shadow-lg shadow-amber-500/20">
+                <img
+                  src={KITANA_AVATAR}
+                  alt="Kitana AI"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Online indicator */}
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-neutral-950 shadow-lg shadow-emerald-400/50" />
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] font-semibold text-amber-300">Kitana AI</span>
+                <Sparkles size={12} className="text-amber-400" />
+              </div>
+              <span className="text-[11px] text-neutral-500">Smart Assistant</span>
+            </div>
+
+            {/* Badge */}
+            <span className="px-2 py-0.5 text-[9px] uppercase tracking-wider bg-amber-500/20 text-amber-400 rounded-full font-medium">
+              Pro
+            </span>
+          </NavLink>
+        </div>
 
         {/* Separator */}
         <div className="my-4 border-t border-white/10" />

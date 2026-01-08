@@ -86,3 +86,31 @@ body {
   outline: 2px solid rgba(252, 211, 77, 0.5);
   outline-offset: 2px;
 }
+
+/* Kitana AI Avatar Animations */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Listening pulse animation for voice input */
+@keyframes listening-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+  }
+}
+
+.animate-listening {
+  animation: listening-pulse 1.5s ease-in-out infinite;
+}
