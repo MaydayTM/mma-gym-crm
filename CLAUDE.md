@@ -1,5 +1,43 @@
 # RCN CRM - Project Context voor Claude Code
 
+## 🚀 QUICK START VOOR NIEUWE SESSIE
+
+> **Lees dit eerst!** Deze sectie helpt Claude snel op te starten.
+
+### Huidige Status (9 januari 2026)
+- **Fase:** MVP naar Production-Ready
+- **Prioriteit:** Security audit + Testing voordat we live gaan
+- **Laatste grote features:** Kitana AI Smart Hub, Password Reset Flow, Hooks systeem
+
+### Beschikbare Slash Commands
+```
+/crm-security-audit    → Volledige security checklist (RLS, API keys, auth)
+/crm-test-all          → Build, lint, TypeScript, Playwright tests
+/crm-production-ready  → Complete launch checklist (alle checks)
+```
+
+> **Tip voor Mehdi:** Type `/crm-` en je ziet alle project-specifieke commands.
+
+### Kritieke Bestanden
+- `CLAUDE.md` - Dit bestand (altijd lezen)
+- `.claude/settings.json` - Project hooks configuratie
+- `.claude/commands/` - Slash command definities
+- `supabase/migrations/` - Database schema
+- `src/types/database.types.ts` - Auto-generated types
+
+### Context Management
+- **Start nieuwe sessie** wanneer context < 10% (anders risico op hallucinations)
+- **Hooks actief:** Automatische macOS notificatie + logging bij taak afronding
+- **Subagents:** Voor complexe taken, houden eigen geïsoleerde context
+
+### Na elke significante taak
+```bash
+git add . && git commit -m "beschrijving"
+vercel --prod  # Deploy naar productie
+```
+
+---
+
 ## 🎯 PROJECT OVERZICHT
 
 **Naam:** RCN CRM (Reconnect Academy CRM)
@@ -414,23 +452,71 @@ CREATE POLICY "fighter_own_data" ON members
 
 ---
 
+## 🗓️ AFGEROND SESSIE 8 januari 2026
+
+### Kitana AI Smart Hub (DONE)
+- [x] `src/pages/KitanaHub.tsx` - Dedicated Kitana pagina
+  - Hero sectie met geanimeerde avatar (spin effect)
+  - Voice input via Web Speech API
+  - Text-to-speech voor responses (SpeechSynthesis)
+  - 6 agent function cards (Leden zoeken, Rapporten, etc.)
+  - Chat integratie met useAIChat hook
+  - Premium avatar placeholder
+- [x] Sidebar aangepast met prominente Kitana sectie (glow effect, "Pro" badge)
+- [x] Route `/kitana` toegevoegd
+
+### Password Reset Flow (DONE)
+- [x] `src/pages/ForgotPassword.tsx` - Email invoeren voor reset link
+- [x] `src/pages/ResetPassword.tsx` - Nieuw wachtwoord instellen na klik op link
+- [x] Login pagina: "Wachtwoord vergeten?" link toegevoegd
+- [x] Routes toegevoegd in App.tsx
+
+### Claude Code Hooks Systeem (DONE)
+- [x] Global hooks: `~/.claude/settings.json`
+  - Stop hook: macOS notificatie + activity logging
+  - PreToolUse: Bash command logging
+  - PostToolUse: Write file logging
+- [x] Global commands: `~/.claude/commands/`
+  - `/ralph-loop` - Autonome taak afronding
+  - `/security-audit` - Algemene security checklist
+  - `/test-loop` - Geautomatiseerd testen
+  - `/fix-loop` - Bug fixing loop
+- [x] Project hooks: `.claude/settings.json`
+  - RCN CRM specifieke notificaties
+  - Permissions whitelist (npm build, git, etc.)
+- [x] Project commands: `.claude/commands/`
+  - `/crm-security-audit` - Supabase RLS, API keys checks
+  - `/crm-test-all` - Build, lint, TypeScript, Playwright
+  - `/crm-production-ready` - Complete launch checklist
+
+### HTML Email Templates (DONE)
+- [x] `src/emails/BaseTemplate.tsx` - React Email component
+- [x] `src/emails/renderEmail.ts` - HTML generator voor Edge Functions
+- [x] `ai-assistant` Edge Function gebruikt nu HTML emails
+
+---
+
 ## 🗓️ PLAN VOLGENDE SESSIE
 
-### Prioriteit 1: Shop Module Afronden
-1. Test Shop module in browser (login nodig)
-2. Regenereer database types: `npx supabase gen types typescript`
-3. Koppel Shop admin functies aan mmagym.be/admin/shop
+### Prioriteit 1: Security Audit Uitvoeren
+> **Start met:** `/crm-security-audit`
+1. RLS policies controleren voor alle tabellen
+2. API keys valideren (geen hardcoded secrets)
+3. Auth flow testen (protected routes)
+4. Edge Functions auth tokens valideren
 
-### Prioriteit 2: Payment Integratie
+### Prioriteit 2: Testing & Build Verificatie
+> **Start met:** `/crm-test-all`
+1. `npm run build` - geen errors
+2. `npm run lint` - geen errors
+3. TypeScript check
+4. Playwright E2E tests
+
+### Prioriteit 3: Payment Integratie
 1. Mollie of Stripe kiezen en implementeren
 2. Webhook handlers voor payment confirmatie
 3. Automatisch member aanmaken na succesvolle betaling
 4. Success/Cancel pagina's
-
-### Prioriteit 3: Checkout Afronding
-1. Welkomstmail na inschrijving
-2. Dagpas & Beurtenkaart checkout flows
-3. Admin beheer van plannen en prijzen
 
 ### Prioriteit 4: Nice to have
 1. Fighter Profile Generator koppelen (externe repo)
@@ -599,5 +685,5 @@ vercel --prod                     # Deploy naar Vercel
 
 ---
 
-*Laatste update: 15 december 2025*
-*Fase: MVP Development - Functionele Shell*
+*Laatste update: 9 januari 2026*
+*Fase: MVP naar Production-Ready (Security Audit & Testing)*
