@@ -27,3 +27,10 @@ npm-debug.log*
 # TypeScript cache
 *.tsbuildinfo
 .vercel
+
+# Claude Code - only ignore logs, keep settings and commands
+.claude/logs/
+
+# Test reports (generated)
+*_REPORT.md
+!README.md
