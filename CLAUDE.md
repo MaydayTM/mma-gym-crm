@@ -4,10 +4,11 @@
 
 > **Lees dit eerst!** Deze sectie helpt Claude snel op te starten.
 
-### Huidige Status (9 januari 2026)
-- **Fase:** MVP naar Production-Ready
-- **Prioriteit:** Security audit + Testing voordat we live gaan
+### Huidige Status (11 januari 2026)
+- **Fase:** MVP naar Production-Ready + Mobile App Planning
+- **Prioriteit:** Mobile App brainstorm hervatten (crash herstel)
 - **Laatste grote features:** Kitana AI Smart Hub, Password Reset Flow, Hooks systeem
+- **NIEUW:** Mobile app design document hersteld na PC crash
 
 ### Beschikbare Slash Commands
 ```
@@ -496,40 +497,71 @@ CREATE POLICY "fighter_own_data" ON members
 
 ---
 
+## 📱 MOBILE APP PROJECT (NIEUW - Januari 2026)
+
+> **BELANGRIJK:** Op 11 januari 2026 is er werk verloren gegaan door een PC crash.
+> Gelukkig zijn de sessie logs teruggevonden. Zie `docs/plans/2026-01-11-mobile-app-design.md`
+
+### Visie
+Een **community-driven martial arts app** die drie producten combineert:
+1. **Member App** - QR toegang, reserveringen, profiel
+2. **Multi-tenant CRM** - Meerdere gyms kunnen platform gebruiken
+3. **Social Platform "FightFlow"** - Video-driven content (15-sec techniek clips)
+
+### Technische Beslissingen (DEFINITIEF)
+- **Framework:** Expo + React Native
+- **Codebase:** Monorepo (apps/web + apps/mobile + packages/shared)
+- **Backend:** Zelfde Supabase database
+- **Multi-tenant:** Eén database met tenant_id
+
+### Status
+- [x] Brainstorm sessie (9 januari 2026)
+- [x] Technische keuzes gemaakt
+- [x] Design document aangemaakt na crash herstel
+- [ ] **VOLGENDE:** Brainstorm hervatten, open vragen beantwoorden
+- [ ] Expo project setup
+
+### Design Document
+`docs/plans/2026-01-11-mobile-app-design.md` bevat:
+- Complete feature lijst
+- Database schema uitbreiding (tenants, moves, fightflows, etc.)
+- Implementatie stappenplan
+- Open vragen die nog beantwoord moeten worden
+
+---
+
 ## 🗓️ PLAN VOLGENDE SESSIE
 
-### Prioriteit 1: Security Audit Uitvoeren
-> **Start met:** `/crm-security-audit`
-1. RLS policies controleren voor alle tabellen
-2. API keys valideren (geen hardcoded secrets)
-3. Auth flow testen (protected routes)
-4. Edge Functions auth tokens valideren
+### Prioriteit 1: Mobile App Brainstorm Hervatten
+> **Lees eerst:** `docs/plans/2026-01-11-mobile-app-design.md`
+1. Open vragen beantwoorden (app naam, MVP scope, etc.)
+2. Monorepo migratie planning
+3. Expo project initialiseren
 
-### Prioriteit 2: Testing & Build Verificatie
-> **Start met:** `/crm-test-all`
-1. `npm run build` - geen errors
-2. `npm run lint` - geen errors
-3. TypeScript check
-4. Playwright E2E tests
+### Prioriteit 2: Security Audit (indien nog niet gedaan)
+> Security audit was al uitgevoerd op 9 januari - RLS gefixed (migration 051)
+> Zie `SECURITY_AUDIT_REPORT.md` voor status
 
 ### Prioriteit 3: Payment Integratie
 1. Mollie of Stripe kiezen en implementeren
 2. Webhook handlers voor payment confirmatie
 3. Automatisch member aanmaken na succesvolle betaling
-4. Success/Cancel pagina's
 
 ### Prioriteit 4: Nice to have
 1. Fighter Profile Generator koppelen (externe repo)
-2. QR scanner voor check-in
-3. Export functies voor rapportages
+2. Export functies voor rapportages
 
 > **Design documents:**
+> - Mobile App: `docs/plans/2026-01-11-mobile-app-design.md`
 > - Subscription module: `docs/plans/2025-12-08-subscription-plans-design.md`
 > - Shop integratie: Zie `reconnect-site` repo voor webshop code
 
 ---
 
 ## 🚧 BLOKKERENDE TODO'S
+
+### Mobile App - Open Vragen
+Zie `docs/plans/2026-01-11-mobile-app-design.md` sectie "Open Vragen"
 
 ### Fighter Profile Generator koppelen
 - Knop staat klaar in EditMemberForm (disabled)
