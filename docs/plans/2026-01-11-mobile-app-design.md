@@ -1,4 +1,4 @@
-# RCN Mobile App - Design Document
+# COMBO - Mobile App Design Document
 
 > **Status:** HERSTELD NA CRASH - Brainstorm moet hervat worden
 > **Datum originele sessie:** 9 januari 2026
@@ -300,8 +300,8 @@ CREATE TABLE messages (
 1. **Monorepo timing:** Migreren we de huidige CRM code direct naar `apps/web/` of later?
 
 2. **Naming:**
-   - App naam? "Reconnect" / "FightFlow" / "FightWave" / anders?
-   - Package naam voor stores?
+   - ~~App naam?~~ ✅ **COMBO** (besloten)
+   - Package naam voor stores? `com.combo.app` ?
 
 3. **Onboarding flow:**
    - Kan iemand zonder gym registreren? (community-only user)
