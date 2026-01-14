@@ -1030,6 +1030,50 @@ export type Database = {
         }
         Relationships: []
       }
+      creative_fighter_lifetime_purchases: {
+        Row: {
+          amount_cents: number
+          auth_user_id: string | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          status: string | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_cents: number
+          auth_user_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          auth_user_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creative_fighter_lifetime_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "creative_fighter_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creative_fighter_photos: {
         Row: {
           created_at: string | null
@@ -1061,7 +1105,9 @@ export type Database = {
           credits: number | null
           display_name: string | null
           email: string
+          has_lifetime_access: boolean | null
           id: string
+          lifetime_purchased_at: string | null
           role: string | null
           updated_at: string | null
         }
@@ -1071,7 +1117,9 @@ export type Database = {
           credits?: number | null
           display_name?: string | null
           email: string
+          has_lifetime_access?: boolean | null
           id?: string
+          lifetime_purchased_at?: string | null
           role?: string | null
           updated_at?: string | null
         }
@@ -1081,7 +1129,9 @@ export type Database = {
           credits?: number | null
           display_name?: string | null
           email?: string
+          has_lifetime_access?: boolean | null
           id?: string
+          lifetime_purchased_at?: string | null
           role?: string | null
           updated_at?: string | null
         }
@@ -1357,6 +1407,409 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      email_campaigns: {
+        Row: {
+          audience_count: number | null
+          audience_filter: Json | null
+          body_html: string | null
+          body_text: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          scheduled_at: string | null
+          started_at: string | null
+          status: string | null
+          subject: string | null
+          template_id: string | null
+          total_bounced: number | null
+          total_clicked: number | null
+          total_complained: number | null
+          total_delivered: number | null
+          total_opened: number | null
+          total_recipients: number | null
+          total_sent: number | null
+          total_unsubscribed: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          audience_count?: number | null
+          audience_filter?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string | null
+          subject?: string | null
+          template_id?: string | null
+          total_bounced?: number | null
+          total_clicked?: number | null
+          total_complained?: number | null
+          total_delivered?: number | null
+          total_opened?: number | null
+          total_recipients?: number | null
+          total_sent?: number | null
+          total_unsubscribed?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          audience_count?: number | null
+          audience_filter?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string | null
+          subject?: string | null
+          template_id?: string | null
+          total_bounced?: number | null
+          total_clicked?: number | null
+          total_complained?: number | null
+          total_delivered?: number | null
+          total_opened?: number | null
+          total_recipients?: number | null
+          total_sent?: number | null
+          total_unsubscribed?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_events: {
+        Row: {
+          clicked_url: string | null
+          created_at: string | null
+          event_type: string
+          id: string
+          ip_address: unknown
+          raw_payload: Json | null
+          send_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_url?: string | null
+          created_at?: string | null
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          raw_payload?: Json | null
+          send_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_url?: string | null
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          raw_payload?: Json | null
+          send_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_events_send_id_fkey"
+            columns: ["send_id"]
+            isOneToOne: false
+            referencedRelation: "email_sends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sends: {
+        Row: {
+          campaign_id: string | null
+          click_count: number | null
+          created_at: string | null
+          delivered_at: string | null
+          error_code: string | null
+          error_message: string | null
+          first_clicked_at: string | null
+          first_opened_at: string | null
+          id: string
+          last_opened_at: string | null
+          member_id: string | null
+          open_count: number | null
+          provider: string | null
+          provider_message_id: string | null
+          queued_at: string | null
+          recipient_email: string
+          recipient_name: string | null
+          sent_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          click_count?: number | null
+          created_at?: string | null
+          delivered_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          first_clicked_at?: string | null
+          first_opened_at?: string | null
+          id?: string
+          last_opened_at?: string | null
+          member_id?: string | null
+          open_count?: number | null
+          provider?: string | null
+          provider_message_id?: string | null
+          queued_at?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          click_count?: number | null
+          created_at?: string | null
+          delivered_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          first_clicked_at?: string | null
+          first_opened_at?: string | null
+          id?: string
+          last_opened_at?: string | null
+          member_id?: string | null
+          open_count?: number | null
+          provider?: string | null
+          provider_message_id?: string | null
+          queued_at?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_sends_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_sends_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_sends_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_sends_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          available_variables: string[] | null
+          body_html: string
+          body_text: string | null
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          preview_text: string | null
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          available_variables?: string[] | null
+          body_html: string
+          body_text?: string | null
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          preview_text?: string | null
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          available_variables?: string[] | null
+          body_html?: string
+          body_text?: string | null
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          preview_text?: string | null
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_unsubscribes: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          member_id: string | null
+          reason: string | null
+          unsubscribed_from_campaign_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          member_id?: string | null
+          reason?: string | null
+          unsubscribed_from_campaign_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          member_id?: string | null
+          reason?: string | null
+          unsubscribed_from_campaign_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_unsubscribes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_unsubscribes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_unsubscribes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_unsubscribes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_unsubscribes_unsubscribed_from_campaign_id_fkey"
+            columns: ["unsubscribed_from_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       family_discounts: {
         Row: {
@@ -4079,6 +4532,10 @@ export type Database = {
           match_type: string
         }[]
       }
+      check_lifetime_access: {
+        Args: { p_auth_user_id: string }
+        Returns: boolean
+      }
       check_member_door_access: {
         Args: { p_member_id: string }
         Returns: {
@@ -4137,6 +4594,15 @@ export type Database = {
           id: string
           image_url: string
           title: string
+        }[]
+      }
+      get_campaign_audience: {
+        Args: { filter_json: Json }
+        Returns: {
+          email: string
+          first_name: string
+          last_name: string
+          member_id: string
         }[]
       }
       get_churn_risk_members: {
@@ -4263,10 +4729,21 @@ export type Database = {
         Returns: number
       }
       get_user_tenant_ids: { Args: never; Returns: string[] }
+      grant_lifetime_access: {
+        Args: {
+          p_amount_cents: number
+          p_auth_user_id: string
+          p_currency?: string
+          p_stripe_payment_intent_id: string
+          p_stripe_session_id: string
+        }
+        Returns: boolean
+      }
       has_module_access: {
         Args: { p_module_slug: string; p_tenant_id: string }
         Returns: boolean
       }
+      is_email_unsubscribed: { Args: { check_email: string }; Returns: boolean }
       is_member_publicly_visible: {
         Args: { member_row: Database["public"]["Tables"]["members"]["Row"] }
         Returns: boolean
@@ -4279,6 +4756,10 @@ export type Database = {
       restore_variant_stock: {
         Args: { p_quantity: number; p_variant_id: string }
         Returns: boolean
+      }
+      update_campaign_stats: {
+        Args: { p_campaign_id: string }
+        Returns: undefined
       }
     }
     Enums: {

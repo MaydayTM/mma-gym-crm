@@ -22,6 +22,7 @@ import {
   ForgotPassword,
   ResetPassword,
   Shop,
+  Email,
   GymScreen,
   DoorTest,
   KitanaHub,
@@ -177,6 +178,7 @@ function CRMApp() {
           <Route path="team" element={<Team />} />
           <Route path="settings" element={<Settings />} />
           <Route path="shop" element={<Shop />} />
+          <Route path="email" element={<Email />} />
           <Route path="gymscreen" element={<GymScreen />} />
           <Route path="door-test" element={<DoorTest />} />
         </Route>
@@ -203,6 +205,7 @@ function CRMApp() {
           <Route path="team" element={<Team />} />
           <Route path="settings" element={<Settings />} />
           <Route path="shop" element={<Shop />} />
+          <Route path="email" element={<Email />} />
           <Route path="gymscreen" element={<GymScreen />} />
           <Route path="door-test" element={<DoorTest />} />
         </Route>

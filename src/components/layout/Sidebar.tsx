@@ -14,6 +14,7 @@ import {
   Shield,
   LogOut,
   ShoppingBag,
+  Mail,
   ChevronDown,
   ExternalLink,
   Palette,
@@ -162,6 +163,17 @@ export function Sidebar() {
             href: '/shop',
             icon: ShoppingBag,
             trialBadge: getTrialInfo('shop').isTrialing ? getTrialInfo('shop').daysLeft : null,
+          },
+        ]
+        : []),
+      // Email Marketing (if access)
+      ...(hasAccess('email')
+        ? [
+          {
+            name: 'Email',
+            href: '/email',
+            icon: Mail,
+            trialBadge: getTrialInfo('email').isTrialing ? getTrialInfo('email').daysLeft : null,
           },
         ]
         : []),
