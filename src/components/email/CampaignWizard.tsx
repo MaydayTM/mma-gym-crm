@@ -9,14 +9,22 @@ import {
   Send,
   AlertCircle,
   Filter,
+  Search,
+  UserPlus,
+  X,
+  AlertTriangle,
 } from 'lucide-react'
 import { useEmailTemplates } from '../../hooks/useEmailTemplates'
 import {
   useCreateEmailCampaign,
   useCampaignAudienceCount,
+  useSearchMembersForEmail,
   type AudienceFilter,
+  type MemberSearchResult,
 } from '../../hooks/useEmailCampaigns'
 import { useDisciplines } from '../../hooks/useDisciplines'
+
+type AudienceMode = 'filter' | 'custom'
 
 interface CampaignWizardProps {
   onClose: () => void
@@ -53,27 +61,91 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
   const [customBody, setCustomBody] = useState('')
   const [useCustomContent, setUseCustomContent] = useState(false)
 
-  // Audience filter
+  // Audience mode and filter
+  const [audienceMode, setAudienceMode] = useState<AudienceMode>('filter')
   const [audienceFilter, setAudienceFilter] = useState<AudienceFilter>({
-    status: ['active'],
+    status: [],
     role: [],
     disciplines: [],
   })
+  const [audienceError, setAudienceError] = useState<string | null>(null)
+
+  // Custom selection state
+  const [customRecipients, setCustomRecipients] = useState<MemberSearchResult[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Data
   const { data: templates } = useEmailTemplates()
   const { data: disciplines } = useDisciplines()
   const createCampaign = useCreateEmailCampaign()
   const getAudienceCount = useCampaignAudienceCount()
+  const searchMembers = useSearchMembersForEmail()
 
   const [audienceCount, setAudienceCount] = useState<number | null>(null)
 
-  // Fetch audience count when filter changes
+  // Fetch audience count when filter or custom recipients change
   useEffect(() => {
-    getAudienceCount.mutate(audienceFilter, {
-      onSuccess: (count) => setAudienceCount(count),
+    setAudienceError(null)
+
+    if (audienceMode === 'custom') {
+      // For custom mode, just count the selected recipients (excluding unsubscribed)
+      const validRecipients = customRecipients.filter((r) => !r.is_unsubscribed)
+      setAudienceCount(validRecipients.length)
+    } else {
+      // For filter mode, call the RPC
+      getAudienceCount.mutate(
+        { filter: audienceFilter },
+        {
+          onSuccess: (count) => {
+            setAudienceCount(count)
+          },
+          onError: (err) => {
+            console.error('Audience count error:', err)
+            setAudienceError((err as Error).message)
+          },
+        }
+      )
+    }
+  }, [audienceFilter, audienceMode, customRecipients])
+
+  // Reset all filters
+  const resetFilters = () => {
+    setAudienceFilter({
+      status: [],
+      role: [],
+      disciplines: [],
     })
-  }, [audienceFilter])
+  }
+
+  // Select all members with email (no filters)
+  const selectAllMembers = () => {
+    setAudienceFilter({
+      status: [],
+      role: [],
+      disciplines: [],
+    })
+  }
+
+  // Custom selection handlers
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      searchMembers.mutate(searchQuery)
+    }
+  }
+
+  const addRecipient = (member: MemberSearchResult) => {
+    if (!customRecipients.find((r) => r.member_id === member.member_id)) {
+      setCustomRecipients([...customRecipients, member])
+    }
+  }
+
+  const removeRecipient = (memberId: string) => {
+    setCustomRecipients(customRecipients.filter((r) => r.member_id !== memberId))
+  }
+
+  const clearCustomRecipients = () => {
+    setCustomRecipients([])
+  }
 
   const selectedTemplate = templates?.find((t) => t.id === selectedTemplateId)
 
@@ -120,14 +192,31 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
     setError(null)
 
     try {
-      const campaign = await createCampaign.mutateAsync({
+      const campaignData: {
+        name: string
+        template_id?: string
+        subject?: string
+        body_html?: string
+        audience_filter?: AudienceFilter
+        custom_recipients?: string[]
+      } = {
         name,
         template_id: useCustomContent ? undefined : selectedTemplateId || undefined,
         subject: useCustomContent ? customSubject : undefined,
         body_html: useCustomContent ? customBody : undefined,
-        audience_filter: audienceFilter,
-      })
+      }
 
+      if (audienceMode === 'custom') {
+        // Use custom recipient IDs
+        campaignData.custom_recipients = customRecipients
+          .filter((r) => !r.is_unsubscribed)
+          .map((r) => r.member_id)
+      } else {
+        // Use filter
+        campaignData.audience_filter = audienceFilter
+      }
+
+      const campaign = await createCampaign.mutateAsync(campaignData)
       onSuccess(campaign.id)
     } catch (err) {
       setError((err as Error).message)
@@ -219,13 +308,28 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
       <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
         {currentStep === 1 && (
           <AudienceStep
+            mode={audienceMode}
+            onModeChange={setAudienceMode}
             filter={audienceFilter}
             audienceCount={audienceCount}
             isLoading={getAudienceCount.isPending}
             onToggle={toggleFilter}
+            onReset={resetFilters}
+            onSelectAll={selectAllMembers}
             statusOptions={STATUS_OPTIONS}
             roleOptions={ROLE_OPTIONS}
             disciplines={disciplines || []}
+            error={audienceError}
+            // Custom selection props
+            customRecipients={customRecipients}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            onSearch={handleSearch}
+            searchResults={searchMembers.data || []}
+            isSearching={searchMembers.isPending}
+            onAddRecipient={addRecipient}
+            onRemoveRecipient={removeRecipient}
+            onClearRecipients={clearCustomRecipients}
           />
         )}
 
@@ -261,7 +365,9 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
           <ReviewStep
             name={name}
             audienceCount={audienceCount || 0}
+            audienceMode={audienceMode}
             audienceFilter={audienceFilter}
+            customRecipientsCount={customRecipients.length}
             templateName={selectedTemplate?.name}
             useCustomContent={useCustomContent}
             subject={useCustomContent ? customSubject : selectedTemplate?.subject || ''}
@@ -304,29 +410,64 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
 }
 
 function AudienceStep({
+  mode,
+  onModeChange,
   filter,
   audienceCount,
   isLoading,
   onToggle,
+  onReset,
+  onSelectAll,
   statusOptions,
   roleOptions,
   disciplines,
+  error,
+  // Custom selection props
+  customRecipients,
+  searchQuery,
+  onSearchQueryChange,
+  onSearch,
+  searchResults,
+  isSearching,
+  onAddRecipient,
+  onRemoveRecipient,
+  onClearRecipients,
 }: {
+  mode: AudienceMode
+  onModeChange: (mode: AudienceMode) => void
   filter: AudienceFilter
   audienceCount: number | null
   isLoading: boolean
   onToggle: (type: 'status' | 'role' | 'disciplines', value: string) => void
+  onReset: () => void
+  onSelectAll: () => void
   statusOptions: { value: string; label: string }[]
   roleOptions: { value: string; label: string }[]
   disciplines: { id: string; name: string }[]
+  error?: string | null
+  // Custom selection props
+  customRecipients: MemberSearchResult[]
+  searchQuery: string
+  onSearchQueryChange: (query: string) => void
+  onSearch: () => void
+  searchResults: MemberSearchResult[]
+  isSearching: boolean
+  onAddRecipient: (member: MemberSearchResult) => void
+  onRemoveRecipient: (memberId: string) => void
+  onClearRecipients: () => void
 }) {
+  const hasFilters = (filter.status?.length || 0) > 0 ||
+    (filter.role?.length || 0) > 0 ||
+    (filter.disciplines?.length || 0) > 0
+
   return (
     <div className="space-y-6">
+      {/* Header with count */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">Selecteer je audience</h2>
           <p className="text-neutral-400 text-sm mt-1">
-            Filter op status, rol en discipline
+            {mode === 'filter' ? 'Filter op status, rol en discipline' : 'Zoek en selecteer specifieke leden'}
           </p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-amber-400/10 border border-amber-400/30 rounded-xl">
@@ -338,56 +479,273 @@ function AudienceStep({
         </div>
       </div>
 
-      {/* Status filter */}
-      <div>
-        <h3 className="text-sm font-medium text-neutral-300 mb-2 flex items-center gap-2">
+      {/* Mode tabs */}
+      <div className="flex gap-2 p-1 bg-neutral-800 rounded-lg">
+        <button
+          onClick={() => onModeChange('filter')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            mode === 'filter'
+              ? 'bg-amber-400 text-neutral-900'
+              : 'text-neutral-400 hover:text-white'
+          }`}
+        >
           <Filter className="w-4 h-4" />
-          Lidmaatschap Status
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {statusOptions.map((opt) => (
-            <FilterChip
-              key={opt.value}
-              label={opt.label}
-              selected={filter.status?.includes(opt.value) || false}
-              onClick={() => onToggle('status', opt.value)}
-            />
-          ))}
-        </div>
+          Filters
+        </button>
+        <button
+          onClick={() => onModeChange('custom')}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            mode === 'custom'
+              ? 'bg-amber-400 text-neutral-900'
+              : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <UserPlus className="w-4 h-4" />
+          Custom Selectie
+        </button>
       </div>
 
-      {/* Role filter */}
-      <div>
-        <h3 className="text-sm font-medium text-neutral-300 mb-2">Rol</h3>
-        <div className="flex flex-wrap gap-2">
-          {roleOptions.map((opt) => (
-            <FilterChip
-              key={opt.value}
-              label={opt.label}
-              selected={filter.role?.includes(opt.value) || false}
-              onClick={() => onToggle('role', opt.value)}
-            />
-          ))}
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-sm">
+          {error}
         </div>
-      </div>
+      )}
 
-      {/* Disciplines filter */}
-      <div>
-        <h3 className="text-sm font-medium text-neutral-300 mb-2">Disciplines</h3>
-        <div className="flex flex-wrap gap-2">
-          {disciplines.map((d) => (
-            <FilterChip
-              key={d.id}
-              label={d.name}
-              selected={filter.disciplines?.includes(d.name.toLowerCase()) || false}
-              onClick={() => onToggle('disciplines', d.name.toLowerCase())}
-            />
-          ))}
-        </div>
-        <p className="text-xs text-neutral-500 mt-2">
-          Geen discipline geselecteerd = alle disciplines
-        </p>
-      </div>
+      {/* Filter Mode */}
+      {mode === 'filter' && (
+        <>
+          {/* Quick actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={onSelectAll}
+              className="px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/20 transition-colors text-sm font-medium"
+            >
+              Alle leden met email
+            </button>
+            {hasFilters && (
+              <button
+                onClick={onReset}
+                className="px-4 py-2 bg-neutral-800 text-neutral-300 rounded-lg hover:bg-neutral-700 transition-colors text-sm"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
+
+          {/* Warning when 0 results with filters */}
+          {audienceCount === 0 && !isLoading && hasFilters && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-300 text-sm">
+              <strong>Geen ontvangers gevonden.</strong> Probeer minder filters te selecteren of klik op "Alle leden met email".
+            </div>
+          )}
+
+          {/* Status filter */}
+          <div>
+            <h3 className="text-sm font-medium text-neutral-300 mb-2 flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              Lidmaatschap Status
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {statusOptions.map((opt) => (
+                <FilterChip
+                  key={opt.value}
+                  label={opt.label}
+                  selected={filter.status?.includes(opt.value) || false}
+                  onClick={() => onToggle('status', opt.value)}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-neutral-500 mt-2">
+              Geen status geselecteerd = alle statussen
+            </p>
+          </div>
+
+          {/* Role filter */}
+          <div>
+            <h3 className="text-sm font-medium text-neutral-300 mb-2">Rol</h3>
+            <div className="flex flex-wrap gap-2">
+              {roleOptions.map((opt) => (
+                <FilterChip
+                  key={opt.value}
+                  label={opt.label}
+                  selected={filter.role?.includes(opt.value) || false}
+                  onClick={() => onToggle('role', opt.value)}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-neutral-500 mt-2">
+              Geen rol geselecteerd = alle rollen
+            </p>
+          </div>
+
+          {/* Disciplines filter */}
+          <div>
+            <h3 className="text-sm font-medium text-neutral-300 mb-2">Disciplines</h3>
+            <div className="flex flex-wrap gap-2">
+              {disciplines.map((d) => (
+                <FilterChip
+                  key={d.id}
+                  label={d.name}
+                  selected={filter.disciplines?.includes(d.name.toLowerCase()) || false}
+                  onClick={() => onToggle('disciplines', d.name.toLowerCase())}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-neutral-500 mt-2">
+              Geen discipline geselecteerd = alle disciplines
+            </p>
+          </div>
+
+          {/* Info about disciplines */}
+          {(filter.disciplines?.length || 0) > 0 && (
+            <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-blue-300 text-sm">
+              <strong>Let op:</strong> De meeste leden hebben nog geen disciplines ingesteld in hun profiel.
+              Dit filter werkt alleen op leden die expliciet disciplines hebben toegewezen.
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Custom Selection Mode */}
+      {mode === 'custom' && (
+        <>
+          {/* Search */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchQueryChange(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+                placeholder="Zoek op naam of email..."
+                className="w-full pl-10 pr-4 py-2.5 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400/50"
+              />
+            </div>
+            <button
+              onClick={onSearch}
+              disabled={isSearching || !searchQuery.trim()}
+              className="px-4 py-2.5 bg-amber-400 text-neutral-900 font-medium rounded-lg hover:bg-amber-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSearching ? 'Zoeken...' : 'Zoeken'}
+            </button>
+          </div>
+
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <div className="border border-neutral-700 rounded-lg overflow-hidden">
+              <div className="px-4 py-2 bg-neutral-800 text-sm text-neutral-400">
+                {searchResults.length} resultaten gevonden
+              </div>
+              <div className="max-h-48 overflow-y-auto divide-y divide-neutral-800">
+                {searchResults.map((member) => {
+                  const isSelected = customRecipients.some(
+                    (r) => r.member_id === member.member_id
+                  )
+                  return (
+                    <div
+                      key={member.member_id}
+                      className="flex items-center justify-between px-4 py-2 hover:bg-neutral-800/50"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium truncate">
+                            {member.first_name} {member.last_name}
+                          </span>
+                          {member.is_unsubscribed && (
+                            <span className="flex items-center gap-1 px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded">
+                              <AlertTriangle className="w-3 h-3" />
+                              Uitgeschreven
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm text-neutral-400 truncate block">
+                          {member.email}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => onAddRecipient(member)}
+                        disabled={isSelected || member.is_unsubscribed}
+                        className={`ml-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-green-500/20 text-green-400 cursor-default'
+                            : member.is_unsubscribed
+                            ? 'bg-neutral-700 text-neutral-500 cursor-not-allowed'
+                            : 'bg-amber-400/10 text-amber-400 hover:bg-amber-400/20'
+                        }`}
+                      >
+                        {isSelected ? 'Toegevoegd' : 'Toevoegen'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Selected Recipients */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-neutral-300">
+                Geselecteerde ontvangers ({customRecipients.length})
+              </h3>
+              {customRecipients.length > 0 && (
+                <button
+                  onClick={onClearRecipients}
+                  className="text-xs text-red-400 hover:text-red-300"
+                >
+                  Alles verwijderen
+                </button>
+              )}
+            </div>
+
+            {customRecipients.length === 0 ? (
+              <div className="p-6 border border-dashed border-neutral-700 rounded-lg text-center">
+                <UserPlus className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
+                <p className="text-neutral-500 text-sm">
+                  Zoek hierboven naar leden om toe te voegen
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-3 bg-neutral-800/50 rounded-lg">
+                {customRecipients.map((member) => (
+                  <div
+                    key={member.member_id}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
+                      member.is_unsubscribed
+                        ? 'bg-red-500/10 border border-red-500/30'
+                        : 'bg-neutral-700'
+                    }`}
+                  >
+                    <span className={member.is_unsubscribed ? 'text-red-300' : 'text-white'}>
+                      {member.first_name} {member.last_name}
+                    </span>
+                    {member.is_unsubscribed && (
+                      <AlertTriangle className="w-3 h-3 text-red-400" />
+                    )}
+                    <button
+                      onClick={() => onRemoveRecipient(member.member_id)}
+                      className="text-neutral-400 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Warning about unsubscribed */}
+            {customRecipients.some((r) => r.is_unsubscribed) && (
+              <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-300 text-sm flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  Sommige geselecteerde leden hebben zich uitgeschreven en zullen geen email ontvangen.
+                </span>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -590,18 +948,39 @@ function ContentStep({
 function ReviewStep({
   name,
   audienceCount,
+  audienceMode,
   audienceFilter,
+  customRecipientsCount,
   templateName,
   useCustomContent,
   subject,
 }: {
   name: string
   audienceCount: number
+  audienceMode: AudienceMode
   audienceFilter: AudienceFilter
+  customRecipientsCount: number
   templateName?: string
   useCustomContent: boolean
   subject: string
 }) {
+  const getAudienceDescription = () => {
+    if (audienceMode === 'custom') {
+      return `Custom selectie (${customRecipientsCount} leden)`
+    }
+    const filters = []
+    if (audienceFilter.status?.length) {
+      filters.push(`Status: ${audienceFilter.status.join(', ')}`)
+    }
+    if (audienceFilter.role?.length) {
+      filters.push(`Rol: ${audienceFilter.role.join(', ')}`)
+    }
+    if (audienceFilter.disciplines?.length) {
+      filters.push(`Disciplines: ${audienceFilter.disciplines.join(', ')}`)
+    }
+    return filters.length > 0 ? filters.join(' | ') : 'Alle leden met email'
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -618,9 +997,10 @@ function ReviewStep({
           value={`${audienceCount.toLocaleString()} leden`}
         />
         <ReviewItem
-          label="Status Filter"
-          value={audienceFilter.status?.join(', ') || 'Alle'}
+          label="Selectie Type"
+          value={audienceMode === 'custom' ? 'Custom selectie' : 'Filter'}
         />
+        <ReviewItem label="Criteria" value={getAudienceDescription()} />
         <ReviewItem
           label="Template"
           value={useCustomContent ? 'Custom content' : templateName || '-'}

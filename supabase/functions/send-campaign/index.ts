@@ -318,18 +318,41 @@ serve(async (req) => {
       throw new Error('Campaign heeft geen subject of body')
     }
 
-    // Get audience
-    const { data: audience, error: audienceError } = await supabase.rpc(
-      'get_campaign_audience',
-      { filter_json: campaign.audience_filter || {} }
-    )
+    // Get audience - check for custom recipients first
+    let audience: any[] = []
 
-    if (audienceError) {
-      console.error('Audience error:', audienceError)
-      throw new Error('Kon audience niet ophalen')
+    if (campaign.custom_recipients && campaign.custom_recipients.length > 0) {
+      // Use custom recipients
+      const { data: customAudience, error: customError } = await supabase.rpc(
+        'get_campaign_audience',
+        {
+          filter_json: {},
+          custom_member_ids: campaign.custom_recipients,
+        }
+      )
+
+      if (customError) {
+        console.error('Custom audience error:', customError)
+        throw new Error('Kon custom ontvangers niet ophalen')
+      }
+
+      audience = customAudience || []
+    } else {
+      // Use filter-based audience
+      const { data: filterAudience, error: filterError } = await supabase.rpc(
+        'get_campaign_audience',
+        { filter_json: campaign.audience_filter || {} }
+      )
+
+      if (filterError) {
+        console.error('Filter audience error:', filterError)
+        throw new Error('Kon audience niet ophalen')
+      }
+
+      audience = filterAudience || []
     }
 
-    if (!audience || audience.length === 0) {
+    if (audience.length === 0) {
       throw new Error('Geen ontvangers gevonden voor deze campaign')
     }
 

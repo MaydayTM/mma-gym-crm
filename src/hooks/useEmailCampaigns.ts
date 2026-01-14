@@ -24,7 +24,17 @@ interface CreateCampaignData {
   body_html?: string
   body_text?: string
   audience_filter?: AudienceFilter
+  custom_recipients?: string[]
   scheduled_at?: string
+}
+
+export interface MemberSearchResult {
+  member_id: string
+  email: string
+  first_name: string
+  last_name: string
+  status: string
+  is_unsubscribed: boolean
 }
 
 interface UpdateCampaignData extends Partial<CreateCampaignData> {
@@ -98,6 +108,9 @@ export function useCreateEmailCampaign() {
         audience_filter: data.audience_filter as Json,
         scheduled_at: data.scheduled_at,
         status: 'draft' as const,
+        custom_recipients: data.custom_recipients && data.custom_recipients.length > 0
+          ? data.custom_recipients
+          : null,
       }
 
       const { data: campaign, error } = await supabase
@@ -176,16 +189,57 @@ export function useDeleteEmailCampaign() {
 
 export function useCampaignAudienceCount() {
   return useMutation({
-    mutationFn: async (filter: AudienceFilter): Promise<number> => {
+    mutationFn: async ({
+      filter,
+      customRecipients,
+    }: {
+      filter?: AudienceFilter
+      customRecipients?: string[]
+    }): Promise<number> => {
+      // If custom recipients are provided, count those
+      if (customRecipients && customRecipients.length > 0) {
+        const { data, error } = await supabase.rpc('get_campaign_audience', {
+          filter_json: {},
+          custom_member_ids: customRecipients,
+        })
+
+        if (error) {
+          console.error('get_campaign_audience error:', error)
+          throw new Error(error.message)
+        }
+
+        return data?.length || 0
+      }
+
+      // Otherwise use filter
       const { data, error } = await supabase.rpc('get_campaign_audience', {
-        filter_json: filter as Json,
+        filter_json: (filter || {}) as Json,
       })
 
       if (error) {
+        console.error('get_campaign_audience error:', error)
         throw new Error(error.message)
       }
 
       return data?.length || 0
+    },
+  })
+}
+
+export function useSearchMembersForEmail() {
+  return useMutation({
+    mutationFn: async (searchQuery: string): Promise<MemberSearchResult[]> => {
+      const { data, error } = await supabase.rpc('search_members_for_email', {
+        search_query: searchQuery,
+        result_limit: 20,
+      })
+
+      if (error) {
+        console.error('search_members_for_email error:', error)
+        throw new Error(error.message)
+      }
+
+      return (data || []) as MemberSearchResult[]
     },
   })
 }

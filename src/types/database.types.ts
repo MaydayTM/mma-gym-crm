@@ -1417,6 +1417,7 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           created_by: string | null
+          custom_recipients: string[] | null
           description: string | null
           id: string
           name: string
@@ -1443,6 +1444,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
+          custom_recipients?: string[] | null
           description?: string | null
           id?: string
           name: string
@@ -1469,6 +1471,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
+          custom_recipients?: string[] | null
           description?: string | null
           id?: string
           name?: string
@@ -4597,7 +4600,7 @@ export type Database = {
         }[]
       }
       get_campaign_audience: {
-        Args: { filter_json: Json }
+        Args: { custom_member_ids?: string[]; filter_json?: Json }
         Returns: {
           email: string
           first_name: string
@@ -4756,6 +4759,17 @@ export type Database = {
       restore_variant_stock: {
         Args: { p_quantity: number; p_variant_id: string }
         Returns: boolean
+      }
+      search_members_for_email: {
+        Args: { result_limit?: number; search_query?: string }
+        Returns: {
+          email: string
+          first_name: string
+          is_unsubscribed: boolean
+          last_name: string
+          member_id: string
+          status: string
+        }[]
       }
       update_campaign_stats: {
         Args: { p_campaign_id: string }
