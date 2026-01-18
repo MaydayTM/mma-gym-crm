@@ -2,16 +2,43 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
+import { BeltAvatar, BeltProgress } from '../../components/BeltAvatar';
 
-const BELT_COLORS: Record<string, string> = {
-  white: '#FFFFFF',
-  blue: '#0066CC',
-  purple: '#6B2D8B',
-  brown: '#8B4513',
-  black: '#1a1a1a',
+// Mock user data - will be replaced with real Supabase data
+const MOCK_USER = {
+  firstName: 'Mehdi',
+  lastName: 'Michiels',
+  imageUrl: null, // Will show initials
+  role: 'coach' as const,
+  gym: 'Reconnect Academy',
+  stats: {
+    trainings: 156,
+    streak: 12,
+    ranking: 'Top 5%',
+  },
+  belts: [
+    { discipline: 'BJJ', color: 'black', stripes: 2 },
+    { discipline: 'LL', color: 'brown', stripes: 1 },
+  ],
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  coach: '#F59E0B',
+  fighter: '#8B5CF6',
+  fan: '#6B7280',
 };
 
 export default function ProfileScreen() {
+  const user = MOCK_USER;
+
+  // Get highest belt for avatar ring
+  const beltOrder = ['white', 'blue', 'purple', 'brown', 'black'];
+  const highestBelt = user.belts.reduce((highest, belt) => {
+    const currentIndex = beltOrder.indexOf(belt.color);
+    const highestIndex = beltOrder.indexOf(highest);
+    return currentIndex > highestIndex ? belt.color : highest;
+  }, 'white');
+
   const handleLogout = async () => {
     Alert.alert(
       'Uitloggen',
@@ -34,14 +61,39 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container}>
       {/* Profile header */}
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <View style={[styles.avatar, { borderColor: BELT_COLORS.black }]}>
-            <Ionicons name="person" size={50} color="#D4AF37" />
-          </View>
+        {/* Role badge */}
+        <View style={[styles.roleBadge, { backgroundColor: ROLE_COLORS[user.role] }]}>
+          <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
         </View>
-        <Text style={styles.name}>Mehdi Michiels</Text>
-        <Text style={styles.handle}>@mehdi</Text>
-        <Text style={styles.gym}>Reconnect Academy</Text>
+
+        {/* Avatar with belt ring */}
+        <View style={styles.avatarContainer}>
+          <BeltAvatar
+            imageUrl={user.imageUrl}
+            firstName={user.firstName}
+            lastName={user.lastName}
+            beltColor={highestBelt}
+            size={120}
+          />
+        </View>
+
+        <Text style={styles.name}>{user.firstName}</Text>
+        <Text style={styles.lastName}>{user.lastName}</Text>
+        <Text style={styles.gym}>{user.gym}</Text>
+      </View>
+
+      {/* Belt Progress Section */}
+      <View style={styles.section}>
+        <View style={styles.beltsCard}>
+          {user.belts.map((belt) => (
+            <BeltProgress
+              key={belt.discipline}
+              discipline={belt.discipline}
+              beltColor={belt.color}
+              stripes={belt.stripes}
+            />
+          ))}
+        </View>
       </View>
 
       {/* Stats */}
@@ -49,37 +101,16 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Statistieken</Text>
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>156</Text>
+            <Text style={styles.statValue}>{user.stats.trainings}</Text>
             <Text style={styles.statLabel}>Trainingen</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statValue}>{user.stats.streak}</Text>
             <Text style={styles.statLabel}>Maanden streak</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>Top 5%</Text>
+            <Text style={styles.statValue}>{user.stats.ranking}</Text>
             <Text style={styles.statLabel}>Aanwezigheid</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Belts */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Gordels</Text>
-        <View style={styles.beltList}>
-          <View style={styles.beltItem}>
-            <View style={[styles.beltIndicator, { backgroundColor: BELT_COLORS.black }]} />
-            <View style={styles.beltInfo}>
-              <Text style={styles.beltDiscipline}>BJJ</Text>
-              <Text style={styles.beltRank}>Zwart (2 stripes)</Text>
-            </View>
-          </View>
-          <View style={styles.beltItem}>
-            <View style={[styles.beltIndicator, { backgroundColor: BELT_COLORS.brown }]} />
-            <View style={styles.beltInfo}>
-              <Text style={styles.beltDiscipline}>Judo</Text>
-              <Text style={styles.beltRank}>Bruin</Text>
-            </View>
           </View>
         </View>
       </View>
@@ -130,42 +161,42 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    paddingTop: 80,
-    paddingBottom: 30,
-    borderBottomWidth: 1,
-    borderBottomColor: '#222',
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  roleBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  roleText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
   avatarContainer: {
     marginBottom: 15,
   },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#222',
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   name: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
   },
-  handle: {
-    fontSize: 14,
+  lastName: {
+    fontSize: 18,
     color: '#888',
     marginTop: 2,
   },
   gym: {
     fontSize: 14,
-    color: '#D4AF37',
-    marginTop: 5,
+    color: '#F59E0B',
+    marginTop: 8,
   },
   section: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#222',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   sectionTitle: {
     fontSize: 14,
@@ -175,9 +206,18 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 15,
   },
+  beltsCard: {
+    backgroundColor: '#111',
+    borderRadius: 12,
+    padding: 15,
+    gap: 8,
+  },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    backgroundColor: '#111',
+    borderRadius: 12,
+    padding: 20,
   },
   statItem: {
     alignItems: 'center',
@@ -191,35 +231,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 4,
-  },
-  beltList: {
-    gap: 12,
-  },
-  beltItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#111',
-    borderRadius: 12,
-    padding: 15,
-  },
-  beltIndicator: {
-    width: 8,
-    height: 40,
-    borderRadius: 4,
-    marginRight: 15,
-  },
-  beltInfo: {
-    flex: 1,
-  },
-  beltDiscipline: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  beltRank: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 2,
   },
   menuList: {
     gap: 2,
