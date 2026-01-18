@@ -50,7 +50,7 @@ export function PaymentSettings() {
       await saveConfig(formData)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch (err) {
+    } catch {
       // Error is handled by the hook
     }
   }

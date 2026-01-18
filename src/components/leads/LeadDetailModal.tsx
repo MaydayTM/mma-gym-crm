@@ -50,6 +50,8 @@ export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps)
     lost_reason: lead.lost_reason || '',
   })
 
+  // Reset form data when lead changes - intentional props-to-state sync
+   
   useEffect(() => {
     setFormData({
       first_name: lead.first_name || '',

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Calendar, Clock } from 'lucide-react'
 import type { Lead } from '../../hooks/useLeads'
 
@@ -8,9 +9,10 @@ interface LeadCardProps {
 }
 
 export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
-  const daysSinceCreated = lead.created_at
-    ? Math.floor((Date.now() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60 * 24))
-    : 0
+  const daysSinceCreated = useMemo(() => {
+    if (!lead.created_at) return 0
+    return Math.floor((Date.now() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60 * 24))
+  }, [lead.created_at])
 
   return (
     <div

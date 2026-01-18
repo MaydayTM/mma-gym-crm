@@ -56,6 +56,8 @@ export const ShopProductDetail: React.FC = () => {
   }, [product, selectedVariantId])
 
   // Auto-select first available variant when product loads
+  // This is intentional props-to-state initialization on product load
+   
   useEffect(() => {
     if (product && !selectedVariantId) {
       const presale = isInPresale(product)
@@ -71,6 +73,7 @@ export const ShopProductDetail: React.FC = () => {
 
   // Auto-select purchase mode based on what's available
   // This only runs once when the product loads, not on every change
+   
   useEffect(() => {
     if (!product) return
 

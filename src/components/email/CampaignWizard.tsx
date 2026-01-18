@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,6 +23,9 @@ import {
   type MemberSearchResult,
 } from '../../hooks/useEmailCampaigns'
 import { useDisciplines } from '../../hooks/useDisciplines'
+import type { Database } from '../../types/database.types'
+
+type EmailTemplate = Database['public']['Tables']['email_templates']['Row']
 
 type AudienceMode = 'filter' | 'custom'
 
@@ -83,14 +86,13 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
 
   const [audienceCount, setAudienceCount] = useState<number | null>(null)
 
-  // Fetch audience count when filter or custom recipients change
-  useEffect(() => {
-    setAudienceError(null)
-
+  // Memoized function to fetch audience count
+  const fetchAudienceCount = useCallback(() => {
     if (audienceMode === 'custom') {
       // For custom mode, just count the selected recipients (excluding unsubscribed)
       const validRecipients = customRecipients.filter((r) => !r.is_unsubscribed)
       setAudienceCount(validRecipients.length)
+      setAudienceError(null)
     } else {
       // For filter mode, call the RPC
       getAudienceCount.mutate(
@@ -98,6 +100,7 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
         {
           onSuccess: (count) => {
             setAudienceCount(count)
+            setAudienceError(null)
           },
           onError: (err) => {
             console.error('Audience count error:', err)
@@ -106,7 +109,13 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
         }
       )
     }
-  }, [audienceFilter, audienceMode, customRecipients])
+  }, [audienceFilter, audienceMode, customRecipients, getAudienceCount])
+
+  // Fetch audience count when filter or custom recipients change
+   
+  useEffect(() => {
+    fetchAudienceCount()
+  }, [fetchAudienceCount])
 
   // Reset all filters
   const resetFilters = () => {
@@ -147,7 +156,7 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
     setCustomRecipients([])
   }
 
-  const selectedTemplate = templates?.find((t) => t.id === selectedTemplateId)
+  const selectedTemplate = templates?.find((t) => t.id === selectedTemplateId) ?? null
 
   const handleNext = () => {
     setError(null)
@@ -780,7 +789,7 @@ function TemplateStep({
   onSelectTemplate,
   onToggleCustom,
 }: {
-  templates: any[]
+  templates: EmailTemplate[]
   selectedTemplateId: string | null
   useCustomContent: boolean
   onSelectTemplate: (id: string) => void
@@ -869,7 +878,7 @@ function ContentStep({
   name: string
   onNameChange: (name: string) => void
   useCustomContent: boolean
-  selectedTemplate: any
+  selectedTemplate: EmailTemplate | null
   customSubject: string
   customBody: string
   onSubjectChange: (s: string) => void

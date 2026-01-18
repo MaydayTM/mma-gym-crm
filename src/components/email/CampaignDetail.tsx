@@ -18,6 +18,7 @@ import {
   useCampaignSends,
   useSendCampaign,
 } from '../../hooks/useEmailCampaigns'
+import type { Database } from '../../types/database.types'
 
 interface CampaignDetailProps {
   campaignId: string
@@ -331,11 +332,15 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+type EmailSendWithMember = Database['public']['Tables']['email_sends']['Row'] & {
+  member?: { first_name: string; last_name: string } | null
+}
+
 function RecipientsList({
   sends,
   isLoading,
 }: {
-  sends: any[]
+  sends: EmailSendWithMember[]
   isLoading: boolean
 }) {
   if (isLoading) {
@@ -391,10 +396,10 @@ function RecipientsList({
                 </div>
               </td>
               <td className="px-4 py-3">
-                <SendStatusBadge status={send.status} />
+                <SendStatusBadge status={send.status || 'pending'} />
               </td>
               <td className="px-4 py-3">
-                {send.open_count > 0 ? (
+                {(send.open_count ?? 0) > 0 ? (
                   <div className="flex items-center gap-1 text-green-400">
                     <Eye className="w-4 h-4" />
                     <span>{send.open_count}x</span>
@@ -404,7 +409,7 @@ function RecipientsList({
                 )}
               </td>
               <td className="px-4 py-3">
-                {send.click_count > 0 ? (
+                {(send.click_count ?? 0) > 0 ? (
                   <span className="text-purple-400">{send.click_count}x</span>
                 ) : (
                   <span className="text-neutral-500">-</span>

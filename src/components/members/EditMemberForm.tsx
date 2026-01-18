@@ -57,6 +57,8 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
     notes: member.notes ?? '',
   })
 
+  // Reset form data when member changes - intentional props-to-state sync
+   
   useEffect(() => {
     setFormData({
       first_name: member.first_name,

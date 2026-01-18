@@ -43,7 +43,8 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit')
   const [error, setError] = useState<string | null>(null)
 
-  // Load existing template data
+  // Load existing template data - intentional props-to-state sync
+   
   useEffect(() => {
     if (existingTemplate) {
       setName(existingTemplate.name)

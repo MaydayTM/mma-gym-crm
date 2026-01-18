@@ -129,20 +129,6 @@ export function Sidebar() {
     localStorage.setItem(SIDEBAR_STATE_KEY, JSON.stringify(openGroups))
   }, [openGroups])
 
-  // Auto-open group when navigating to a route within it
-  useEffect(() => {
-    const allGroups = [...navigationGroups, modulesGroup, beheerGroup]
-    for (const group of allGroups) {
-      const hasActiveRoute = group.items.some(
-        (item) => item.href === location.pathname || location.pathname.startsWith(item.href + '/')
-      )
-      if (hasActiveRoute && !openGroups[group.id]) {
-        setOpenGroups((prev) => ({ ...prev, [group.id]: true }))
-        break
-      }
-    }
-  }, [location.pathname])
-
   const toggleGroup = (groupId: string) => {
     setOpenGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }))
   }
@@ -192,6 +178,21 @@ export function Sidebar() {
       },
     ],
   }
+
+  // Auto-open group when navigating to a route within it
+   
+  useEffect(() => {
+    const allGroups = [...navigationGroups, modulesGroup, beheerGroup]
+    for (const group of allGroups) {
+      const hasActiveRoute = group.items.some(
+        (item) => item.href === location.pathname || location.pathname.startsWith(item.href + '/')
+      )
+      if (hasActiveRoute && !openGroups[group.id]) {
+        setOpenGroups((prev) => ({ ...prev, [group.id]: true }))
+        break
+      }
+    }
+  }, [location.pathname])
 
   // All groups for rendering
   const allGroups = [

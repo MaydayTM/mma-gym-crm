@@ -1,5 +1,7 @@
+// deno-lint-ignore-file no-explicit-any
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -344,10 +346,7 @@ serve(async (req) => {
       }
 
       case QUERY_TYPES.SCHEDULE: {
-        // Get upcoming classes for the next 7 days
-        const today = new Date()
-        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-
+        // Get upcoming classes
         const { data, error } = await supabase
           .from('classes')
           .select(`

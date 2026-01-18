@@ -138,7 +138,7 @@ function normalizePhone(value: unknown): string | undefined {
   if (!str) return undefined
 
   // Remove common formatting characters but keep + for international
-  const cleaned = str.replace(/[\s\-\(\)\.]/g, '')
+  const cleaned = str.replace(/[\s\-()./]/g, '')
 
   // Basic validation: should have at least 8 digits
   const digitsOnly = cleaned.replace(/\D/g, '')
@@ -196,7 +196,7 @@ interface ImportDuplicate {
 }
 
 export function ImportMembersModal({ isOpen, onClose }: ImportMembersModalProps) {
-  const [_file, setFile] = useState<File | null>(null)
+  const [, setFile] = useState<File | null>(null)
   const [parsedData, setParsedData] = useState<ParsedMember[]>([])
   const [errors, setErrors] = useState<ValidationError[]>([])
   const [duplicates, setDuplicates] = useState<ImportDuplicate[]>([])

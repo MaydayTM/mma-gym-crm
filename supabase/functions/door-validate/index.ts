@@ -1,5 +1,7 @@
 // supabase/functions/door-validate/index.ts
 // Called by ESP32 to validate QR code and grant/deny door access
+// deno-lint-ignore-file no-explicit-any
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"

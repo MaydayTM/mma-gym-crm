@@ -24,6 +24,9 @@ import {
 import { TemplateEditor } from '../components/email/TemplateEditor'
 import { CampaignWizard } from '../components/email/CampaignWizard'
 import { CampaignDetail } from '../components/email/CampaignDetail'
+import type { Database } from '../types/database.types'
+
+type EmailTemplate = Database['public']['Tables']['email_templates']['Row']
 
 type TabType = 'campaigns' | 'templates' | 'analytics'
 
@@ -438,7 +441,7 @@ function TemplatesList({
   onDelete,
   onCreate,
 }: {
-  templates: any[]
+  templates: EmailTemplate[]
   isLoading: boolean
   onEdit: (id: string) => void
   onDelete: (id: string) => void

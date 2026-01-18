@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Monitor, Maximize2, Cake, Image, Award, ShoppingBag, Clock } from 'lucide-react';
 import { useSlides } from '../../../hooks/gymscreen/useSlides';
 import { useTodaysBirthdays } from '../../../hooks/gymscreen/useBirthdays';
@@ -14,12 +14,15 @@ export function LivePreview() {
   const [currentSection, setCurrentSection] = useState<Section>('slideshow');
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
-  // Get active sections based on settings
-  const activeSections: Section[] = [];
-  if (settings?.show_slideshow && slides && slides.length > 0) activeSections.push('slideshow');
-  if (settings?.show_birthdays && birthdays && birthdays.length > 0) activeSections.push('birthdays');
-  if (settings?.show_belt_wall) activeSections.push('belt_wall');
-  if (settings?.show_shop_banners) activeSections.push('shop');
+  // Get active sections based on settings - memoized to prevent dependency changes on every render
+  const activeSections = useMemo(() => {
+    const sections: Section[] = [];
+    if (settings?.show_slideshow && slides && slides.length > 0) sections.push('slideshow');
+    if (settings?.show_birthdays && birthdays && birthdays.length > 0) sections.push('birthdays');
+    if (settings?.show_belt_wall) sections.push('belt_wall');
+    if (settings?.show_shop_banners) sections.push('shop');
+    return sections;
+  }, [settings?.show_slideshow, settings?.show_birthdays, settings?.show_belt_wall, settings?.show_shop_banners, slides, birthdays]);
 
   // Rotate sections
   useEffect(() => {
