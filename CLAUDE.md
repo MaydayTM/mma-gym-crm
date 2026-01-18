@@ -560,6 +560,15 @@ Een **community-driven martial arts app** die drie producten combineert:
 
 ## 🚧 BLOKKERENDE TODO'S
 
+### ⚠️ Kitana AI Chat Werkt Niet (18 januari 2026)
+**Probleem:** "Sorry, er ging iets mis bij het genereren van het antwoord"
+**Oorzaak:** Waarschijnlijk `ANTHROPIC_API_KEY` verlopen of rate limit
+**Actie nodig:**
+1. Check Anthropic Console: https://console.anthropic.com/
+2. Verifieer API key credits en status
+3. Update indien nodig: `npx supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx...`
+4. Check logs: https://supabase.com/dashboard/project/wiuzjpoizxeycrshsuqn/functions/ai-assistant/logs
+
 ### Mobile App - Open Vragen
 Zie `docs/plans/2026-01-11-mobile-app-design.md` sectie "Open Vragen"
 
