@@ -1,43 +1,31 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
 import { router } from 'expo-router';
+import { useAuth } from '../../hooks/useAuth';
+import { useMemberBelts } from '../../hooks/useMemberBelts';
 import { BeltAvatar, BeltProgress } from '../../components/BeltAvatar';
 
-// Mock user data - will be replaced with real Supabase data
-const MOCK_USER = {
-  firstName: 'Mehdi',
-  lastName: 'Michiels',
-  imageUrl: null, // Will show initials
-  role: 'coach' as const,
-  gym: 'Reconnect Academy',
-  stats: {
-    trainings: 156,
-    streak: 12,
-    ranking: 'Top 5%',
-  },
-  belts: [
-    { discipline: 'BJJ', color: 'black', stripes: 2 },
-    { discipline: 'LL', color: 'brown', stripes: 1 },
-  ],
-};
-
 const ROLE_COLORS: Record<string, string> = {
+  admin: '#EF4444',
+  medewerker: '#F59E0B',
+  coordinator: '#F59E0B',
   coach: '#F59E0B',
   fighter: '#8B5CF6',
   fan: '#6B7280',
 };
 
-export default function ProfileScreen() {
-  const user = MOCK_USER;
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'ADMIN',
+  medewerker: 'STAFF',
+  coordinator: 'COORDINATOR',
+  coach: 'COACH',
+  fighter: 'FIGHTER',
+  fan: 'FAN',
+};
 
-  // Get highest belt for avatar ring
-  const beltOrder = ['white', 'blue', 'purple', 'brown', 'black'];
-  const highestBelt = user.belts.reduce((highest, belt) => {
-    const currentIndex = beltOrder.indexOf(belt.color);
-    const highestIndex = beltOrder.indexOf(highest);
-    return currentIndex > highestIndex ? belt.color : highest;
-  }, 'white');
+export default function ProfileScreen() {
+  const { profile, isLoading, signOut, isCoach, isStaff } = useAuth();
+  const { beltsForDisplay, highestBelt, isLoading: beltsLoading } = useMemberBelts(profile?.id);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -49,7 +37,7 @@ export default function ProfileScreen() {
           text: 'Uitloggen',
           style: 'destructive',
           onPress: async () => {
-            await supabase.auth.signOut();
+            await signOut();
             router.replace('/auth/login');
           },
         },
@@ -57,63 +45,89 @@ export default function ProfileScreen() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#D4AF37" />
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Profiel niet gevonden</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={handleLogout}>
+          <Text style={styles.retryText}>Opnieuw inloggen</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const roleColor = ROLE_COLORS[profile.role] || ROLE_COLORS.fighter;
+  const roleLabel = ROLE_LABELS[profile.role] || 'MEMBER';
+
   return (
     <ScrollView style={styles.container}>
       {/* Profile header */}
       <View style={styles.header}>
         {/* Role badge */}
-        <View style={[styles.roleBadge, { backgroundColor: ROLE_COLORS[user.role] }]}>
-          <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+        <View style={[styles.roleBadge, { backgroundColor: roleColor }]}>
+          <Text style={styles.roleText}>{roleLabel}</Text>
         </View>
 
         {/* Avatar with belt ring */}
         <View style={styles.avatarContainer}>
           <BeltAvatar
-            imageUrl={user.imageUrl}
-            firstName={user.firstName}
-            lastName={user.lastName}
+            imageUrl={profile.profile_picture_url}
+            firstName={profile.first_name}
+            lastName={profile.last_name}
             beltColor={highestBelt}
             size={120}
           />
         </View>
 
-        <Text style={styles.name}>{user.firstName}</Text>
-        <Text style={styles.lastName}>{user.lastName}</Text>
-        <Text style={styles.gym}>{user.gym}</Text>
+        <Text style={styles.name}>{profile.first_name}</Text>
+        <Text style={styles.lastName}>{profile.last_name}</Text>
+        <Text style={styles.email}>{profile.email}</Text>
       </View>
 
       {/* Belt Progress Section */}
-      <View style={styles.section}>
-        <View style={styles.beltsCard}>
-          {user.belts.map((belt) => (
-            <BeltProgress
-              key={belt.discipline}
-              discipline={belt.discipline}
-              beltColor={belt.color}
-              stripes={belt.stripes}
-            />
-          ))}
+      {beltsForDisplay.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.beltsCard}>
+            {beltsForDisplay.map((belt, index) => (
+              <BeltProgress
+                key={index}
+                discipline={belt.discipline}
+                beltColor={belt.color}
+                stripes={belt.stripes}
+              />
+            ))}
+          </View>
         </View>
-      </View>
+      )}
 
-      {/* Stats */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Statistieken</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{user.stats.trainings}</Text>
-            <Text style={styles.statLabel}>Trainingen</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{user.stats.streak}</Text>
-            <Text style={styles.statLabel}>Maanden streak</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{user.stats.ranking}</Text>
-            <Text style={styles.statLabel}>Aanwezigheid</Text>
+      {/* Staff-only section */}
+      {isStaff && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Staff Tools</Text>
+          <View style={styles.menuList}>
+            <TouchableOpacity style={styles.menuItem}>
+              <Ionicons name="people-outline" size={22} color="#F59E0B" />
+              <Text style={styles.menuText}>Leden beheren</Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" />
+            </TouchableOpacity>
+            {isCoach && (
+              <TouchableOpacity style={styles.menuItem}>
+                <Ionicons name="clipboard-outline" size={22} color="#F59E0B" />
+                <Text style={styles.menuText}>Aanwezigheid</Text>
+                <Ionicons name="chevron-forward" size={20} color="#666" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-      </View>
+      )}
 
       {/* Settings */}
       <View style={styles.section}>
@@ -149,6 +163,7 @@ export default function ProfileScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.version}>FightFlow v1.0.0</Text>
+        <Text style={styles.memberId}>ID: {profile.id.slice(0, 8)}...</Text>
       </View>
     </ScrollView>
   );
@@ -158,6 +173,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#888',
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#D4AF37',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#000',
+    fontWeight: '600',
   },
   header: {
     alignItems: 'center',
@@ -189,9 +225,9 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 2,
   },
-  gym: {
+  email: {
     fontSize: 14,
-    color: '#F59E0B',
+    color: '#666',
     marginTop: 8,
   },
   section: {
@@ -211,26 +247,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     gap: 8,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#111',
-    borderRadius: 12,
-    padding: 20,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
   },
   menuList: {
     gap: 2,
@@ -263,5 +279,10 @@ const styles = StyleSheet.create({
   version: {
     fontSize: 12,
     color: '#444',
+  },
+  memberId: {
+    fontSize: 10,
+    color: '#333',
+    marginTop: 4,
   },
 });
