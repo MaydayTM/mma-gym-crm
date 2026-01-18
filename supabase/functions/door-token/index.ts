@@ -39,7 +39,7 @@ serve(async (req) => {
     // Check member exists and is active
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('id, first_name, last_name, status, door_access_enabled')
+      .select('id, first_name, last_name, status, role, door_access_enabled')
       .eq('id', member_id)
       .single()
 
@@ -55,19 +55,25 @@ serve(async (req) => {
       return jsonResponse({ error: 'Door access is disabled for this member' }, 403)
     }
 
-    // Check for active subscription
-    const { data: subscription, error: subError } = await supabase
-      .from('member_subscriptions')
-      .select('id, end_date, status')
-      .eq('member_id', member_id)
-      .eq('status', 'active')
-      .gte('end_date', new Date().toISOString().split('T')[0])
-      .order('end_date', { ascending: false })
-      .limit(1)
-      .single()
+    // Staff roles (admin, medewerker, coordinator, coach) always have access
+    const STAFF_ROLES = ['admin', 'medewerker', 'coordinator', 'coach']
+    const isStaff = STAFF_ROLES.includes(member.role)
 
-    if (subError || !subscription) {
-      return jsonResponse({ error: 'No active subscription found' }, 403)
+    // Only check subscription for non-staff members
+    if (!isStaff) {
+      const { data: subscription, error: subError } = await supabase
+        .from('member_subscriptions')
+        .select('id, end_date, status')
+        .eq('member_id', member_id)
+        .eq('status', 'active')
+        .gte('end_date', new Date().toISOString().split('T')[0])
+        .order('end_date', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (subError || !subscription) {
+        return jsonResponse({ error: 'No active subscription found' }, 403)
+      }
     }
 
     // Generate JWT token (15 minutes expiry)

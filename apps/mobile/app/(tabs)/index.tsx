@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
@@ -8,15 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { BeltAvatar } from '../../components/BeltAvatar';
 import { useMemberBelts } from '../../hooks/useMemberBelts';
 
-// Generate a secure random token
-function generateToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 32; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
-}
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default function QRCodeScreen() {
   const { profile, isLoading: authLoading } = useAuth();
@@ -25,85 +17,80 @@ export default function QRCodeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [accessStatus, setAccessStatus] = useState<'checking' | 'allowed' | 'denied'>('checking');
   const [denialReason, setDenialReason] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Staff roles always have access (no subscription needed)
-  const isStaffRole = profile?.role && ['admin', 'medewerker', 'coordinator', 'coach'].includes(profile.role);
-
-  // Fetch or generate QR token
-  const fetchOrGenerateToken = useCallback(async () => {
+  // Fetch JWT token from Edge Function
+  const fetchToken = useCallback(async () => {
     if (!profile?.id) return;
 
     setIsRefreshing(true);
     try {
-      // Staff always gets access - skip subscription check
-      if (!isStaffRole) {
-        // Only check subscription for regular members (fighter, fan)
-        const { data: accessData } = await supabase
-          .rpc('check_member_door_access', { p_member_id: profile.id });
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/door-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ member_id: profile.id }),
+      });
 
-        if (accessData && accessData.length > 0) {
-          const access = accessData[0];
-          if (!access.allowed) {
-            setAccessStatus('denied');
-            setDenialReason(access.denial_reason);
-            return;
-          }
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle specific error cases
+        setAccessStatus('denied');
+        if (data.error?.includes('subscription')) {
+          setDenialReason('no_active_subscription');
+        } else if (data.error?.includes('disabled')) {
+          setDenialReason('access_disabled');
+        } else if (data.error?.includes('not active')) {
+          setDenialReason('member_inactive');
+        } else {
+          setDenialReason(data.error || 'unknown_error');
         }
+        return;
       }
 
+      // Success - set token and expiry
+      setQrToken(data.qr_token);
       setAccessStatus('allowed');
 
-      // Check if member already has a token
-      const { data: memberData } = await supabase
-        .from('members')
-        .select('qr_token')
-        .eq('id', profile.id)
-        .single();
+      // Calculate expiry time (token expires in `expires_in` seconds)
+      const expiry = new Date(Date.now() + (data.expires_in * 1000));
+      setExpiresAt(expiry);
 
-      if (memberData?.qr_token) {
-        setQrToken(memberData.qr_token);
-      } else {
-        // Generate new token and save it
-        const newToken = generateToken();
-        const { error } = await supabase
-          .from('members')
-          .update({ qr_token: newToken })
-          .eq('id', profile.id);
-
-        if (!error) {
-          setQrToken(newToken);
-        }
+      // Auto-refresh 1 minute before expiry
+      const refreshIn = (data.expires_in - 60) * 1000;
+      if (refreshIn > 0) {
+        if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = setTimeout(() => {
+          fetchToken();
+        }, refreshIn);
       }
+
     } catch (error) {
       console.error('Error fetching QR token:', error);
+      setAccessStatus('denied');
+      setDenialReason('network_error');
     } finally {
       setIsRefreshing(false);
     }
-  }, [profile?.id, isStaffRole]);
+  }, [profile?.id]);
 
   useEffect(() => {
-    fetchOrGenerateToken();
-  }, [fetchOrGenerateToken]);
+    fetchToken();
 
-  const handleRefresh = async () => {
-    if (!profile?.id || isRefreshing) return;
-
-    setIsRefreshing(true);
-    try {
-      // Generate new token
-      const newToken = generateToken();
-      const { error } = await supabase
-        .from('members')
-        .update({ qr_token: newToken })
-        .eq('id', profile.id);
-
-      if (!error) {
-        setQrToken(newToken);
+    // Cleanup timer on unmount
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
       }
-    } catch (error) {
-      console.error('Error refreshing token:', error);
-    } finally {
-      setIsRefreshing(false);
+    };
+  }, [fetchToken]);
+
+  const handleRefresh = () => {
+    if (!isRefreshing) {
+      fetchToken();
     }
   };
 
@@ -115,9 +102,22 @@ export default function QRCodeScreen() {
         return 'Toegang is uitgeschakeld voor dit account';
       case 'member_inactive':
         return 'Je account is niet actief';
+      case 'network_error':
+        return 'Geen internetverbinding';
       default:
         return 'Geen toegang';
     }
+  };
+
+  // Format remaining time
+  const getExpiryText = (): string => {
+    if (!expiresAt) return '';
+    const now = new Date();
+    const diff = expiresAt.getTime() - now.getTime();
+    if (diff <= 0) return 'Verlopen - vernieuw';
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Minder dan 1 min geldig';
+    return `Geldig voor ${minutes} min`;
   };
 
   if (authLoading) {
@@ -202,6 +202,9 @@ export default function QRCodeScreen() {
       {accessStatus === 'allowed' && qrToken && (
         <>
           <Text style={styles.instruction}>Scan voor toegang</Text>
+          {expiresAt && (
+            <Text style={styles.expiryText}>{getExpiryText()}</Text>
+          )}
 
           {/* Refresh button */}
           <TouchableOpacity
@@ -342,6 +345,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 20,
     fontStyle: 'italic',
+  },
+  expiryText: {
+    textAlign: 'center',
+    color: '#D4AF37',
+    fontSize: 12,
+    marginTop: 8,
   },
   refreshButton: {
     flexDirection: 'row',
