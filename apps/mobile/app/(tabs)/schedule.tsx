@@ -95,7 +95,7 @@ export default function ScheduleScreen() {
         ]
       );
     } else {
-      const result = await makeReservation(classId);
+      const result = await makeReservation(classId, selectedDate);
       if (result.success) {
         setReservedClasses(prev => new Set(prev).add(classId));
         Alert.alert('Gelukt!', 'Je bent ingeschreven voor deze les');

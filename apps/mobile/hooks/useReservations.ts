@@ -35,7 +35,7 @@ export function useReservations() {
   };
 
   // Make a reservation
-  const makeReservation = async (classId: string): Promise<{ success: boolean; error?: string }> => {
+  const makeReservation = async (classId: string, reservationDate: Date): Promise<{ success: boolean; error?: string }> => {
     if (!profile?.id) {
       return { success: false, error: 'Je moet ingelogd zijn om te reserveren' };
     }
@@ -49,12 +49,16 @@ export function useReservations() {
         return { success: false, error: 'Je hebt al een reservering voor deze les' };
       }
 
+      // Format date as YYYY-MM-DD for the database
+      const dateString = reservationDate.toISOString().split('T')[0];
+
       const { error } = await supabase
         .from('reservations')
         .insert({
           class_id: classId,
           member_id: profile.id,
           status: 'reserved',
+          reservation_date: dateString,
         });
 
       if (error) throw error;
