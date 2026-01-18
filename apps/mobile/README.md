@@ -1,74 +1,54 @@
-# COMBO Mobile App
+# FightFlow Mobile App
 
-> React Native app built with Expo for the COMBO martial arts platform.
-
-## Prerequisites
-
-The following tools should already be installed globally (from your other project):
-
-| Tool | Command to verify | Purpose |
-|------|-------------------|---------|
-| EAS CLI | `eas --version` | Build & submit to stores |
-| CocoaPods | `pod --version` | iOS native dependencies |
-| Ruby | `ruby --version` | Required for CocoaPods |
+> React Native app built with Expo for the FightFlow martial arts platform.
 
 ## Quick Start
 
-When ready to start building the mobile app:
-
 ```bash
-# 1. Initialize Expo project in this directory
-npx create-expo-app@latest . --template blank-typescript
+# 1. Install dependencies
+npm install
 
-# 2. Add dev client for local builds
-npx expo install expo-dev-client
+# 2. Copy environment file and add your Supabase keys
+cp .env.example .env
+# Edit .env with your EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
 
-# 3. Install Supabase and other dependencies
-npx expo install @supabase/supabase-js @react-native-async-storage/async-storage react-native-url-polyfill
-
-# 4. Generate native projects (iOS/Android folders)
-npx expo prebuild
-
-# 5. Link to EAS (uses eas.json in root)
-eas build:configure
+# 3. Start development server
+npm start
 ```
 
 ## Development
 
 ```bash
 # Start Expo dev server
-npx expo start
+npm start
 
 # Run on iOS simulator (requires Xcode)
-npx expo run:ios
+npm run ios
 
 # Run on Android emulator (requires Android Studio)
-npx expo run:android
+npm run android
+
+# Run in web browser
+npm run web
 ```
 
-## Building
+## Testing on Device
 
-```bash
-# Development build (with dev menu)
-eas build --profile development --platform ios
+1. Install **Expo Go** app on your phone
+2. Run `npm start`
+3. Scan QR code with your phone
 
-# Preview build (for TestFlight/internal testing)
-eas build --profile preview --platform ios
-
-# Production build
-eas build --profile production --platform ios
-```
-
-## Project Structure (Planned)
+## Project Structure
 
 ```
 apps/mobile/
 ├── app/                  # App screens (Expo Router)
 │   ├── (tabs)/          # Tab navigation
-│   │   ├── index.tsx    # Home/Dashboard
+│   │   ├── index.tsx    # QR Code (home)
 │   │   ├── schedule.tsx # Class schedule
-│   │   ├── profile.tsx  # User profile
-│   │   └── social.tsx   # FightFlow feed
+│   │   ├── feed.tsx     # FightFlow feed
+│   │   ├── search.tsx   # Search
+│   │   └── profile.tsx  # User profile
 │   ├── auth/            # Auth screens
 │   │   ├── login.tsx
 │   │   └── register.tsx
@@ -80,30 +60,44 @@ apps/mobile/
 └── assets/             # Images, fonts
 ```
 
-## Shared Code
+## Features
 
-The `@combo/shared` package (in `/packages/shared`) contains:
-- TypeScript types
-- Utility functions
-- Constants (belt colors, disciplines, etc.)
+### MVP (P0)
+- [x] QR Code screen for gym access
+- [x] Class schedule with reservations
+- [x] User profile with belt display
+- [x] Settings (account, password, logout)
+- [x] Login/Register flow
 
-Import like:
-```typescript
-import { BELT_COLORS, formatBeltDisplay } from '@combo/shared';
+### Coming Soon (P1)
+- [ ] FightFlow Feed (YouTube Shorts)
+- [ ] Profile photo upload
+- [ ] Push notifications
+
+## Building
+
+```bash
+# Development build (with dev menu)
+npm run build:dev
+
+# Preview build (for TestFlight/internal testing)
+npm run build:preview
+
+# Production build
+npm run build:prod
 ```
 
 ## Environment Variables
 
-Create `.env` in this directory:
-```
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-```
+| Variable | Description |
+|----------|-------------|
+| `EXPO_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
 
-Note: Expo uses `EXPO_PUBLIC_` prefix for client-side env vars.
+## Tech Stack
 
-## Notes
-
-- iOS builds require Xcode (7GB download)
-- Android builds require Android Studio (2GB download)
-- EAS cloud builds work without local Xcode/Android Studio
+- **Framework:** Expo + React Native
+- **Navigation:** Expo Router (file-based)
+- **Backend:** Supabase (shared with web CRM)
+- **Styling:** React Native StyleSheet
+- **Icons:** @expo/vector-icons (Ionicons)
