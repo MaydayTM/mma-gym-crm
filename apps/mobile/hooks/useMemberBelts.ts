@@ -6,8 +6,8 @@ interface MemberBelt {
   member_id: string;
   discipline_id: string;
   belt_color: string;
-  stripes: number;
-  awarded_at: string;
+  stripes: number | null;
+  created_at: string | null;
   discipline?: {
     id: string;
     name: string;
@@ -38,7 +38,7 @@ export function useMemberBelts(memberId: string | undefined) {
           discipline:disciplines(id, name, slug)
         `)
         .eq('member_id', memberId)
-        .order('awarded_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
 
@@ -78,7 +78,7 @@ export function useMemberBelts(memberId: string | undefined) {
     return belts.map(belt => ({
       discipline: belt.discipline?.slug?.toUpperCase() || belt.discipline?.name || 'Unknown',
       color: belt.belt_color,
-      stripes: belt.stripes,
+      stripes: belt.stripes || 0,
     }));
   };
 

@@ -88,7 +88,7 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={styles.name}>{profile.first_name}</Text>
-        <Text style={styles.lastName}>{profile.last_name}</Text>
+        {profile.last_name && <Text style={styles.lastName}>{profile.last_name}</Text>}
         <Text style={styles.email}>{profile.email}</Text>
       </View>
 
