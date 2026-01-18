@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useClasses } from '../../hooks/useClasses';
+import { useClasses, formatClassTime } from '../../hooks/useClasses';
 import { useReservations } from '../../hooks/useReservations';
 
-const DAYS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+const DAYS = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
 
 const disciplineIcons: Record<string, string> = {
   bjj: 'body',
@@ -12,12 +12,14 @@ const disciplineIcons: Record<string, string> = {
   kickboxing: 'flash',
   wrestling: 'fitness',
   judo: 'body',
+  luta_livre: 'body',
   default: 'barbell',
 };
 
 function getWeekDates(): Date[] {
   const today = new Date();
   const dayOfWeek = today.getDay();
+  // Start from Monday (day 1), unless today is Sunday (day 0)
   const monday = new Date(today);
   monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
@@ -28,11 +30,6 @@ function getWeekDates(): Date[] {
     dates.push(date);
   }
   return dates;
-}
-
-function formatTime(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function ScheduleScreen() {
@@ -46,16 +43,10 @@ export default function ScheduleScreen() {
   const [reservedClasses, setReservedClasses] = useState<Set<string>>(new Set());
 
   const selectedDate = weekDates[selectedDay];
-  const startOfDay = new Date(selectedDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(selectedDate);
-  endOfDay.setHours(23, 59, 59, 999);
+  // Convert to day_of_week (0=Sunday, 1=Monday, etc.)
+  const dayOfWeek = selectedDate.getDay();
 
-  const { classes, isLoading, error, refetch } = useClasses({
-    startDate: startOfDay,
-    endDate: endOfDay,
-  });
-
+  const { classes, isLoading, error, refetch } = useClasses({ dayOfWeek });
   const { makeReservation, cancelReservation, getMyReservation, isLoading: reservationLoading } = useReservations();
 
   // Check which classes user has reserved
@@ -114,10 +105,17 @@ export default function ScheduleScreen() {
     }
   };
 
-  const getIconName = (disciplineName?: string): string => {
-    if (!disciplineName) return disciplineIcons.default;
-    const key = disciplineName.toLowerCase().replace(/[^a-z]/g, '');
+  const getIconName = (disciplineSlug?: string): string => {
+    if (!disciplineSlug) return disciplineIcons.default;
+    const key = disciplineSlug.toLowerCase().replace(/[^a-z_]/g, '');
     return disciplineIcons[key] || disciplineIcons.default;
+  };
+
+  // Get day label for display (Ma, Di, etc.) - weekDates starts from Monday
+  const getDayLabel = (index: number): string => {
+    // weekDates[0] = Monday, weekDates[6] = Sunday
+    const dayMapping = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+    return dayMapping[index];
   };
 
   return (
@@ -145,7 +143,7 @@ export default function ScheduleScreen() {
                 styles.dayText,
                 selectedDay === index && styles.dayTextActive,
               ]}>
-                {DAYS[index]}
+                {getDayLabel(index)}
               </Text>
               <Text style={[
                 styles.dayNumber,
@@ -183,7 +181,7 @@ export default function ScheduleScreen() {
               <View key={cls.id} style={styles.classCard}>
                 <View style={styles.classIcon}>
                   <Ionicons
-                    name={getIconName(cls.discipline?.name) as any}
+                    name={getIconName(cls.discipline?.slug) as any}
                     size={24}
                     color="#D4AF37"
                   />
@@ -191,7 +189,7 @@ export default function ScheduleScreen() {
                 <View style={styles.classInfo}>
                   <Text style={styles.className}>{cls.name}</Text>
                   <Text style={styles.classTime}>
-                    {formatTime(cls.start_time)} - {formatTime(cls.end_time)}
+                    {formatClassTime(cls.start_time)} - {formatClassTime(cls.end_time)}
                   </Text>
                   {cls.coach && (
                     <Text style={styles.classCoach}>
