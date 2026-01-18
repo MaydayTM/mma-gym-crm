@@ -236,11 +236,18 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== AI Assistant Request Started ===')
+
     // Get API keys from environment
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
+
+    console.log('API Key exists:', !!anthropicApiKey)
+    console.log('API Key starts with:', anthropicApiKey?.substring(0, 10) + '...')
+    console.log('Supabase URL exists:', !!supabaseUrl)
+    console.log('Service Key exists:', !!supabaseServiceKey)
 
     if (!anthropicApiKey) {
       throw new Error('ANTHROPIC_API_KEY not configured')
@@ -614,6 +621,9 @@ serve(async (req) => {
  */
 async function classifyQuestion(question: string, apiKey: string): Promise<QueryType> {
   try {
+    console.log('Classifying question:', question)
+    console.log('Using API key starting with:', apiKey?.substring(0, 15) + '...')
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -646,8 +656,11 @@ Question: "${question}"`,
       }),
     })
 
+    console.log('Anthropic API response status:', response.status)
+
     if (!response.ok) {
-      console.error('Classification API error:', await response.text())
+      const errorText = await response.text()
+      console.error('Classification API error:', response.status, errorText)
       return QUERY_TYPES.GENERAL
     }
 
@@ -831,7 +844,7 @@ async function parseEmailRequest(question: string, supabase: any, apiKey: string
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 1000,
       messages: [{
         role: 'user',
@@ -948,7 +961,7 @@ async function generateResponse(
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 1500,
         system: SYSTEM_PROMPT,
         messages: [
