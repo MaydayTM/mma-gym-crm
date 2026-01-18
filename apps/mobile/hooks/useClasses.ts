@@ -16,7 +16,7 @@ interface ClassSession {
   discipline?: {
     id: string;
     name: string;
-    abbreviation: string;
+    slug: string;
   };
   coach?: {
     id: string;
@@ -51,7 +51,7 @@ export function useClasses(options: UseClassesOptions = {}) {
         .from('classes')
         .select(`
           *,
-          discipline:disciplines(id, name, abbreviation),
+          discipline:disciplines(id, name, slug),
           coach:members!classes_coach_id_fkey(id, first_name, last_name, profile_picture_url)
         `)
         .gte('start_time', start.toISOString())

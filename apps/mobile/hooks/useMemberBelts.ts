@@ -11,7 +11,7 @@ interface MemberBelt {
   discipline?: {
     id: string;
     name: string;
-    abbreviation: string;
+    slug: string;
   };
 }
 
@@ -35,7 +35,7 @@ export function useMemberBelts(memberId: string | undefined) {
         .from('member_belts')
         .select(`
           *,
-          discipline:disciplines(id, name, abbreviation)
+          discipline:disciplines(id, name, slug)
         `)
         .eq('member_id', memberId)
         .order('awarded_at', { ascending: false });
@@ -76,7 +76,7 @@ export function useMemberBelts(memberId: string | undefined) {
   // Format belts for display components
   const getBeltsForDisplay = () => {
     return belts.map(belt => ({
-      discipline: belt.discipline?.abbreviation || belt.discipline?.name || 'Unknown',
+      discipline: belt.discipline?.slug?.toUpperCase() || belt.discipline?.name || 'Unknown',
       color: belt.belt_color,
       stripes: belt.stripes,
     }));
