@@ -124,6 +124,16 @@ export function Login() {
               {isLoading ? 'Inloggen...' : 'Inloggen'}
             </button>
           </form>
+
+          {/* Claim account link */}
+          <div className="mt-6 pt-6 border-t border-white/10 text-center">
+            <p className="text-neutral-500 text-[13px]">
+              Nieuw lid van Reconnect?{' '}
+              <Link to="/claim-account" className="text-amber-400 hover:text-amber-300 transition-colors">
+                Activeer je account
+              </Link>
+            </p>
+          </div>
         </div>
 
         {/* Footer with live indicator */}

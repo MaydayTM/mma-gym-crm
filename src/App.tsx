@@ -21,6 +21,8 @@ import {
   Login,
   ForgotPassword,
   ResetPassword,
+  ClaimAccount,
+  ActivateAccount,
   Shop,
   Email,
   GymScreen,
@@ -135,9 +137,13 @@ function CRMApp() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/claim-account" element={<ClaimAccount />} />
+        <Route path="/activate" element={<ActivateAccount />} />
         <Route path="/app.html/login" element={<Login />} />
         <Route path="/app.html/forgot-password" element={<ForgotPassword />} />
         <Route path="/app.html/reset-password" element={<ResetPassword />} />
+        <Route path="/app.html/claim-account" element={<ClaimAccount />} />
+        <Route path="/app.html/activate" element={<ActivateAccount />} />
 
         {/* Email preview (dev only) */}
         <Route path="/email-preview" element={<EmailPreview />} />

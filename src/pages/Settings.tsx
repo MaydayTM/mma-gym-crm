@@ -1,13 +1,22 @@
 import { useState } from 'react'
-import { Settings as SettingsIcon, Building2, Users, Bell, Palette, Shield, CreditCard, Calendar } from 'lucide-react'
+import { Settings as SettingsIcon, Building2, Users, Bell, Palette, Shield, CreditCard, Calendar, UserPlus } from 'lucide-react'
 import { PaymentSettings } from '../components/settings/PaymentSettings'
 import { ScheduleSettings } from '../components/settings/ScheduleSettings'
 import { RolesSettings } from '../components/settings/RolesSettings'
 import { SecuritySettings } from '../components/settings/SecuritySettings'
+import { OnboardingSettings } from '../components/settings/OnboardingSettings'
 
-type SettingsTab = 'overview' | 'payments' | 'schedule' | 'profile' | 'users' | 'notifications' | 'branding' | 'security'
+type SettingsTab = 'overview' | 'payments' | 'schedule' | 'profile' | 'users' | 'notifications' | 'branding' | 'security' | 'onboarding'
 
 const settingsSections = [
+  {
+    id: 'onboarding' as SettingsTab,
+    title: 'Onboarding',
+    description: 'Nodig leden uit om hun account te activeren',
+    icon: UserPlus,
+    color: 'emerald',
+    available: true,
+  },
   {
     id: 'payments' as SettingsTab,
     title: 'Betalingen',
@@ -87,6 +96,8 @@ export function Settings() {
   // Render the active tab content
   const renderContent = () => {
     switch (activeTab) {
+      case 'onboarding':
+        return <OnboardingSettings />
       case 'payments':
         return <PaymentSettings />
       case 'schedule':
