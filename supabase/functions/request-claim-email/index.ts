@@ -135,7 +135,7 @@ interface RequestClaimRequest {
 const GENERIC_SUCCESS_MESSAGE = 'Als er een account bestaat met deze gegevens, ontvang je binnen enkele minuten een e-mail met activatielink.'
 
 serve(async (req) => {
-  console.log('[request-claim-email] Request received:', req.method)
+  console.log('[request-claim-email] v2 - Request received:', req.method)
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -186,9 +186,8 @@ serve(async (req) => {
 
     if (findError) {
       console.error('Error finding member:', findError)
-      // Return generic message even on error
       return new Response(
-        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
+        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'find_error', error: findError.message } }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
@@ -197,22 +196,23 @@ serve(async (req) => {
     if (!result || result.length === 0) {
       console.log('No member found for identifier:', identifier)
       return new Response(
-        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
+        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'not_found', identifier } }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
     const memberInfo = result[0]
+    console.log('[request-claim-email] Member info:', memberInfo)
 
     // Member can't claim (already has account)
     if (!memberInfo.can_claim) {
       console.log('Member cannot claim:', memberInfo.reason)
-      // Still return generic success but include hint
       return new Response(
         JSON.stringify({
           success: true,
           message: GENERIC_SUCCESS_MESSAGE,
-          hint: memberInfo.reason, // "Account is al geactiveerd..."
+          hint: memberInfo.reason,
+          debug: { step: 'cant_claim', reason: memberInfo.reason }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
@@ -228,10 +228,12 @@ serve(async (req) => {
     if (memberError || !member) {
       console.error('Error fetching member:', memberError)
       return new Response(
-        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
+        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'member_fetch_error', error: memberError?.message } }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
+
+    console.log('[request-claim-email] Found member:', member.email)
 
     // Create claim token
     const { data: tokenResult, error: tokenError } = await supabase.rpc('create_claim_token', {
@@ -243,7 +245,7 @@ serve(async (req) => {
     if (tokenError || !tokenResult) {
       console.error('Token creation error:', tokenError)
       return new Response(
-        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
+        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'token_error', error: tokenError?.message } }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
@@ -264,6 +266,9 @@ serve(async (req) => {
     })
 
     // Send email via Resend
+    console.log('[request-claim-email] Sending email to:', member.email)
+    console.log('[request-claim-email] Resend key present:', !!resendApiKey, 'length:', resendApiKey?.length)
+
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -278,24 +283,34 @@ serve(async (req) => {
       }),
     })
 
+    const responseText = await emailResponse.text()
+    console.log('[request-claim-email] Resend response status:', emailResponse.status)
+    console.log('[request-claim-email] Resend response:', responseText)
+
     if (!emailResponse.ok) {
-      const emailError = await emailResponse.json()
-      console.error('Resend error:', emailError)
-      // Still return success - don't reveal email issues
-    } else {
-      console.log('Claim email sent to:', member.email)
+      console.error('Resend error:', responseText)
+      // Return debug info temporarily
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: GENERIC_SUCCESS_MESSAGE,
+          debug: { status: emailResponse.status, error: responseText }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
     }
+
+    console.log('Claim email sent to:', member.email)
 
     // Always return generic success
     return new Response(
-      JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
+      JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { emailSent: true } }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
     console.error('Error in request-claim-email:', error)
-    // Return generic success even on unexpected error
     return new Response(
-      JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
+      JSON.stringify({ success: false, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'catch', error: String(error) } }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   }
