@@ -27,6 +27,7 @@ import {
   DoorTest,
   KitanaHub,
 } from './pages'
+import { EmailPreview } from './pages/EmailPreview'
 import { SubscriptionsManage } from './pages/SubscriptionsManage'
 import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
 
@@ -137,6 +138,9 @@ function CRMApp() {
         <Route path="/app.html/login" element={<Login />} />
         <Route path="/app.html/forgot-password" element={<ForgotPassword />} />
         <Route path="/app.html/reset-password" element={<ResetPassword />} />
+
+        {/* Email preview (dev only) */}
+        <Route path="/email-preview" element={<EmailPreview />} />
 
         {/* Public checkout routes */}
         <Route path="/checkout/plans" element={<PlansOverview />} />
