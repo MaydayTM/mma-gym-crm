@@ -1,0 +1,4 @@
+# Public endpoint - no JWT verification required
+# Members can request activation emails without being logged in
+[function]
+verify_jwt = false

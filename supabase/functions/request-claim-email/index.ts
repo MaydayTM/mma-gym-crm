@@ -13,8 +13,8 @@
  * Body: { identifier: string } // email or member number
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -115,7 +115,7 @@ function generateClaimAccountEmail(options: {
           <tr>
             <td style="padding: 24px 40px; text-align: center; border-top: 1px solid ${colors.border};">
               <p style="color: ${colors.textMuted}; font-size: 13px; margin: 0;">
-                Reconnect Academy | Erembodegem\u00ADstraat 31/16, 9300 Aalst
+                Reconnect Academy | Erembo&shy;degemstraat 31/16, 9300 Aalst
               </p>
             </td>
           </tr>
@@ -135,15 +135,26 @@ interface RequestClaimRequest {
 const GENERIC_SUCCESS_MESSAGE = 'Als er een account bestaat met deze gegevens, ontvang je binnen enkele minuten een e-mail met activatielink.'
 
 serve(async (req) => {
+  console.log('[request-claim-email] Request received:', req.method)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
+    console.log('[request-claim-email] Handling OPTIONS preflight')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    console.log('[request-claim-email] Processing POST request')
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
+
+    console.log('[request-claim-email] Env vars present:', {
+      url: !!supabaseUrl,
+      key: !!supabaseServiceKey,
+      resend: !!resendApiKey
+    })
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Supabase environment variables not configured')
@@ -153,9 +164,13 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    console.log('[request-claim-email] Supabase client created')
 
     // Parse request
-    const { identifier }: RequestClaimRequest = await req.json()
+    const body = await req.text()
+    console.log('[request-claim-email] Request body:', body)
+
+    const { identifier }: RequestClaimRequest = JSON.parse(body)
 
     if (!identifier || identifier.trim().length === 0) {
       return new Response(

@@ -1,0 +1,4 @@
+# Public endpoint - no JWT verification required
+# Token verification before showing password form
+[function]
+verify_jwt = false

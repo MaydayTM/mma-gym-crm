@@ -2,7 +2,7 @@
 // Generates a short-lived JWT QR token for a member to use at the door
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 import { create } from "https://deno.land/x/djwt@v2.8/mod.ts"
 
 const corsHeaders = {

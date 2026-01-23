@@ -1,0 +1,4 @@
+# Public endpoint - no JWT verification required
+# Completes account activation with password
+[function]
+verify_jwt = false
