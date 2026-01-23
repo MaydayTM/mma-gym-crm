@@ -354,8 +354,8 @@ serve(async (req) => {
 
     const plainToken = tokenResult as string
 
-    // Build activation URL
-    const baseUrl = 'https://crm.mmagym.be'
+    // Build activation URL - use creative.mmagym.be for member activation
+    const baseUrl = 'https://creative.mmagym.be'
     const activationUrl = `${baseUrl}/activate?token=${encodeURIComponent(plainToken)}`
 
     // Generate email HTML
