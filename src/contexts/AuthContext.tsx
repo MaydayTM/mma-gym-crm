@@ -13,6 +13,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signInWithGoogle: () => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   isAuthenticated: boolean
 }
@@ -32,21 +33,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
   })
 
   // Fetch member profile from members table with timeout
-  // Note: members.id IS the auth user id (same UUID)
-  const fetchMemberProfile = useCallback(async (userId: string): Promise<Member | null> => {
+  // Tries auth_user_id first, then falls back to id (legacy)
+  const fetchMemberProfile = useCallback(async (userId: string, userEmail?: string): Promise<Member | null> => {
     try {
       // Add timeout using Promise.race
       const timeoutPromise = new Promise<null>((_, reject) =>
         setTimeout(() => reject(new Error('Timeout')), 5000)
       )
 
-      const queryPromise = supabase
+      // First try to find by auth_user_id
+      const queryByAuthUserId = supabase
         .from('members')
         .select('*')
-        .eq('id', userId)
+        .eq('auth_user_id', userId)
         .single()
 
-      const result = await Promise.race([queryPromise, timeoutPromise])
+      const result = await Promise.race([queryByAuthUserId, timeoutPromise])
 
       // If timeout won, result is null
       if (result === null) {
@@ -56,15 +58,56 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const { data, error } = result
 
-      if (error) {
-        // PGRST116 = no rows found, which is OK for new users
-        if (error.code !== 'PGRST116') {
-          console.error('[Auth] Error fetching member profile:', error.message)
-        }
-        return null
+      if (!error && data) {
+        console.log('[Auth] Found member by auth_user_id')
+        return data
       }
 
-      return data
+      // If not found by auth_user_id, try by id (legacy - member.id = auth.uid)
+      if (error?.code === 'PGRST116') {
+        const legacyResult = await supabase
+          .from('members')
+          .select('*')
+          .eq('id', userId)
+          .single()
+
+        if (!legacyResult.error && legacyResult.data) {
+          console.log('[Auth] Found member by id (legacy)')
+          return legacyResult.data
+        }
+
+        // Last resort: try by email (for Google OAuth linking)
+        if (userEmail) {
+          const emailResult = await supabase
+            .from('members')
+            .select('*')
+            .eq('email', userEmail)
+            .is('auth_user_id', null)  // Only unlinked members
+            .single()
+
+          if (!emailResult.error && emailResult.data) {
+            console.log('[Auth] Found unlinked member by email, linking now...')
+            // Link the member to this auth user
+            const { error: linkError } = await supabase
+              .from('members')
+              .update({ auth_user_id: userId })
+              .eq('id', emailResult.data.id)
+
+            if (linkError) {
+              console.error('[Auth] Error linking member:', linkError)
+            } else {
+              console.log('[Auth] Member linked successfully!')
+              return { ...emailResult.data, auth_user_id: userId }
+            }
+          }
+        }
+      }
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('[Auth] Error fetching member profile:', error.message)
+      }
+
+      return null
     } catch (err) {
       if (err instanceof Error && err.message === 'Timeout') {
         console.warn('[Auth] Member profile fetch timed out')
@@ -105,7 +148,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Fetch member profile in background (non-blocking)
       if (session?.user && isMounted) {
         try {
-          const member = await fetchMemberProfile(session.user.id)
+          const member = await fetchMemberProfile(session.user.id, session.user.email)
           console.log('[Auth] Member profile fetched:', !!member)
           if (isMounted) {
             setState(prev => ({ ...prev, member }))
@@ -148,7 +191,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // Fetch member profile in background (non-blocking)
         if (session?.user && isMounted) {
-          const member = await fetchMemberProfile(session.user.id)
+          const member = await fetchMemberProfile(session.user.id, session.user.email)
           console.log('[Auth] Member profile fetched from getSession:', !!member)
           if (isMounted) {
             setState(prev => ({ ...prev, member }))
@@ -201,6 +244,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return { error }
   }, [])
 
+  const signInWithGoogle = useCallback(async (): Promise<{ error: string | null }> => {
+    try {
+      // Use production URL if in production, otherwise localhost
+      const productionUrl = 'https://crm.mmagym.be'
+      const redirectUrl = import.meta.env.PROD ? productionUrl : window.location.origin
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+        },
+      })
+
+      if (error) {
+        return { error: error.message }
+      }
+
+      return { error: null }
+    } catch (err) {
+      console.error('[Auth] Google sign-in error:', err)
+      return {
+        error: err instanceof Error ? err.message : 'Google sign-in failed',
+      }
+    }
+  }, [])
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut()
   }, [])
@@ -208,6 +277,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     ...state,
     signIn,
+    signInWithGoogle,
     signOut,
     isAuthenticated: !!state.session,
   }
