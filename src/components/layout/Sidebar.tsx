@@ -34,6 +34,8 @@ interface NavItem {
   badge?: number
   adminOnly?: boolean
   trialBadge?: number | null
+  expiredBadge?: boolean
+  disabled?: boolean
   external?: boolean
 }
 
@@ -107,7 +109,7 @@ const SIDEBAR_STATE_KEY = 'rcn-sidebar-groups'
 
 export function Sidebar() {
   const { signOut, member, user } = useAuth()
-  const { hasAccess, getTrialInfo } = useModules()
+  const { hasAccess, shouldShowInSidebar, isTrialExpired, getTrialInfo } = useModules()
   const location = useLocation()
 
   // Load initial state from localStorage
@@ -138,28 +140,34 @@ export function Sidebar() {
     : user?.email?.split('@')[0] || 'Gebruiker'
 
   // Build modules group dynamically based on access
+  // Modules are visible if they have a subscription (active, trial, or expired trial)
+  // Expired trials show with "Verlopen" badge and disabled access
   const modulesGroup: NavGroup = {
     ...modulesGroupBase,
     items: [
-      // Shop (if access)
-      ...(hasAccess('shop')
+      // Shop (visible if has/had subscription)
+      ...(shouldShowInSidebar('shop')
         ? [
           {
             name: 'Shop',
             href: '/shop',
             icon: ShoppingBag,
             trialBadge: getTrialInfo('shop').isTrialing ? getTrialInfo('shop').daysLeft : null,
+            expiredBadge: isTrialExpired('shop'),
+            disabled: !hasAccess('shop'),
           },
         ]
         : []),
-      // Email Marketing (if access)
-      ...(hasAccess('email')
+      // Email Marketing (visible if has/had subscription)
+      ...(shouldShowInSidebar('email')
         ? [
           {
             name: 'Email',
             href: '/email',
             icon: Mail,
             trialBadge: getTrialInfo('email').isTrialing ? getTrialInfo('email').daysLeft : null,
+            expiredBadge: isTrialExpired('email'),
+            disabled: !hasAccess('email'),
           },
         ]
         : []),
@@ -343,6 +351,20 @@ export function Sidebar() {
                             <span className="text-[13px] font-medium flex-1">{item.name}</span>
                             <ExternalLink className="w-3 h-3 opacity-50" />
                           </a>
+                        ) : item.disabled ? (
+                          // Disabled link (expired trial)
+                          <div
+                            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-neutral-600 cursor-not-allowed opacity-60"
+                            title="Trial verlopen - upgrade om toegang te krijgen"
+                          >
+                            <item.icon className="w-4 h-4" strokeWidth={1.5} />
+                            <span className="text-[13px] font-medium">{item.name}</span>
+                            {item.expiredBadge && (
+                              <span className="ml-auto bg-red-500/20 text-red-400 text-[9px] font-medium px-1.5 py-0.5 rounded-full border border-red-500/30">
+                                Verlopen
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           // Internal link
                           <NavLink

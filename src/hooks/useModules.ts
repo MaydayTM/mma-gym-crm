@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase'
 // Tenant ID - later configureerbaar per gym
 const TENANT_ID = 'reconnect'
 
+// Owner tenant heeft altijd volledige toegang tot alle modules
+const OWNER_TENANT_ID = 'reconnect'
+
 export type ModuleStatus = 'active' | 'trial' | 'available' | 'expired' | 'cancelled'
 
 export interface TenantModule {
@@ -88,10 +91,16 @@ export function useModules() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
+  // Check of tenant de owner is (altijd volledige toegang)
+  const isOwner = TENANT_ID === OWNER_TENANT_ID
+
   // Check of een specifieke module actief is
   function hasAccess(moduleSlug: string): boolean {
     const module = modules.find((m) => m.slug === moduleSlug)
     if (!module) return false
+
+    // Owner tenant heeft altijd toegang tot alle modules
+    if (isOwner) return true
 
     // Core modules zijn altijd beschikbaar
     if (module.is_core) return true
@@ -106,6 +115,32 @@ export function useModules() {
     }
 
     return true
+  }
+
+  // Check of trial verlopen is (voor UI feedback)
+  function isTrialExpired(moduleSlug: string): boolean {
+    // Owner heeft nooit expired trials
+    if (isOwner) return false
+
+    const module = modules.find((m) => m.slug === moduleSlug)
+    if (!module || module.status !== 'trial' || !module.trial_ends_at) return false
+
+    const trialEnd = new Date(module.trial_ends_at)
+    return trialEnd < new Date()
+  }
+
+  // Check of module zichtbaar moet zijn in sidebar (ook expired trials)
+  function shouldShowInSidebar(moduleSlug: string): boolean {
+    const module = modules.find((m) => m.slug === moduleSlug)
+    if (!module) return false
+
+    // Core modules altijd zichtbaar
+    if (module.is_core) return true
+
+    // Active en trial modules altijd zichtbaar
+    if (module.status === 'active' || module.status === 'trial') return true
+
+    return false
   }
 
   // Get trial info voor een module
@@ -152,7 +187,10 @@ export function useModules() {
     loading,
     error,
     refetch,
+    isOwner,
     hasAccess,
+    isTrialExpired,
+    shouldShowInSidebar,
     getTrialInfo,
     getPremiumModules,
     getActiveModules,
