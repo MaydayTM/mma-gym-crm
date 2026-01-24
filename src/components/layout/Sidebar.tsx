@@ -109,7 +109,7 @@ const SIDEBAR_STATE_KEY = 'rcn-sidebar-groups'
 
 export function Sidebar() {
   const { signOut, member, user } = useAuth()
-  const { hasAccess, shouldShowInSidebar, isTrialExpired, getTrialInfo } = useModules()
+  const { isOwner, hasAccess, shouldShowInSidebar, isTrialExpired, getTrialInfo } = useModules()
   const location = useLocation()
 
   // Load initial state from localStorage
@@ -140,13 +140,14 @@ export function Sidebar() {
     : user?.email?.split('@')[0] || 'Gebruiker'
 
   // Build modules group dynamically based on access
-  // Modules are visible if they have a subscription (active, trial, or expired trial)
+  // Owner tenant sees ALL modules (full access)
+  // Other tenants: modules visible if they have subscription (active, trial, or expired)
   // Expired trials show with "Verlopen" badge and disabled access
   const modulesGroup: NavGroup = {
     ...modulesGroupBase,
     items: [
-      // Shop (visible if has/had subscription)
-      ...(shouldShowInSidebar('shop')
+      // Shop (owner always sees, others need subscription)
+      ...(isOwner || shouldShowInSidebar('shop')
         ? [
           {
             name: 'Shop',
@@ -158,8 +159,8 @@ export function Sidebar() {
           },
         ]
         : []),
-      // Email Marketing (visible if has/had subscription)
-      ...(shouldShowInSidebar('email')
+      // Email Marketing (owner always sees, others need subscription)
+      ...(isOwner || shouldShowInSidebar('email')
         ? [
           {
             name: 'Email',
