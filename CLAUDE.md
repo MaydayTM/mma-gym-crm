@@ -4,11 +4,11 @@
 
 > **Lees dit eerst!** Deze sectie helpt Claude snel op te starten.
 
-### Huidige Status (11 januari 2026)
-- **Fase:** MVP naar Production-Ready + Mobile App Planning
-- **Prioriteit:** Mobile App brainstorm hervatten (crash herstel)
-- **Laatste grote features:** Kitana AI Smart Hub, Password Reset Flow, Hooks systeem
-- **NIEUW:** Mobile app design document hersteld na PC crash
+### Huidige Status (24 januari 2026)
+- **Fase:** MVP Production-Ready + Ledenmigratie
+- **Prioriteit:** Claim Account flow testen en debuggen
+- **Laatste fixes:** RLS infinite recursion bug, Shop module visibility
+- **Documentatie:** LESSONS_LEARNED.md toegevoegd voor AI context
 
 ### Beschikbare Slash Commands
 ```
@@ -21,6 +21,8 @@
 
 ### Kritieke Bestanden
 - `CLAUDE.md` - Dit bestand (altijd lezen)
+- `docs/LESSONS_LEARNED.md` - **LEES DIT VOOR COMPLEXE WIJZIGINGEN** - Bekende bugs, patterns, oplossingen
+- `docs/FUNCTIONLIST.md` - Complete feature lijst van het CRM
 - `.claude/settings.json` - Project hooks configuratie
 - `.claude/commands/` - Slash command definities
 - `supabase/migrations/` - Database schema
