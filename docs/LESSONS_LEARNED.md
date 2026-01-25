@@ -180,4 +180,26 @@ npx supabase db push --include-all
 
 ---
 
+---
+
+## Open Issues (volgende sessie)
+
+### RLS Recursie - Members Table (24 jan 2026)
+
+**Status:** Gedeeltelijk gefixed
+
+**Gedaan:**
+- `get_my_role()` functie gedropped
+- Migration 060 toegepast
+
+**Nog te doen:** Drop deze policies via SQL Editor:
+```sql
+DROP POLICY IF EXISTS "Staff can update any member" ON members;
+DROP POLICY IF EXISTS "Users can read their own member record" ON members;
+```
+
+**Reden:** Deze policies bevatten waarschijnlijk subqueries op `members` tabel.
+
+---
+
 *Laatst bijgewerkt: 24 januari 2026*
