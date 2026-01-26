@@ -87,6 +87,31 @@ serve(async (req) => {
 
     const memberData = result[0]
 
+    // Check for specific error reasons from the improved verify_claim_token function
+    if (memberData.error_reason) {
+      const errorMessages: Record<string, string> = {
+        'TOKEN_NOT_FOUND': 'Deze activatielink is ongeldig. Controleer of je de volledige link hebt gekopieerd.',
+        'TOKEN_ALREADY_CLAIMED': 'Deze activatielink is al gebruikt. Log in met je account of vraag een nieuwe link aan.',
+        'TOKEN_EXPIRED': 'Deze activatielink is verlopen. Vraag een nieuwe link aan via "Account activeren".',
+        'MEMBER_NOT_FOUND': 'Er is een probleem met je account. Neem contact op met de gym.',
+        'MEMBER_ALREADY_ACTIVATED': 'Je account is al geactiveerd! Log in met je e-mailadres en wachtwoord, of gebruik "Wachtwoord vergeten" als je je wachtwoord kwijt bent.',
+      }
+
+      return new Response(
+        JSON.stringify({
+          valid: false,
+          error: errorMessages[memberData.error_reason] || 'Deze activatielink is ongeldig of verlopen.',
+          reason: memberData.error_reason,
+          // Include name for MEMBER_ALREADY_ACTIVATED so we can show a friendly message
+          member_name: memberData.error_reason === 'MEMBER_ALREADY_ACTIVATED' ? memberData.first_name : undefined,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
+    }
+
     // Return member preview (limited data for security)
     return new Response(
       JSON.stringify({

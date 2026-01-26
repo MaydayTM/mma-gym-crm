@@ -48,7 +48,12 @@ export function ActivateAccount() {
 
       if (!data.valid) {
         setPageState('invalid')
+        // Use the specific error message from the API, which now includes helpful guidance
         setError(data.error || 'Deze link is ongeldig of verlopen.')
+        // Log reason for debugging
+        if (data.reason) {
+          console.log('[ActivateAccount] Token invalid, reason:', data.reason)
+        }
         return
       }
 

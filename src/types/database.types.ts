@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -39,6 +40,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_claim_tokens: {
+        Row: {
+          claimed_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          member_id: string
+          token_hash: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          member_id: string
+          token_hash: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          member_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_claim_tokens_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_claim_tokens_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_claim_tokens_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_claim_tokens_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_log: {
         Row: {
           action: string
@@ -2549,6 +2609,7 @@ export type Database = {
           phone_mobile: string | null
           profile_picture_url: string | null
           qr_token: string | null
+          qr_token_hash: string | null
           retention_status: string | null
           role: string
           status: string | null
@@ -2597,6 +2658,7 @@ export type Database = {
           phone_mobile?: string | null
           profile_picture_url?: string | null
           qr_token?: string | null
+          qr_token_hash?: string | null
           retention_status?: string | null
           role?: string
           status?: string | null
@@ -2645,6 +2707,7 @@ export type Database = {
           phone_mobile?: string | null
           profile_picture_url?: string | null
           qr_token?: string | null
+          qr_token_hash?: string | null
           retention_status?: string | null
           role?: string
           status?: string | null
@@ -4298,6 +4361,16 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_account_stats: {
+        Row: {
+          claimed_accounts: number | null
+          expired_tokens: number | null
+          pending_tokens: number | null
+          total_active_accounts: number | null
+          unclaimed_members: number | null
+        }
+        Relationships: []
+      }
       dashboard_stats: {
         Row: {
           active_members: number | null
@@ -4547,6 +4620,11 @@ export type Database = {
           member_name: string
         }[]
       }
+      cleanup_expired_claim_tokens: { Args: never; Returns: number }
+      create_claim_token: {
+        Args: { p_email: string; p_expires_hours?: number; p_member_id: string }
+        Returns: string
+      }
       create_profile_on_signup: {
         Args: {
           p_auth_user_id: string
@@ -4585,6 +4663,20 @@ export type Database = {
           profile_completeness: number
           total_checkins: number
         }[]
+      }
+      find_member_for_claim: {
+        Args: { p_identifier: string }
+        Returns: {
+          can_claim: boolean
+          email: string
+          first_name: string
+          member_id: string
+          reason: string
+        }[]
+      }
+      generate_member_qr_token: {
+        Args: { p_member_id: string }
+        Returns: string
       }
       generate_order_number: { Args: { p_tenant_id: string }; Returns: string }
       generate_shop_order_number: { Args: never; Returns: string }
@@ -4683,7 +4775,6 @@ export type Database = {
           scanned_at: string
         }[]
       }
-      get_my_role: { Args: never; Returns: string }
       get_period_comparison: {
         Args: {
           p_metric?: string
@@ -4752,6 +4843,7 @@ export type Database = {
         Returns: boolean
       }
       is_tenant_owner: { Args: { check_tenant_id: string }; Returns: boolean }
+      mark_token_claimed: { Args: { p_token: string }; Returns: boolean }
       merge_duplicate_members: {
         Args: { p_duplicate_ids: string[]; p_master_id: string }
         Returns: Json
@@ -4774,6 +4866,32 @@ export type Database = {
       update_campaign_stats: {
         Args: { p_campaign_id: string }
         Returns: undefined
+      }
+      validate_qr_token: {
+        Args: { p_token: string }
+        Returns: {
+          denial_reason: string
+          is_valid: boolean
+          member_id: string
+          member_name: string
+        }[]
+      }
+      verify_and_claim_token: {
+        Args: { p_member_id: string; p_token: string }
+        Returns: boolean
+      }
+      verify_claim_token: {
+        Args: { p_token: string }
+        Returns: {
+          email: string
+          error_reason: string
+          first_name: string
+          last_name: string
+          member_id: string
+          member_number: number
+          profile_picture_url: string
+          token_id: string
+        }[]
       }
     }
     Enums: {

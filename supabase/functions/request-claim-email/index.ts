@@ -65,7 +65,7 @@ function generateClaimAccountEmail(options: {
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
             <td style="padding: 32px 40px; text-align: center; border-bottom: 1px solid ${colors.border};">
-              <img src="https://mmagym.be/images/logo-reconnect-dark.png" width="120" alt="Reconnect Academy" style="display: block; margin: 0 auto;">
+              <img src="https://crm.mmagym.be/images/freshYellowRCN%202.png" width="120" alt="Reconnect Academy" style="display: block; margin: 0 auto;">
             </td>
           </tr>
         </table>
@@ -252,8 +252,8 @@ serve(async (req) => {
 
     const plainToken = tokenResult as string
 
-    // Build activation URL - use creative.mmagym.be for member activation
-    const baseUrl = 'https://creative.mmagym.be'
+    // Build activation URL - use crm.mmagym.be for member activation
+    const baseUrl = 'https://crm.mmagym.be'
     const activationUrl = `${baseUrl}/activate?token=${encodeURIComponent(plainToken)}`
 
     // Generate email HTML
