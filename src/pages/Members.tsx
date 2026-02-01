@@ -6,6 +6,7 @@ import { NewMemberForm } from '../components/members/NewMemberForm'
 import { ImportMembersModal } from '../components/members/ImportMembersModal'
 import { DuplicateReviewModal } from '../components/members/DuplicateReviewModal'
 import { useMembers } from '../hooks/useMembers'
+import { usePermissions } from '../hooks/usePermissions'
 
 export function Members() {
   const navigate = useNavigate()
@@ -15,6 +16,7 @@ export function Members() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const { data: members, isLoading, error } = useMembers()
+  const permissions = usePermissions()
 
   const filteredMembers = members?.filter(member => {
     if (!searchQuery) return true
@@ -37,38 +39,44 @@ export function Members() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => setIsDuplicateModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 text-[15px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-6 py-3 hover:bg-neutral-900 transition"
-            style={{
-              position: 'relative',
-              '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
-              '--border-radius-before': '9999px',
-            } as React.CSSProperties}
-            title="Scan database op duplicaat leden"
-          >
-            <Users size={18} strokeWidth={1.5} />
-            <span>Duplicaten</span>
-          </button>
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 text-[15px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-6 py-3 hover:bg-neutral-900 transition"
-            style={{
-              position: 'relative',
-              '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
-              '--border-radius-before': '9999px',
-            } as React.CSSProperties}
-          >
-            <Upload size={18} strokeWidth={1.5} />
-            <span>Importeren</span>
-          </button>
-          <button
-            onClick={() => setIsNewMemberModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
-          >
-            <UserPlus size={18} strokeWidth={1.5} />
-            <span>Nieuw Lid</span>
-          </button>
+          {permissions.isAdmin && (
+            <button
+              onClick={() => setIsDuplicateModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 text-[15px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-6 py-3 hover:bg-neutral-900 transition"
+              style={{
+                position: 'relative',
+                '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
+                '--border-radius-before': '9999px',
+              } as React.CSSProperties}
+              title="Scan database op duplicaat leden"
+            >
+              <Users size={18} strokeWidth={1.5} />
+              <span>Duplicaten</span>
+            </button>
+          )}
+          {permissions.isAdmin && (
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 text-[15px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-6 py-3 hover:bg-neutral-900 transition"
+              style={{
+                position: 'relative',
+                '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
+                '--border-radius-before': '9999px',
+              } as React.CSSProperties}
+            >
+              <Upload size={18} strokeWidth={1.5} />
+              <span>Importeren</span>
+            </button>
+          )}
+          {permissions.canEditMembers && (
+            <button
+              onClick={() => setIsNewMemberModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+            >
+              <UserPlus size={18} strokeWidth={1.5} />
+              <span>Nieuw Lid</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -203,27 +211,31 @@ export function Members() {
           <p className="text-[14px] text-neutral-500 mt-1">
             {searchQuery ? 'Probeer een andere zoekterm' : 'Voeg je eerste lid toe of importeer een CSV bestand'}
           </p>
-          {!searchQuery && (
+          {!searchQuery && (permissions.canEditMembers || permissions.isAdmin) && (
             <div className="flex justify-center gap-3 mt-6">
-              <button
-                onClick={() => setIsImportModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 text-[14px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-5 py-2.5 hover:bg-neutral-900 transition"
-                style={{
-                  position: 'relative',
-                  '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
-                  '--border-radius-before': '9999px',
-                } as React.CSSProperties}
-              >
-                <Upload size={16} strokeWidth={1.5} />
-                Importeren
-              </button>
-              <button
-                onClick={() => setIsNewMemberModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-5 py-2.5 text-[14px] font-medium shadow-[0_16px_40px_rgba(251,191,36,0.55)] hover:bg-amber-200 transition"
-              >
-                <UserPlus size={16} strokeWidth={1.5} />
-                Nieuw Lid
-              </button>
+              {permissions.isAdmin && (
+                <button
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 text-[14px] text-neutral-100 bg-gradient-to-br from-white/10 to-white/0 rounded-full px-5 py-2.5 hover:bg-neutral-900 transition"
+                  style={{
+                    position: 'relative',
+                    '--border-gradient': 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))',
+                    '--border-radius-before': '9999px',
+                  } as React.CSSProperties}
+                >
+                  <Upload size={16} strokeWidth={1.5} />
+                  Importeren
+                </button>
+              )}
+              {permissions.canEditMembers && (
+                <button
+                  onClick={() => setIsNewMemberModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-5 py-2.5 text-[14px] font-medium shadow-[0_16px_40px_rgba(251,191,36,0.55)] hover:bg-amber-200 transition"
+                >
+                  <UserPlus size={16} strokeWidth={1.5} />
+                  Nieuw Lid
+                </button>
+              )}
             </div>
           )}
         </div>
