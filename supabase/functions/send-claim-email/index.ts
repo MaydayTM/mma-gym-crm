@@ -16,7 +16,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Import email template (inline to avoid module issues in Deno)
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// Email template inline (to avoid module issues in Deno)
+// NOTE: This template is duplicated in request-claim-email. Future refactor:
+// extract to shared module once Deno import.meta.resolve is stable.
 const colors = {
   primary: '#FBBF24',
   primaryHover: '#F59E0B',
@@ -281,11 +286,11 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    // Check if user is staff
+    // Check if user is staff (use auth_user_id to find member, not id)
     const { data: userMember } = await supabase
       .from('members')
       .select('role')
-      .eq('id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!['admin', 'medewerker'].includes(userMember?.role || '')) {
@@ -297,6 +302,11 @@ serve(async (req) => {
 
     if (!member_id) {
       throw new Error('member_id is required')
+    }
+
+    // Validate member_id format
+    if (!UUID_REGEX.test(member_id)) {
+      throw new Error('Ongeldige member_id format')
     }
 
     // Get member data
