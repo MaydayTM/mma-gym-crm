@@ -20,6 +20,7 @@ import { EditMemberForm } from '../components/members/EditMemberForm'
 import { BeltProgressCard } from '../components/members/BeltProgressCard'
 import { DoorAccessCard } from '../components/members/DoorAccessCard'
 import { AssignSubscriptionModal } from '../components/members/AssignSubscriptionModal'
+import { SubscriptionActions } from '../components/members/SubscriptionActions'
 import { useMember } from '../hooks/useMember'
 import { useMemberSubscriptions } from '../hooks/useMemberSubscriptions'
 import { useMemberCheckins } from '../hooks/useMemberCheckins'
@@ -337,6 +338,7 @@ export function MemberDetail() {
                     >
                       {sub.status}
                     </span>
+                    <SubscriptionActions subscription={sub} />
                   </div>
                 </div>
               )
