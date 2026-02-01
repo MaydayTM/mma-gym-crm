@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useModules } from '../../hooks/useModules'
+import { usePermissions } from '../../hooks/usePermissions'
 
 const KITANA_AVATAR = '/images/rcn_assistent.png'
 
@@ -37,6 +38,7 @@ interface NavItem {
   expiredBadge?: boolean
   disabled?: boolean
   external?: boolean
+  permission?: keyof ReturnType<typeof usePermissions>  // Permission key from usePermissions
 }
 
 // Navigation group type
@@ -59,9 +61,9 @@ const navigationGroups: NavGroup[] = [
     name: 'Leden & Sales',
     icon: Users,
     items: [
-      { name: 'Leden', href: '/members', icon: Users },
-      { name: 'Leads', href: '/leads', icon: UserPlus },
-      { name: 'Abonnementen', href: '/subscriptions', icon: CreditCard },
+      { name: 'Leden', href: '/members', icon: Users },  // All authenticated
+      { name: 'Leads', href: '/leads', icon: UserPlus, permission: 'canManageLeads' },  // Staff only
+      { name: 'Abonnementen', href: '/subscriptions', icon: CreditCard, permission: 'canEditMembers' },  // Staff only
     ],
   },
   {
@@ -69,9 +71,9 @@ const navigationGroups: NavGroup[] = [
     name: 'Planning',
     icon: Calendar,
     items: [
-      { name: 'Rooster', href: '/schedule', icon: Calendar },
-      { name: 'Reservaties', href: '/reservations', icon: CalendarCheck },
-      { name: 'Check-in', href: '/checkin', icon: ScanLine },
+      { name: 'Rooster', href: '/schedule', icon: Calendar, permission: 'canViewSchedule' },  // Team + fighters
+      { name: 'Reservaties', href: '/reservations', icon: CalendarCheck },  // All authenticated
+      { name: 'Check-in', href: '/checkin', icon: ScanLine, permission: 'canCheckInMembers' },  // Staff only
     ],
   },
   {
@@ -79,8 +81,8 @@ const navigationGroups: NavGroup[] = [
     name: 'Inzichten',
     icon: BarChart3,
     items: [
-      { name: 'Rapportages', href: '/reports', icon: BarChart3 },
-      { name: 'Taken', href: '/tasks', icon: Sparkles },
+      { name: 'Rapportages', href: '/reports', icon: BarChart3, permission: 'canManageFinances' },  // Admin only
+      { name: 'Taken', href: '/tasks', icon: Sparkles },  // All authenticated
     ],
   },
 ]
@@ -99,8 +101,8 @@ const beheerGroup: NavGroup = {
   name: 'Beheer',
   icon: Settings,
   items: [
-    { name: 'Team', href: '/team', icon: Shield, adminOnly: true },
-    { name: 'Instellingen', href: '/settings', icon: Settings },
+    { name: 'Team', href: '/team', icon: Shield, permission: 'isAdmin' },  // Admin only
+    { name: 'Instellingen', href: '/settings', icon: Settings, permission: 'isStaff' },  // Staff only
   ],
 }
 
@@ -110,6 +112,7 @@ const SIDEBAR_STATE_KEY = 'rcn-sidebar-groups'
 export function Sidebar() {
   const { signOut, member, user } = useAuth()
   const { isOwner, hasAccess, shouldShowInSidebar, isTrialExpired, getTrialInfo } = useModules()
+  const permissions = usePermissions()
   const location = useLocation()
 
   // Load initial state from localStorage
@@ -203,6 +206,15 @@ export function Sidebar() {
     }
   }, [location.pathname])
 
+  // Helper to check if user has permission for an item
+  const hasPermission = (item: NavItem): boolean => {
+    // If no permission specified, accessible to all authenticated users
+    if (!item.permission) return true
+
+    // Check the permission from usePermissions
+    return Boolean(permissions[item.permission])
+  }
+
   // All groups for rendering
   const allGroups = [
     ...navigationGroups,
@@ -291,10 +303,14 @@ export function Sidebar() {
         {/* Collapsible groups */}
         <div className="space-y-2">
           {allGroups.map((group) => {
-            // Filter out admin-only items if not admin
-            const visibleItems = group.items.filter(
-              (item) => !item.adminOnly || member?.role === 'admin'
-            )
+            // Filter items based on permissions
+            const visibleItems = group.items.filter((item) => {
+              // Legacy adminOnly check (kept for backward compatibility)
+              if (item.adminOnly && member?.role !== 'admin') return false
+
+              // New permission-based check
+              return hasPermission(item)
+            })
 
             // Skip empty groups
             if (visibleItems.length === 0) return null
