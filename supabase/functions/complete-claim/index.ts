@@ -109,47 +109,27 @@ serve(async (req) => {
     const memberId = memberData.member_id
     const memberEmail = memberData.email
 
-    // Step 2: Check if email is already registered in Supabase Auth
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-    const existingUser = existingUsers?.users?.find(
-      (u) => u.email?.toLowerCase() === memberEmail.toLowerCase()
-    )
-
-    if (existingUser) {
-      // Email already exists in Auth - link to member instead of creating new
-      console.log('User already exists in Auth, linking to member:', existingUser.id)
-
-      // Update member with existing auth user ID
-      const { error: linkError } = await supabaseAdmin
-        .from('members')
-        .update({ auth_user_id: existingUser.id })
-        .eq('id', memberId)
-
-      if (linkError) {
-        console.error('Error linking existing user:', linkError)
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Er bestaat al een account met dit e-mailadres. Probeer in te loggen of gebruik wachtwoord vergeten.',
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-        )
+    // Check for specific error reasons from verify_claim_token (migration 061)
+    if (memberData.error_reason) {
+      const errorMessages: Record<string, string> = {
+        'TOKEN_NOT_FOUND': 'Deze activatielink is ongeldig.',
+        'TOKEN_ALREADY_CLAIMED': 'Deze activatielink is al gebruikt. Log in met je account.',
+        'TOKEN_EXPIRED': 'Deze activatielink is verlopen. Vraag een nieuwe link aan.',
+        'MEMBER_NOT_FOUND': 'Er is een probleem met je account. Neem contact op met de gym.',
+        'MEMBER_ALREADY_ACTIVATED': 'Je account is al geactiveerd! Log in met je e-mailadres en wachtwoord.',
       }
-
-      // Mark token as claimed
-      await supabaseAdmin.rpc('mark_token_claimed', { p_token: token })
 
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Er bestaat al een account met dit e-mailadres. Probeer in te loggen.',
-          redirect: '/login',
+          error: errorMessages[memberData.error_reason] || 'Deze activatielink is ongeldig.',
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
 
-    // Step 3: Create new Supabase Auth user
+    // Step 2: Try to create the auth user directly (handles duplicate email atomically)
+    // This is more efficient than listUsers() and avoids race conditions
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: memberEmail,
       password: password,
@@ -160,6 +140,23 @@ serve(async (req) => {
         member_id: memberId,
       },
     })
+
+    // Handle duplicate email error
+    if (authError && authError.message?.toLowerCase().includes('user already registered')) {
+      console.error('User already exists for email:', memberEmail)
+
+      // Mark token as claimed to prevent reuse
+      await supabaseAdmin.rpc('mark_token_claimed', { p_token: token })
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Er bestaat al een account met dit e-mailadres. Probeer in te loggen of gebruik "Wachtwoord vergeten".',
+          redirect: '/login',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
 
     if (authError) {
       console.error('Error creating auth user:', authError)
