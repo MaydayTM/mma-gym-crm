@@ -1,4 +1,6 @@
 // supabase/functions/create-mollie-payment/index.ts
+// NOTE: Rate limiting should be configured at Supabase Edge Function level in production
+// to prevent abuse of this public endpoint.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 
@@ -25,9 +27,10 @@ serve(async (req) => {
     }
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
+    // Use SERVICE_ROLE_KEY for edge function - bypass RLS for reading checkout sessions
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     const { checkout_session_id, redirect_url } = await req.json() as CreatePaymentRequest
 
@@ -46,16 +49,30 @@ serve(async (req) => {
       throw new Error('Checkout session not found')
     }
 
+    // Validate session payment status
     if (session.payment_status !== 'pending') {
       throw new Error('Checkout session already processed')
     }
 
-    // Build payment description
+    // Validate session freshness (24 hour expiry)
+    const sessionCreatedAt = new Date(session.created_at)
+    const now = new Date()
+    const hoursSinceCreation = (now.getTime() - sessionCreatedAt.getTime()) / (1000 * 60 * 60)
+    if (hoursSinceCreation > 24) {
+      throw new Error('Checkout session expired')
+    }
+
+    // Validate positive amount
+    if (!session.final_total || session.final_total <= 0) {
+      throw new Error('Invalid payment amount')
+    }
+
+    // Build payment description (sanitized and truncated to Mollie's 255 char limit)
     const planName = session.plan_types?.name || 'Abonnement'
     const ageName = session.age_groups?.name || ''
     const duration = session.duration_months === 1 ? '1 maand' :
                      session.duration_months === 3 ? '3 maanden' : '12 maanden'
-    const description = `${planName} ${ageName} - ${duration}`
+    const description = `${planName} ${ageName} - ${duration}`.substring(0, 255)
 
     // Webhook URL for Mollie to call after payment
     const webhookUrl = `${SUPABASE_URL}/functions/v1/mollie-webhook`
