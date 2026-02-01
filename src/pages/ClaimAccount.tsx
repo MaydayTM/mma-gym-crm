@@ -8,16 +8,14 @@ export function ClaimAccount() {
   const [isLoading, setIsLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
-    setHint(null)
     setIsLoading(true)
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('request-claim-email', {
+      const { error: fnError } = await supabase.functions.invoke('request-claim-email', {
         body: { identifier: identifier.trim() },
       })
 
@@ -27,11 +25,6 @@ export function ClaimAccount() {
 
       // Always show success (security: don't reveal if account exists)
       setSubmitted(true)
-
-      // Show hint if provided (e.g., "Account is al geactiveerd")
-      if (data?.hint) {
-        setHint(data.hint)
-      }
     } catch (err) {
       console.error('Claim request error:', err)
       setError('Er ging iets mis. Probeer het later opnieuw.')
@@ -66,18 +59,11 @@ export function ClaimAccount() {
                 Als er een account bestaat met deze gegevens, ontvang je binnen enkele minuten een e-mail met een activatielink.
               </p>
 
-              {hint && (
-                <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/40 rounded-xl">
-                  <p className="text-amber-300 text-[13px]">{hint}</p>
-                </div>
-              )}
-
               <div className="space-y-3">
                 <button
                   onClick={() => {
                     setSubmitted(false)
                     setIdentifier('')
-                    setHint(null)
                   }}
                   className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200 font-medium rounded-full transition-all text-[14px]"
                 >

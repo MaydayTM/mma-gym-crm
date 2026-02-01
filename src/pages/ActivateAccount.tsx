@@ -48,8 +48,23 @@ export function ActivateAccount() {
 
       if (!data.valid) {
         setPageState('invalid')
-        // Use the specific error message from the API, which now includes helpful guidance
-        setError(data.error || 'Deze link is ongeldig of verlopen.')
+
+        // Map error_reason to Dutch error messages
+        const errorMessages: Record<string, string> = {
+          'TOKEN_NOT_FOUND': 'Deze activatielink is ongeldig. Vraag een nieuwe link aan.',
+          'TOKEN_EXPIRED': 'Deze activatielink is verlopen (48 uur). Vraag een nieuwe link aan.',
+          'TOKEN_ALREADY_CLAIMED': 'Dit account is al geactiveerd. Je kunt nu inloggen.',
+          'MEMBER_NOT_FOUND': 'Er is geen lid gekoppeld aan deze link. Neem contact op met de beheerder.',
+          'MEMBER_ALREADY_ACTIVATED': 'Dit account is al geactiveerd. Je kunt nu inloggen.',
+        }
+
+        // Use specific error message based on reason, fallback to generic
+        const errorMessage = data.reason && errorMessages[data.reason]
+          ? errorMessages[data.reason]
+          : (data.error || 'Deze link is ongeldig of verlopen.')
+
+        setError(errorMessage)
+
         // Log reason for debugging
         if (data.reason) {
           console.log('[ActivateAccount] Token invalid, reason:', data.reason)
