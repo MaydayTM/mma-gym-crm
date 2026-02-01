@@ -6,6 +6,7 @@ import { useDisciplines } from '../hooks/useDisciplines'
 import { useMembers } from '../hooks/useMembers'
 import { useClassTracks } from '../hooks/useClassTracks'
 import { useRooms } from '../hooks/useRooms'
+import { usePermissions } from '../hooks/usePermissions'
 
 const DAYS = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag']
 const DAYS_SHORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
@@ -145,6 +146,7 @@ export function Schedule() {
   const [selectionMode, setSelectionMode] = useState(false)
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set())
 
+  const { canManageSchedule } = usePermissions()
   const { data: classes, isLoading } = useClasses()
   const { data: rooms } = useRooms()
   const { mutate: updateClass } = useUpdateClass()
@@ -263,30 +265,32 @@ export function Schedule() {
           <div className="flex items-center gap-3">
             {selectionMode ? (
               // Selection mode controls
-              <>
-                <span className="text-[14px] text-neutral-300">
-                  {selectedClasses.size} geselecteerd
-                </span>
-                <button
-                  onClick={handleBulkDelete}
-                  disabled={selectedClasses.size === 0 || isBulkDeleting}
-                  className="inline-flex items-center gap-2 rounded-full bg-rose-500 text-white px-5 py-2.5 text-[14px] font-medium hover:bg-rose-400 transition disabled:opacity-50"
-                >
-                  {isBulkDeleting ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Trash2 size={16} />
-                  )}
-                  Verwijderen
-                </button>
-                <button
-                  onClick={exitSelectionMode}
-                  className="inline-flex items-center gap-2 rounded-full bg-neutral-700 text-neutral-200 px-5 py-2.5 text-[14px] font-medium hover:bg-neutral-600 transition"
-                >
-                  <X size={16} />
-                  Annuleren
-                </button>
-              </>
+              canManageSchedule && (
+                <>
+                  <span className="text-[14px] text-neutral-300">
+                    {selectedClasses.size} geselecteerd
+                  </span>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={selectedClasses.size === 0 || isBulkDeleting}
+                    className="inline-flex items-center gap-2 rounded-full bg-rose-500 text-white px-5 py-2.5 text-[14px] font-medium hover:bg-rose-400 transition disabled:opacity-50"
+                  >
+                    {isBulkDeleting ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
+                    Verwijderen
+                  </button>
+                  <button
+                    onClick={exitSelectionMode}
+                    className="inline-flex items-center gap-2 rounded-full bg-neutral-700 text-neutral-200 px-5 py-2.5 text-[14px] font-medium hover:bg-neutral-600 transition"
+                  >
+                    <X size={16} />
+                    Annuleren
+                  </button>
+                </>
+              )
             ) : (
               // Normal mode controls
               <>
@@ -306,20 +310,24 @@ export function Schedule() {
                     ))}
                   </select>
                 </div>
-                <button
-                  onClick={() => setSelectionMode(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-neutral-800 text-neutral-300 px-4 py-2.5 text-[14px] font-medium hover:bg-neutral-700 transition border border-neutral-700"
-                >
-                  <CheckSquare size={16} />
-                  Selecteren
-                </button>
-                <button
-                  onClick={() => setIsNewClassModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
-                >
-                  <Plus size={18} strokeWidth={1.5} />
-                  <span>Nieuwe Les</span>
-                </button>
+                {canManageSchedule && (
+                  <>
+                    <button
+                      onClick={() => setSelectionMode(true)}
+                      className="inline-flex items-center gap-2 rounded-full bg-neutral-800 text-neutral-300 px-4 py-2.5 text-[14px] font-medium hover:bg-neutral-700 transition border border-neutral-700"
+                    >
+                      <CheckSquare size={16} />
+                      Selecteren
+                    </button>
+                    <button
+                      onClick={() => setIsNewClassModalOpen(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+                    >
+                      <Plus size={18} strokeWidth={1.5} />
+                      <span>Nieuwe Les</span>
+                    </button>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -420,8 +428,8 @@ export function Schedule() {
                     {dayClasses.slice(0, 3).map((cls) => (
                       <div
                         key={cls.id}
-                        onClick={() => setEditingClass(cls as ClassWithRelations)}
-                        className="text-[10px] px-1.5 py-0.5 rounded truncate cursor-pointer hover:ring-1 hover:ring-white/20"
+                        onClick={() => canManageSchedule && setEditingClass(cls as ClassWithRelations)}
+                        className={`text-[10px] px-1.5 py-0.5 rounded truncate ${canManageSchedule ? 'cursor-pointer hover:ring-1 hover:ring-white/20' : 'cursor-default'}`}
                         style={{
                           backgroundColor: `${cls.disciplines?.color || '#3B82F6'}20`,
                           color: cls.disciplines?.color || '#3B82F6',
@@ -535,7 +543,7 @@ export function Schedule() {
                                 compact={viewMode === 'week'}
                                 selectionMode={selectionMode}
                                 isSelected={selectedClasses.has(cls.id)}
-                                onClick={() => setEditingClass(cls as ClassWithRelations)}
+                                onClick={() => canManageSchedule && setEditingClass(cls as ClassWithRelations)}
                                 onToggleSelect={() => toggleClassSelection(cls.id)}
                               />
                             ))}
@@ -548,7 +556,7 @@ export function Schedule() {
                                 unassigned
                                 selectionMode={selectionMode}
                                 isSelected={selectedClasses.has(cls.id)}
-                                onClick={() => setEditingClass(cls as ClassWithRelations)}
+                                onClick={() => canManageSchedule && setEditingClass(cls as ClassWithRelations)}
                                 onToggleSelect={() => toggleClassSelection(cls.id)}
                               />
                             ))}
@@ -581,7 +589,7 @@ export function Schedule() {
                               compact={viewMode === 'week'}
                               selectionMode={selectionMode}
                               isSelected={selectedClasses.has(cls.id)}
-                              onClick={() => setEditingClass(cls as ClassWithRelations)}
+                              onClick={() => canManageSchedule && setEditingClass(cls as ClassWithRelations)}
                               onToggleSelect={() => toggleClassSelection(cls.id)}
                             />
                           ))}

@@ -4,6 +4,7 @@ import { Modal } from '../components/ui'
 import { useMembers } from '../hooks/useMembers'
 import { supabase } from '../lib/supabase'
 import { useQueryClient } from '@tanstack/react-query'
+import { usePermissions } from '../hooks/usePermissions'
 
 type TeamRole = 'admin' | 'medewerker' | 'coordinator' | 'coach'
 
@@ -18,6 +19,7 @@ export function Team() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<string | null>(null)
 
+  const { isAdmin } = usePermissions()
   // Get all team members (non-fighters)
   const { data: allMembers, isLoading } = useMembers()
 
@@ -41,13 +43,15 @@ export function Team() {
             Beheer administrators, medewerkers en coaches
           </p>
         </div>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
-        >
-          <Plus size={18} strokeWidth={1.5} />
-          <span>Teamlid Toevoegen</span>
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+          >
+            <Plus size={18} strokeWidth={1.5} />
+            <span>Teamlid Toevoegen</span>
+          </button>
+        )}
       </div>
 
       {/* Team Overview */}
@@ -121,12 +125,14 @@ export function Team() {
                           </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => setEditingMember(member.id)}
-                        className="p-2 rounded-lg hover:bg-white/10 transition text-neutral-500 hover:text-neutral-300"
-                      >
-                        <MoreVertical size={18} strokeWidth={1.5} />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => setEditingMember(member.id)}
+                          className="p-2 rounded-lg hover:bg-white/10 transition text-neutral-500 hover:text-neutral-300"
+                        >
+                          <MoreVertical size={18} strokeWidth={1.5} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

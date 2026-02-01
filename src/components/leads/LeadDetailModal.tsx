@@ -14,6 +14,7 @@ import {
 import { useUpdateLead } from '../../hooks/useUpdateLead'
 import { useConvertLead } from '../../hooks/useConvertLead'
 import { LEAD_STATUSES, LEAD_SOURCES, type Lead, type LeadStatus } from '../../hooks/useLeads'
+import { usePermissions } from '../../hooks/usePermissions'
 
 interface LeadDetailModalProps {
   lead: Lead
@@ -33,6 +34,7 @@ const DISCIPLINES = [
 
 export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps) {
   const navigate = useNavigate()
+  const { canManageLeads, canEditMembers } = usePermissions()
   const { mutate: updateLead, isPending } = useUpdateLead()
   const { mutate: convertLead, isPending: isConverting } = useConvertLead()
 
@@ -379,29 +381,31 @@ export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps)
         <div className="sticky bottom-0 bg-neutral-950 border-t border-neutral-800 px-6 py-4">
           <div className="flex justify-between gap-3">
             {formData.status !== 'converted' ? (
-              <button
-                type="button"
-                disabled={isConverting}
-                onClick={() => {
-                  convertLead(
-                    { lead },
-                    {
-                      onSuccess: (result) => {
-                        onClose()
-                        navigate(`/members/${result.memberId}`)
-                      },
-                    }
-                  )
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[13px] hover:bg-emerald-500/20 transition disabled:opacity-50"
-              >
-                {isConverting ? (
-                  <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />
-                ) : (
-                  <UserPlus size={16} strokeWidth={1.5} />
-                )}
-                <span>{isConverting ? 'Converteren...' : 'Converteer naar lid'}</span>
-              </button>
+              canEditMembers && (
+                <button
+                  type="button"
+                  disabled={isConverting}
+                  onClick={() => {
+                    convertLead(
+                      { lead },
+                      {
+                        onSuccess: (result) => {
+                          onClose()
+                          navigate(`/members/${result.memberId}`)
+                        },
+                      }
+                    )
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[13px] hover:bg-emerald-500/20 transition disabled:opacity-50"
+                >
+                  {isConverting ? (
+                    <Loader2 size={16} strokeWidth={1.5} className="animate-spin" />
+                  ) : (
+                    <UserPlus size={16} strokeWidth={1.5} />
+                  )}
+                  <span>{isConverting ? 'Converteren...' : 'Converteer naar lid'}</span>
+                </button>
+              )
             ) : (
               <div className="inline-flex items-center gap-2 px-4 py-2.5 text-emerald-300 text-[13px]">
                 <CheckCircle size={16} strokeWidth={1.5} />
@@ -417,15 +421,17 @@ export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps)
               >
                 Annuleren
               </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={isPending}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-300 text-neutral-950 text-[13px] font-medium hover:bg-amber-200 transition disabled:opacity-50"
-              >
-                {isPending && <Loader2 size={16} className="animate-spin" />}
-                {isPending ? 'Opslaan...' : 'Opslaan'}
-              </button>
+              {canManageLeads && (
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-300 text-neutral-950 text-[13px] font-medium hover:bg-amber-200 transition disabled:opacity-50"
+                >
+                  {isPending && <Loader2 size={16} className="animate-spin" />}
+                  {isPending ? 'Opslaan...' : 'Opslaan'}
+                </button>
+              )}
             </div>
           </div>
         </div>

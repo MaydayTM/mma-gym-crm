@@ -6,11 +6,13 @@ import { NewLeadForm } from '../components/leads/NewLeadForm'
 import { LeadDetailModal } from '../components/leads/LeadDetailModal'
 import { useLeadsByStatus, LEAD_STATUSES, type Lead, type LeadStatus } from '../hooks/useLeads'
 import { useUpdateLead } from '../hooks/useUpdateLead'
+import { usePermissions } from '../hooks/usePermissions'
 
 export function Leads() {
   const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false)
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
 
+  const { canManageLeads } = usePermissions()
   const { data: leadsByStatus, leads, isLoading, error } = useLeadsByStatus()
   const { mutate: updateLead } = useUpdateLead()
 
@@ -66,13 +68,15 @@ export function Leads() {
             {leads?.length ?? 0} leads in pipeline
           </p>
         </div>
-        <button
-          onClick={() => setIsNewLeadModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
-        >
-          <UserPlus size={18} strokeWidth={1.5} />
-          <span>Nieuwe Lead</span>
-        </button>
+        {canManageLeads && (
+          <button
+            onClick={() => setIsNewLeadModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+          >
+            <UserPlus size={18} strokeWidth={1.5} />
+            <span>Nieuwe Lead</span>
+          </button>
+        )}
       </div>
 
       {/* Kanban Board */}

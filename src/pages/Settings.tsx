@@ -5,6 +5,7 @@ import { ScheduleSettings } from '../components/settings/ScheduleSettings'
 import { RolesSettings } from '../components/settings/RolesSettings'
 import { SecuritySettings } from '../components/settings/SecuritySettings'
 import { OnboardingSettings } from '../components/settings/OnboardingSettings'
+import { usePermissions } from '../hooks/usePermissions'
 
 type SettingsTab = 'overview' | 'payments' | 'schedule' | 'profile' | 'users' | 'notifications' | 'branding' | 'security' | 'onboarding'
 
@@ -16,6 +17,7 @@ const settingsSections = [
     icon: UserPlus,
     color: 'emerald',
     available: true,
+    adminOnly: false,
   },
   {
     id: 'payments' as SettingsTab,
@@ -24,6 +26,7 @@ const settingsSections = [
     icon: CreditCard,
     color: 'amber',
     available: true,
+    adminOnly: true,
   },
   {
     id: 'schedule' as SettingsTab,
@@ -32,6 +35,7 @@ const settingsSections = [
     icon: Calendar,
     color: 'sky',
     available: true,
+    adminOnly: false,
   },
   {
     id: 'profile' as SettingsTab,
@@ -40,6 +44,7 @@ const settingsSections = [
     icon: Building2,
     color: 'emerald',
     available: false,
+    adminOnly: true,
   },
   {
     id: 'users' as SettingsTab,
@@ -48,6 +53,7 @@ const settingsSections = [
     icon: Users,
     color: 'sky',
     available: true,
+    adminOnly: true,
   },
   {
     id: 'notifications' as SettingsTab,
@@ -56,6 +62,7 @@ const settingsSections = [
     icon: Bell,
     color: 'purple',
     available: false,
+    adminOnly: false,
   },
   {
     id: 'branding' as SettingsTab,
@@ -64,6 +71,7 @@ const settingsSections = [
     icon: Palette,
     color: 'rose',
     available: false,
+    adminOnly: true,
   },
   {
     id: 'security' as SettingsTab,
@@ -72,6 +80,7 @@ const settingsSections = [
     icon: Shield,
     color: 'orange',
     available: true,
+    adminOnly: true,
   },
 ]
 
@@ -85,6 +94,7 @@ const colorClasses: Record<string, { bg: string; text: string; border: string }>
 }
 
 export function Settings() {
+  const { isAdmin } = usePermissions()
   const [activeTab, setActiveTab] = useState<SettingsTab>('overview')
 
   const handleSectionClick = (section: typeof settingsSections[0]) => {
@@ -134,7 +144,7 @@ export function Settings() {
       {activeTab !== 'overview' && (
         <div className="border-b border-white/10">
           <nav className="flex gap-6">
-            {settingsSections.filter(s => s.available).map((section) => (
+            {settingsSections.filter(s => s.available && (!s.adminOnly || isAdmin)).map((section) => (
               <button
                 key={section.id}
                 onClick={() => setActiveTab(section.id)}
@@ -162,11 +172,16 @@ export function Settings() {
 
 // Overview component showing all settings sections as cards
 function SettingsOverview({ onSectionClick }: { onSectionClick: (section: typeof settingsSections[0]) => void }) {
+  const { isAdmin } = usePermissions()
+
+  // Filter sections: show only if admin OR not admin-only
+  const visibleSections = settingsSections.filter(s => !s.adminOnly || isAdmin)
+
   return (
     <>
       {/* Settings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {settingsSections.map((section) => {
+        {visibleSections.map((section) => {
           const colors = colorClasses[section.color]
           return (
             <button

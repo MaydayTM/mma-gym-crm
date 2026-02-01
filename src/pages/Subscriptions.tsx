@@ -5,10 +5,12 @@ import { Plus, CreditCard, Users, TrendingUp, Pause, XCircle, Search, Filter, Se
 import { useSubscriptions, useSubscriptionStats } from '../hooks/useSubscriptions'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import { usePermissions } from '../hooks/usePermissions'
 
 export function Subscriptions() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState('')
+  const { canEditMembers } = usePermissions()
   const { data: subscriptions, isLoading } = useSubscriptions(statusFilter)
   const { data: stats } = useSubscriptionStats()
 
@@ -27,24 +29,26 @@ export function Subscriptions() {
           <h1 className="text-[30px] font-semibold text-neutral-50 tracking-tight">Abonnementen</h1>
           <p className="text-[14px] text-neutral-400 mt-1">Beheer lidmaatschappen en betalingen</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/subscriptions/manage"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 text-neutral-300 px-5 py-3 text-[14px] font-medium hover:bg-white/5 transition"
-          >
-            <Settings size={18} strokeWidth={1.5} />
-            <span>Beheren</span>
-          </Link>
-          <a
-            href="/checkout/plans"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
-          >
-            <Plus size={18} strokeWidth={1.5} />
-            <span>Nieuw Abonnement</span>
-          </a>
-        </div>
+        {canEditMembers && (
+          <div className="flex items-center gap-3">
+            <Link
+              to="/subscriptions/manage"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 text-neutral-300 px-5 py-3 text-[14px] font-medium hover:bg-white/5 transition"
+            >
+              <Settings size={18} strokeWidth={1.5} />
+              <span>Beheren</span>
+            </Link>
+            <a
+              href="/checkout/plans"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium shadow-[0_20px_45px_rgba(251,191,36,0.7)] hover:bg-amber-200 transition"
+            >
+              <Plus size={18} strokeWidth={1.5} />
+              <span>Nieuw Abonnement</span>
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
