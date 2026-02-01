@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import { Mail, Users, Clock, CheckCircle2, Send, RefreshCw, AlertCircle } from 'lucide-react'
+import { Mail, Users, Clock, CheckCircle2, Send, RefreshCw, AlertCircle, ShieldAlert } from 'lucide-react'
 import { useClaimAccountStats, useUnclaimedMembers, useSendClaimEmail, useSendBulkClaimEmails } from '../../hooks/useClaimAccount'
+import { usePermissions } from '../../hooks/usePermissions'
 
 type FilterType = 'all' | 'no_invite' | 'pending'
 
 export function OnboardingSettings() {
+  const { isAdmin, currentRole } = usePermissions()
+  const canAccessOnboarding = isAdmin || currentRole === 'medewerker'
+
   const [filter, setFilter] = useState<FilterType>('all')
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
   const [sendingTo, setSendingTo] = useState<string | null>(null)
@@ -13,6 +17,27 @@ export function OnboardingSettings() {
   const { data: members, isLoading: membersLoading, refetch } = useUnclaimedMembers(filter)
   const sendClaimEmail = useSendClaimEmail()
   const sendBulkClaimEmails = useSendBulkClaimEmails()
+
+  // Inline access control (per constraining decision: no redirect, inline message)
+  if (!canAccessOnboarding) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-neutral-900 rounded-xl p-8 border border-neutral-800">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-rose-500/10 rounded-lg">
+              <ShieldAlert size={24} className="text-rose-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">Geen toegang</h3>
+              <p className="text-sm text-neutral-400">
+                Alleen admins en medewerkers kunnen leden uitnodigen.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const handleSendEmail = async (memberId: string, resend = false) => {
     setSendingTo(memberId)

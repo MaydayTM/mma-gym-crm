@@ -27,18 +27,21 @@ interface UnclaimedMember {
 
 /**
  * Get claim account statistics
- * Note: Uses raw SQL query since claim_account_stats view is created by migration 057
+ * Uses claim_account_stats view created by migration 057
  */
 export function useClaimAccountStats() {
   return useQuery({
     queryKey: ['claim-account-stats'],
     queryFn: async (): Promise<ClaimAccountStats> => {
-      // Use raw query since the view might not exist in types yet
-      const { data, error } = await supabase.rpc('get_claim_stats' as never)
+      // Query the view directly (returns single row)
+      const { data, error } = await supabase
+        .from('claim_account_stats' as never)
+        .select('*')
+        .single()
 
       if (error) {
-        // Fallback: calculate stats manually if RPC doesn't exist
-        console.warn('Claim stats RPC not available, calculating manually')
+        // Fallback: calculate stats manually if view doesn't exist
+        console.warn('Claim stats view not available, calculating manually:', error)
 
         const { count: unclaimed } = await supabase
           .from('members')
@@ -67,12 +70,13 @@ export function useClaimAccountStats() {
 
 /**
  * Get list of members who haven't claimed their account yet
+ * Includes pending token information from account_claim_tokens table
  */
 export function useUnclaimedMembers(filter: 'all' | 'no_invite' | 'pending' = 'all') {
   return useQuery({
     queryKey: ['unclaimed-members', filter],
     queryFn: async (): Promise<UnclaimedMember[]> => {
-      // Get members without auth_user_id
+      // Get members without auth_user_id and their pending tokens
       const { data: members, error: membersError } = await supabase
         .from('members')
         .select(`
@@ -82,7 +86,11 @@ export function useUnclaimedMembers(filter: 'all' | 'no_invite' | 'pending' = 'a
           email,
           clubplanner_member_nr,
           status,
-          created_at
+          created_at,
+          account_claim_tokens!member_id (
+            expires_at,
+            claimed_at
+          )
         `)
         .is('auth_user_id', null)
         .in('status', ['active', 'frozen'])
@@ -97,21 +105,28 @@ export function useUnclaimedMembers(filter: 'all' | 'no_invite' | 'pending' = 'a
         return []
       }
 
-      // For now, just return members without token info
-      // Token info will be available after migration 057 is applied
-      const result: UnclaimedMember[] = members.map(member => ({
-        id: member.id,
-        first_name: member.first_name,
-        last_name: member.last_name,
-        email: member.email,
-        clubplanner_member_nr: member.clubplanner_member_nr,
-        status: member.status,
-        created_at: member.created_at,
-        has_pending_token: false, // Will be populated after migration
-        token_expires_at: null,
-      }))
+      // Map members and check for pending tokens
+      const result: UnclaimedMember[] = members.map(member => {
+        // Find active (unclaimed, unexpired) token
+        const tokens = (member as any).account_claim_tokens || []
+        const pendingToken = tokens.find((t: any) =>
+          !t.claimed_at && new Date(t.expires_at) > new Date()
+        )
 
-      // Apply filter (no_invite and pending will work the same until migration is applied)
+        return {
+          id: member.id,
+          first_name: member.first_name,
+          last_name: member.last_name,
+          email: member.email,
+          clubplanner_member_nr: member.clubplanner_member_nr,
+          status: member.status,
+          created_at: member.created_at,
+          has_pending_token: !!pendingToken,
+          token_expires_at: pendingToken?.expires_at || null,
+        }
+      })
+
+      // Apply filter
       if (filter === 'no_invite') {
         return result.filter(m => !m.has_pending_token)
       }
