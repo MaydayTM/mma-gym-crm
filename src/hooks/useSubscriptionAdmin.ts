@@ -161,6 +161,24 @@ export function useDeleteAgeGroup() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check if there are pricing entries for this age group
+      const { data: pricingCount } = await supabase
+        .from('pricing_matrix')
+        .select('id', { count: 'exact', head: true })
+        .eq('age_group_id', id)
+
+      const count = pricingCount?.length || 0
+
+      // Delete will cascade, but warn user
+      if (count > 0) {
+        const confirmed = confirm(
+          `Let op: Dit verwijdert ook ${count} gekoppelde prijzen. Weet je het zeker?`
+        )
+        if (!confirmed) {
+          throw new Error('Verwijdering geannuleerd door gebruiker')
+        }
+      }
+
       const { error } = await supabase
         .from('age_groups')
         .delete()
@@ -170,6 +188,7 @@ export function useDeleteAgeGroup() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['age-groups'] })
+      queryClient.invalidateQueries({ queryKey: ['pricing-matrix'] })
     }
   })
 }
@@ -239,6 +258,24 @@ export function useDeletePlanType() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check if there are pricing entries for this plan type
+      const { data: pricingCount } = await supabase
+        .from('pricing_matrix')
+        .select('id', { count: 'exact', head: true })
+        .eq('plan_type_id', id)
+
+      const count = pricingCount?.length || 0
+
+      // Delete will cascade, but warn user
+      if (count > 0) {
+        const confirmed = confirm(
+          `Let op: Dit verwijdert ook ${count} gekoppelde prijzen. Weet je het zeker?`
+        )
+        if (!confirmed) {
+          throw new Error('Verwijdering geannuleerd door gebruiker')
+        }
+      }
+
       const { error } = await supabase
         .from('plan_types')
         .delete()
@@ -283,7 +320,13 @@ export function useCreatePricing() {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        // Check for unique constraint violation (duplicate pricing entry)
+        if (error.code === '23505') {
+          throw new Error('Deze combinatie van leeftijdsgroep, type en looptijd bestaat al.')
+        }
+        throw error
+      }
       return data
     },
     onSuccess: () => {

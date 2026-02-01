@@ -13,6 +13,7 @@ export function DiscountModal({ itemId, onClose }: DiscountModalProps) {
   const updateDiscount = useUpdateDiscount()
 
   const existingItem = itemId ? discounts?.find(d => d.id === itemId) : null
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     slug: '',
@@ -67,6 +68,20 @@ export function DiscountModal({ itemId, onClose }: DiscountModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage(null)
+
+    // Validate discount values
+    if (formData.discount_type === 'percentage') {
+      if (formData.percentage < 0 || formData.percentage > 100) {
+        setErrorMessage('Percentage moet tussen 0 en 100 zijn.')
+        return
+      }
+    } else if (formData.discount_type === 'fixed') {
+      if (formData.amount < 0) {
+        setErrorMessage('Bedrag mag niet negatief zijn.')
+        return
+      }
+    }
 
     try {
       const payload = {
@@ -86,6 +101,7 @@ export function DiscountModal({ itemId, onClose }: DiscountModalProps) {
       onClose()
     } catch (error) {
       console.error('Error saving discount:', error)
+      setErrorMessage(error instanceof Error ? error.message : 'Er is een fout opgetreden bij het opslaan.')
     }
   }
 
@@ -113,6 +129,13 @@ export function DiscountModal({ itemId, onClose }: DiscountModalProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20">
+              <p className="text-[14px] text-rose-400">{errorMessage}</p>
+            </div>
+          )}
+
           {/* Name */}
           <div>
             <label className="block text-[13px] text-neutral-400 mb-2">

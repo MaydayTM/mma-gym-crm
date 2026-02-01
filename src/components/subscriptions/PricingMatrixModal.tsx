@@ -15,6 +15,7 @@ export function PricingMatrixModal({ itemId, onClose }: PricingMatrixModalProps)
   const updatePricing = useUpdatePricing()
 
   const existingItem = itemId ? pricing?.find(p => p.id === itemId) : null
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     age_group_id: '',
@@ -54,6 +55,7 @@ export function PricingMatrixModal({ itemId, onClose }: PricingMatrixModalProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage(null)
 
     try {
       if (itemId) {
@@ -64,6 +66,7 @@ export function PricingMatrixModal({ itemId, onClose }: PricingMatrixModalProps)
       onClose()
     } catch (error) {
       console.error('Error saving pricing:', error)
+      setErrorMessage(error instanceof Error ? error.message : 'Er is een fout opgetreden bij het opslaan.')
     }
   }
 
@@ -91,6 +94,13 @@ export function PricingMatrixModal({ itemId, onClose }: PricingMatrixModalProps)
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20">
+              <p className="text-[14px] text-rose-400">{errorMessage}</p>
+            </div>
+          )}
+
           {/* Age Group */}
           <div>
             <label className="block text-[13px] text-neutral-400 mb-2">
