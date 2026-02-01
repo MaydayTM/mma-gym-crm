@@ -71,10 +71,12 @@ Plans:
 **Goal**: End-to-end testing of Resend email delivery, claim account flow with real emails, bulk invitation sending, and member migration onboarding from ClubPlanner.
 **Depends on**: Phase 4
 **Research**: Unlikely (already built, needs verification)
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01: Email webhook hardening & debug info cleanup
+- [ ] 06-02: Claim account Edge Functions security audit
+- [ ] 06-03: Frontend claim flow audit & E2E verification
 
 #### Phase 7: Door Access & QR Integration
 **Goal**: Hardware testing of ESP32 door modules, QR token generation/validation, access logging, and subscription-gated entry. Verify the full physical access flow.
