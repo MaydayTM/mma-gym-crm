@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, no-case-declarations */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { Webhook } from 'https://esm.sh/svix@1.15.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,14 +63,51 @@ serve(async (req) => {
       throw new Error('Supabase environment variables not configured')
     }
 
-    // TODO: Verify webhook signature using webhookSecret
-    // For now, we accept all webhooks (Resend signs with svix)
-    // See: https://resend.com/docs/dashboard/webhooks/verify-webhooks
+    // Read raw body as text for signature verification
+    const body = await req.text()
+
+    // Verify webhook signature using svix (if secret is configured)
+    if (webhookSecret) {
+      const svixId = req.headers.get('svix-id')
+      const svixTimestamp = req.headers.get('svix-timestamp')
+      const svixSignature = req.headers.get('svix-signature')
+
+      if (!svixId || !svixTimestamp || !svixSignature) {
+        console.error('Missing svix headers')
+        return new Response(
+          JSON.stringify({ error: 'Missing signature headers' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 401,
+          }
+        )
+      }
+
+      try {
+        const wh = new Webhook(webhookSecret)
+        wh.verify(body, {
+          'svix-id': svixId,
+          'svix-timestamp': svixTimestamp,
+          'svix-signature': svixSignature,
+        })
+      } catch (err) {
+        console.error('Webhook signature verification failed:', err)
+        return new Response(
+          JSON.stringify({ error: 'Invalid signature' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 401,
+          }
+        )
+      }
+    } else {
+      console.warn('RESEND_WEBHOOK_SECRET not configured - accepting webhook without verification (dev mode)')
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Parse webhook payload
-    const event: ResendWebhookEvent = await req.json()
+    // Parse verified body
+    const event: ResendWebhookEvent = JSON.parse(body)
     console.log('Received webhook event:', event.type, event.data.email_id)
 
     // Find the email send record by provider_message_id
