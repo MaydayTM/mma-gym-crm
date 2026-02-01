@@ -2,12 +2,12 @@
 
 ## Current Position
 
-Phase: 4 of 10 (Roles, Permissions & Access Audit)
+Phase: 5 of 10 (Subscriptions & Billing Audit)
 Plan: 3 of 3 in current phase
 Status: Phase complete
-Last activity: 2026-02-01 - Completed 04-03-PLAN.md
+Last activity: 2026-02-01 - Completed Phase 5 (all 3 plans)
 
-Progress: ███░░░░░░░ ~15%
+Progress: █████░░░░░ ~30%
 
 ## Accumulated Context
 
@@ -24,14 +24,22 @@ Progress: ███░░░░░░░ ~15%
 - Own-profile edit uses member.id === currentMember?.id pattern
 - Sidebar uses permission field mapped to usePermissions keys for flexible visibility
 - Settings sections split: admin-only (Betalingen, Gym Profiel, etc.) vs staff-accessible (Onboarding, Rooster)
+- MRR calculated as sum of (final_price / duration_months) per active subscription
+- Edge functions use SERVICE_ROLE_KEY (not ANON_KEY) for reading checkout_sessions
+- Mollie webhook idempotency: check payment_status before processing to prevent duplicates
+- Revenue records created alongside subscriptions in webhook flow
+- Pricing matrix duplicate detection via catching PostgreSQL 23505 error
+- Cascade delete warnings show count of affected pricing entries
 
 ### Known Issues
 - RLS recursion was fixed in migration 060 but some policies may still need SQL Editor drops (see LESSONS_LEARNED.md)
 - 3 Settings sections not built: gym profile, notifications, branding
 - No automated E2E tests exist yet
+- Migration sync mismatch: remote DB has migrations not in local repo (see .planning/ISSUES.md)
+- Database function check_member_door_access missing team role bypass (not used in production, Edge Function is correct)
 
 ### Blockers/Concerns Carried Forward
-- None (fresh milestone)
+- Migration history sync issue should be investigated before next database schema changes
 
 ### Roadmap Evolution
 - v1.0 Member Onboarding: Claim account flow built, mobile & multi-tenant deferred
@@ -40,7 +48,7 @@ Progress: ███░░░░░░░ ~15%
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 04-03-PLAN.md (Remaining Pages + Sidebar Audit) - Phase 4 complete
+Stopped at: Completed Phase 5 (Subscriptions & Billing Audit) - all 3 plans done
 Resume file: None
 
 ## Deferred Issues
@@ -48,3 +56,4 @@ Resume file: None
 - Multi-tenant (Phase 3) - deferred to post-beta
 - Stripe integration - deferred (Mollie is primary)
 - Fighter Profile Generator - waiting on external repo
+- check_member_door_access DB function team bypass fix (logged in .planning/ISSUES.md)

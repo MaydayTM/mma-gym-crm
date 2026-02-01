@@ -60,10 +60,12 @@ Plans:
 **Goal**: Verify complete subscription lifecycle (create, assign, cancel, freeze, expire), Mollie payment flow, plan pricing matrix, and subscription-gated access (features + door entry).
 **Depends on**: Phase 4
 **Research**: Unlikely (Mollie already integrated)
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 05-01: TBD
+- [x] 05-01: Subscription lifecycle (cancel/freeze/unfreeze) + MRR fix
+- [x] 05-02: Mollie payment flow hardening
+- [x] 05-03: Pricing admin integrity + door access audit
 
 #### Phase 6: Email & Account Claim Testing
 **Goal**: End-to-end testing of Resend email delivery, claim account flow with real emails, bulk invitation sending, and member migration onboarding from ClubPlanner.
@@ -120,7 +122,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 4. Roles & Permissions Audit | v2.0 | 3/3 | Complete | 2026-02-01 |
-| 5. Subscriptions & Billing Audit | v2.0 | 0/? | Not started | - |
+| 5. Subscriptions & Billing Audit | v2.0 | 3/3 | Complete | 2026-02-01 |
 | 6. Email & Account Claim Testing | v2.0 | 0/? | Not started | - |
 | 7. Door Access & QR Integration | v2.0 | 0/? | Not started | - |
 | 8. Functionality Audit & E2E Testing | v2.0 | 0/? | Not started | - |
