@@ -1,4 +1,3 @@
-Initialising login role...
 export type Json =
   | string
   | number
@@ -3383,6 +3382,635 @@ export type Database = {
         }
         Relationships: []
       }
+      sc_athletes: {
+        Row: {
+          anaerobic_threshold_hr: number | null
+          coach_id: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          fitness_level: Database["public"]["Enums"]["sc_fitness_level"]
+          id: string
+          max_hr: number | null
+          resting_hr: number | null
+          sport_detail: string | null
+          track_id: Database["public"]["Enums"]["sc_track_id"]
+          updated_at: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          anaerobic_threshold_hr?: number | null
+          coach_id?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          fitness_level?: Database["public"]["Enums"]["sc_fitness_level"]
+          id: string
+          max_hr?: number | null
+          resting_hr?: number | null
+          sport_detail?: string | null
+          track_id?: Database["public"]["Enums"]["sc_track_id"]
+          updated_at?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          anaerobic_threshold_hr?: number | null
+          coach_id?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          fitness_level?: Database["public"]["Enums"]["sc_fitness_level"]
+          id?: string
+          max_hr?: number | null
+          resting_hr?: number | null
+          sport_detail?: string | null
+          track_id?: Database["public"]["Enums"]["sc_track_id"]
+          updated_at?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_athletes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "sc_coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_coaches: {
+        Row: {
+          created_at: string | null
+          id: string
+          organization: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          organization?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          organization?: string | null
+        }
+        Relationships: []
+      }
+      sc_conditioning_methods_ref: {
+        Row: {
+          category: string
+          energy_system: string
+          goal: string
+          id: string
+          intensity_level: number
+          logic: Json
+          name: string
+          ui_cues: string[]
+        }
+        Insert: {
+          category: string
+          energy_system: string
+          goal: string
+          id: string
+          intensity_level: number
+          logic: Json
+          name: string
+          ui_cues: string[]
+        }
+        Update: {
+          category?: string
+          energy_system?: string
+          goal?: string
+          id?: string
+          intensity_level?: number
+          logic?: Json
+          name?: string
+          ui_cues?: string[]
+        }
+        Relationships: []
+      }
+      sc_exercises: {
+        Row: {
+          category: Database["public"]["Enums"]["sc_exercise_category"]
+          coach_id: string
+          created_at: string | null
+          description: string | null
+          equipment: string[] | null
+          id: string
+          image_url: string | null
+          instructions: string | null
+          is_archived: boolean | null
+          name: string
+          primary_muscles: Database["public"]["Enums"]["sc_muscle_group"][]
+          secondary_muscles:
+            | Database["public"]["Enums"]["sc_muscle_group"][]
+            | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["sc_exercise_category"]
+          coach_id: string
+          created_at?: string | null
+          description?: string | null
+          equipment?: string[] | null
+          id?: string
+          image_url?: string | null
+          instructions?: string | null
+          is_archived?: boolean | null
+          name: string
+          primary_muscles?: Database["public"]["Enums"]["sc_muscle_group"][]
+          secondary_muscles?:
+            | Database["public"]["Enums"]["sc_muscle_group"][]
+            | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["sc_exercise_category"]
+          coach_id?: string
+          created_at?: string | null
+          description?: string | null
+          equipment?: string[] | null
+          id?: string
+          image_url?: string | null
+          instructions?: string | null
+          is_archived?: boolean | null
+          name?: string
+          primary_muscles?: Database["public"]["Enums"]["sc_muscle_group"][]
+          secondary_muscles?:
+            | Database["public"]["Enums"]["sc_muscle_group"][]
+            | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      sc_hrv_readings: {
+        Row: {
+          athlete_id: string
+          created_at: string | null
+          date: string
+          hrv_ms: number
+          id: string
+          recovery_zone: Database["public"]["Enums"]["sc_recovery_zone"]
+          resting_hr: number
+          score: number
+          source: Database["public"]["Enums"]["sc_hrv_source"]
+        }
+        Insert: {
+          athlete_id: string
+          created_at?: string | null
+          date: string
+          hrv_ms: number
+          id?: string
+          recovery_zone: Database["public"]["Enums"]["sc_recovery_zone"]
+          resting_hr: number
+          score: number
+          source?: Database["public"]["Enums"]["sc_hrv_source"]
+        }
+        Update: {
+          athlete_id?: string
+          created_at?: string | null
+          date?: string
+          hrv_ms?: number
+          id?: string
+          recovery_zone?: Database["public"]["Enums"]["sc_recovery_zone"]
+          resting_hr?: number
+          score?: number
+          source?: Database["public"]["Enums"]["sc_hrv_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_hrv_readings_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "sc_athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sc_hrv_readings_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "sc_athletes_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_mesocycles: {
+        Row: {
+          created_at: string | null
+          duration_weeks: number
+          focus: string | null
+          id: string
+          name: string
+          order: number
+          program_id: string
+          week_template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_weeks: number
+          focus?: string | null
+          id?: string
+          name: string
+          order: number
+          program_id: string
+          week_template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_weeks?: number
+          focus?: string | null
+          id?: string
+          name?: string
+          order?: number
+          program_id?: string
+          week_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_mesocycles_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "sc_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_method_exercises: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          default_load: string | null
+          default_reps: string | null
+          default_rest_sec: number | null
+          default_sets: number | null
+          default_tempo: string | null
+          exercise_id: string
+          id: string
+          method_id: string
+          notes: string | null
+          sort_order: number
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          default_load?: string | null
+          default_reps?: string | null
+          default_rest_sec?: number | null
+          default_sets?: number | null
+          default_tempo?: string | null
+          exercise_id: string
+          id?: string
+          method_id: string
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          default_load?: string | null
+          default_reps?: string | null
+          default_rest_sec?: number | null
+          default_sets?: number | null
+          default_tempo?: string | null
+          exercise_id?: string
+          id?: string
+          method_id?: string
+          notes?: string | null
+          sort_order?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_method_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "sc_exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sc_method_exercises_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "sc_conditioning_methods_ref"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_microcycles: {
+        Row: {
+          created_at: string | null
+          id: string
+          mesocycle_id: string
+          week_number: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mesocycle_id: string
+          week_number: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mesocycle_id?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_microcycles_mesocycle_id_fkey"
+            columns: ["mesocycle_id"]
+            isOneToOne: false
+            referencedRelation: "sc_mesocycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_programs: {
+        Row: {
+          athlete_id: string
+          coach_id: string
+          created_at: string | null
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+          status: Database["public"]["Enums"]["sc_program_status"]
+          track_id: Database["public"]["Enums"]["sc_track_id"]
+          updated_at: string | null
+        }
+        Insert: {
+          athlete_id: string
+          coach_id: string
+          created_at?: string | null
+          end_date: string
+          id?: string
+          name: string
+          start_date: string
+          status?: Database["public"]["Enums"]["sc_program_status"]
+          track_id: Database["public"]["Enums"]["sc_track_id"]
+          updated_at?: string | null
+        }
+        Update: {
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          name?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["sc_program_status"]
+          track_id?: Database["public"]["Enums"]["sc_track_id"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_programs_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "sc_athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sc_programs_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "sc_athletes_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sc_programs_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "sc_coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_session_exercises: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          exercise_id: string
+          id: string
+          load: string | null
+          method_id: string | null
+          notes: string | null
+          reps: string | null
+          rest_sec: number | null
+          session_id: string
+          sets: number | null
+          sort_order: number
+          status: string
+          tempo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          exercise_id: string
+          id?: string
+          load?: string | null
+          method_id?: string | null
+          notes?: string | null
+          reps?: string | null
+          rest_sec?: number | null
+          session_id: string
+          sets?: number | null
+          sort_order?: number
+          status?: string
+          tempo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          exercise_id?: string
+          id?: string
+          load?: string | null
+          method_id?: string | null
+          notes?: string | null
+          reps?: string | null
+          rest_sec?: number | null
+          session_id?: string
+          sets?: number | null
+          sort_order?: number
+          status?: string
+          tempo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_session_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "sc_exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sc_session_exercises_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "sc_conditioning_methods_ref"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sc_session_exercises_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sc_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_sessions: {
+        Row: {
+          autoregulation_override:
+            | Database["public"]["Enums"]["sc_day_type"]
+            | null
+          coach_notes: string | null
+          conditioning: Json
+          cooldown: Json
+          created_at: string | null
+          date: string
+          day_type: Database["public"]["Enums"]["sc_day_type"]
+          id: string
+          microcycle_id: string
+          status: Database["public"]["Enums"]["sc_session_status"]
+          strength: Json
+          updated_at: string | null
+          warmup: Json
+        }
+        Insert: {
+          autoregulation_override?:
+            | Database["public"]["Enums"]["sc_day_type"]
+            | null
+          coach_notes?: string | null
+          conditioning?: Json
+          cooldown?: Json
+          created_at?: string | null
+          date: string
+          day_type: Database["public"]["Enums"]["sc_day_type"]
+          id?: string
+          microcycle_id: string
+          status?: Database["public"]["Enums"]["sc_session_status"]
+          strength?: Json
+          updated_at?: string | null
+          warmup?: Json
+        }
+        Update: {
+          autoregulation_override?:
+            | Database["public"]["Enums"]["sc_day_type"]
+            | null
+          coach_notes?: string | null
+          conditioning?: Json
+          cooldown?: Json
+          created_at?: string | null
+          date?: string
+          day_type?: Database["public"]["Enums"]["sc_day_type"]
+          id?: string
+          microcycle_id?: string
+          status?: Database["public"]["Enums"]["sc_session_status"]
+          strength?: Json
+          updated_at?: string | null
+          warmup?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_sessions_microcycle_id_fkey"
+            columns: ["microcycle_id"]
+            isOneToOne: false
+            referencedRelation: "sc_microcycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_user_roles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          sc_role: Database["public"]["Enums"]["sc_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          sc_role?: Database["public"]["Enums"]["sc_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          sc_role?: Database["public"]["Enums"]["sc_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sc_workout_logs: {
+        Row: {
+          athlete_id: string
+          completed_at: string | null
+          created_at: string | null
+          date: string
+          exercises_completed: Json
+          hr_data: Json | null
+          id: string
+          notes: string | null
+          rpe_rating: number | null
+          session_id: string
+          started_at: string
+        }
+        Insert: {
+          athlete_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          date: string
+          exercises_completed?: Json
+          hr_data?: Json | null
+          id?: string
+          notes?: string | null
+          rpe_rating?: number | null
+          session_id: string
+          started_at: string
+        }
+        Update: {
+          athlete_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          date?: string
+          exercises_completed?: Json
+          hr_data?: Json | null
+          id?: string
+          notes?: string | null
+          rpe_rating?: number | null
+          session_id?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_workout_logs_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "sc_athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sc_workout_logs_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "sc_athletes_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sc_workout_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sc_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipping_settings: {
         Row: {
           created_at: string | null
@@ -4584,6 +5212,29 @@ export type Database = {
         }
         Relationships: []
       }
+      sc_athletes_view: {
+        Row: {
+          coach_id: string | null
+          created_at: string | null
+          display_name: string | null
+          fitness_level: Database["public"]["Enums"]["sc_fitness_level"] | null
+          id: string | null
+          max_hr: number | null
+          resting_hr: number | null
+          sport_detail: string | null
+          track_id: Database["public"]["Enums"]["sc_track_id"] | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_athletes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "sc_coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_credits: {
@@ -4852,6 +5503,25 @@ export type Database = {
         Args: { p_quantity: number; p_variant_id: string }
         Returns: boolean
       }
+      sc_create_athlete: {
+        Args: {
+          p_display_name: string
+          p_email: string
+          p_fitness_level?: Database["public"]["Enums"]["sc_fitness_level"]
+          p_max_hr?: number
+          p_resting_hr?: number
+          p_track_id?: Database["public"]["Enums"]["sc_track_id"]
+        }
+        Returns: string
+      }
+      sc_is_coach_of_athlete: {
+        Args: { p_athlete_id: string }
+        Returns: boolean
+      }
+      sc_register_coach: {
+        Args: { p_display_name: string }
+        Returns: undefined
+      }
       search_members_for_email: {
         Args: { result_limit?: number; search_query?: string }
         Returns: {
@@ -4895,7 +5565,42 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      sc_day_type: "DEV" | "STIM" | "HPRT" | "REST"
+      sc_exercise_category:
+        | "cardio"
+        | "strength"
+        | "power"
+        | "flexibility"
+        | "balance"
+        | "plyometric"
+        | "other"
+      sc_fitness_level: "beginner" | "average" | "advanced"
+      sc_hrv_source: "morpheus" | "apple_health" | "manual"
+      sc_muscle_group:
+        | "chest"
+        | "back"
+        | "shoulders"
+        | "biceps"
+        | "triceps"
+        | "forearms"
+        | "core"
+        | "quads"
+        | "hamstrings"
+        | "glutes"
+        | "calves"
+        | "full_body"
+        | "other"
+      sc_program_status: "draft" | "active" | "completed" | "archived"
+      sc_recovery_zone: "green" | "orange" | "red"
+      sc_role: "coach" | "athlete" | "both"
+      sc_session_status: "planned" | "in_progress" | "completed" | "skipped"
+      sc_track_id:
+        | "general"
+        | "combat"
+        | "tactical"
+        | "strength"
+        | "endurance"
+        | "mixed"
     }
     CompositeTypes: {
       duplicate_match: {
@@ -5036,6 +5741,46 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      sc_day_type: ["DEV", "STIM", "HPRT", "REST"],
+      sc_exercise_category: [
+        "cardio",
+        "strength",
+        "power",
+        "flexibility",
+        "balance",
+        "plyometric",
+        "other",
+      ],
+      sc_fitness_level: ["beginner", "average", "advanced"],
+      sc_hrv_source: ["morpheus", "apple_health", "manual"],
+      sc_muscle_group: [
+        "chest",
+        "back",
+        "shoulders",
+        "biceps",
+        "triceps",
+        "forearms",
+        "core",
+        "quads",
+        "hamstrings",
+        "glutes",
+        "calves",
+        "full_body",
+        "other",
+      ],
+      sc_program_status: ["draft", "active", "completed", "archived"],
+      sc_recovery_zone: ["green", "orange", "red"],
+      sc_role: ["coach", "athlete", "both"],
+      sc_session_status: ["planned", "in_progress", "completed", "skipped"],
+      sc_track_id: [
+        "general",
+        "combat",
+        "tactical",
+        "strength",
+        "endurance",
+        "mixed",
+      ],
+    },
   },
 } as const

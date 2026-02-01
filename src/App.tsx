@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
 import { ShopCartProvider } from './contexts/ShopCartContext'
-import { ProtectedRoute } from './components/auth'
+import { ProtectedRoute, RoleGuard } from './components/auth'
 import { Layout } from './components/layout'
 import {
   Dashboard,
@@ -177,20 +177,20 @@ function CRMApp() {
           <Route path="kitana" element={<KitanaHub />} />
           <Route path="members" element={<Members />} />
           <Route path="members/:id" element={<MemberDetail />} />
-          <Route path="leads" element={<Leads />} />
-          <Route path="subscriptions" element={<Subscriptions />} />
-          <Route path="subscriptions/manage" element={<SubscriptionsManage />} />
+          <Route path="leads" element={<RoleGuard permission="canManageLeads"><Leads /></RoleGuard>} />
+          <Route path="subscriptions" element={<RoleGuard permission="canEditMembers"><Subscriptions /></RoleGuard>} />
+          <Route path="subscriptions/manage" element={<RoleGuard permission="canEditMembers"><SubscriptionsManage /></RoleGuard>} />
           <Route path="schedule" element={<Schedule />} />
           <Route path="reservations" element={<Reservations />} />
-          <Route path="checkin" element={<CheckIn />} />
-          <Route path="reports" element={<Reports />} />
+          <Route path="checkin" element={<RoleGuard permission="canCheckInMembers"><CheckIn /></RoleGuard>} />
+          <Route path="reports" element={<RoleGuard permission="canManageFinances"><Reports /></RoleGuard>} />
           <Route path="tasks" element={<Tasks />} />
-          <Route path="team" element={<Team />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="team" element={<RoleGuard permission="isAdmin"><Team /></RoleGuard>} />
+          <Route path="settings" element={<RoleGuard permission="isStaff"><Settings /></RoleGuard>} />
           <Route path="shop" element={<Shop />} />
           <Route path="email" element={<Email />} />
           <Route path="gymscreen" element={<GymScreen />} />
-          <Route path="door-test" element={<DoorTest />} />
+          <Route path="door-test" element={<RoleGuard permission="isAdmin"><DoorTest /></RoleGuard>} />
         </Route>
         <Route
           path="/app.html"
@@ -204,20 +204,20 @@ function CRMApp() {
           <Route path="kitana" element={<KitanaHub />} />
           <Route path="members" element={<Members />} />
           <Route path="members/:id" element={<MemberDetail />} />
-          <Route path="leads" element={<Leads />} />
-          <Route path="subscriptions" element={<Subscriptions />} />
-          <Route path="subscriptions/manage" element={<SubscriptionsManage />} />
+          <Route path="leads" element={<RoleGuard permission="canManageLeads"><Leads /></RoleGuard>} />
+          <Route path="subscriptions" element={<RoleGuard permission="canEditMembers"><Subscriptions /></RoleGuard>} />
+          <Route path="subscriptions/manage" element={<RoleGuard permission="canEditMembers"><SubscriptionsManage /></RoleGuard>} />
           <Route path="schedule" element={<Schedule />} />
           <Route path="reservations" element={<Reservations />} />
-          <Route path="checkin" element={<CheckIn />} />
-          <Route path="reports" element={<Reports />} />
+          <Route path="checkin" element={<RoleGuard permission="canCheckInMembers"><CheckIn /></RoleGuard>} />
+          <Route path="reports" element={<RoleGuard permission="canManageFinances"><Reports /></RoleGuard>} />
           <Route path="tasks" element={<Tasks />} />
-          <Route path="team" element={<Team />} />
-          <Route path="settings" element={<Settings />} />
+          <Route path="team" element={<RoleGuard permission="isAdmin"><Team /></RoleGuard>} />
+          <Route path="settings" element={<RoleGuard permission="isStaff"><Settings /></RoleGuard>} />
           <Route path="shop" element={<Shop />} />
           <Route path="email" element={<Email />} />
           <Route path="gymscreen" element={<GymScreen />} />
-          <Route path="door-test" element={<DoorTest />} />
+          <Route path="door-test" element={<RoleGuard permission="isAdmin"><DoorTest /></RoleGuard>} />
         </Route>
         </Routes>
       </AuthProvider>
