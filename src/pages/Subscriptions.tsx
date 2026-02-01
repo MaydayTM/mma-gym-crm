@@ -70,9 +70,9 @@ export function Subscriptions() {
             </div>
           </div>
           <p className="text-[28px] font-bold text-neutral-50">
-            €{((stats?.total_mrr || 0) / 12).toFixed(0)}
+            €{(stats?.total_mrr || 0).toFixed(0)}
           </p>
-          <p className="text-[13px] text-neutral-500">MRR (geschat)</p>
+          <p className="text-[13px] text-neutral-500">MRR</p>
         </div>
 
         <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-2xl p-5 border border-white/10">
