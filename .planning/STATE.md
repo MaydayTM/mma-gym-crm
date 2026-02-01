@@ -3,11 +3,11 @@
 ## Current Position
 
 Phase: 4 of 10 (Roles, Permissions & Access Audit)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-01 - Completed 04-01-PLAN.md
+Last activity: 2026-02-01 - Completed 04-02-PLAN.md
 
-Progress: █░░░░░░░░░ ~5%
+Progress: ██░░░░░░░░ ~10%
 
 ## Accumulated Context
 
@@ -20,6 +20,8 @@ Progress: █░░░░░░░░░ ~5%
 - Account claim tokens stored as SHA256 hash, 48h expiry
 - Route guards use permission checks (canManageLeads, etc.) not direct role checks for flexibility
 - Inline "Geen toegang" message instead of redirect for blocked routes
+- Action buttons hidden (not disabled) for non-privileged users - cleaner UX
+- Own-profile edit uses member.id === currentMember?.id pattern
 
 ### Known Issues
 - RLS recursion was fixed in migration 060 but some policies may still need SQL Editor drops (see LESSONS_LEARNED.md)
@@ -36,7 +38,7 @@ Progress: █░░░░░░░░░ ~5%
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 04-01-PLAN.md (RoleGuard & Route Access Control)
+Stopped at: Completed 04-02-PLAN.md (Member Management Permission Checks)
 Resume file: None
 
 ## Deferred Issues
