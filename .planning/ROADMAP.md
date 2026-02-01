@@ -54,7 +54,7 @@ RCN CRM replaces ClubPlanner for Reconnect Academy. The MVP is built and deploye
 Plans:
 - [x] 04-01: RoleGuard & Route Access Control
 - [x] 04-02: Member management permission checks
-- [ ] 04-03: Remaining pages + sidebar audit + full verification
+- [x] 04-03: Remaining pages + sidebar audit + full verification
 
 #### Phase 5: Subscriptions & Billing Audit
 **Goal**: Verify complete subscription lifecycle (create, assign, cancel, freeze, expire), Mollie payment flow, plan pricing matrix, and subscription-gated access (features + door entry).
@@ -119,7 +119,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 4. Roles & Permissions Audit | v2.0 | 2/3 | In progress | - |
+| 4. Roles & Permissions Audit | v2.0 | 3/3 | Complete | 2026-02-01 |
 | 5. Subscriptions & Billing Audit | v2.0 | 0/? | Not started | - |
 | 6. Email & Account Claim Testing | v2.0 | 0/? | Not started | - |
 | 7. Door Access & QR Integration | v2.0 | 0/? | Not started | - |

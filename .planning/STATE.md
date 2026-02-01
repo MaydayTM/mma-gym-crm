@@ -3,11 +3,11 @@
 ## Current Position
 
 Phase: 4 of 10 (Roles, Permissions & Access Audit)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-01 - Completed 04-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-02-01 - Completed 04-03-PLAN.md
 
-Progress: ██░░░░░░░░ ~10%
+Progress: ███░░░░░░░ ~15%
 
 ## Accumulated Context
 
@@ -22,6 +22,8 @@ Progress: ██░░░░░░░░ ~10%
 - Inline "Geen toegang" message instead of redirect for blocked routes
 - Action buttons hidden (not disabled) for non-privileged users - cleaner UX
 - Own-profile edit uses member.id === currentMember?.id pattern
+- Sidebar uses permission field mapped to usePermissions keys for flexible visibility
+- Settings sections split: admin-only (Betalingen, Gym Profiel, etc.) vs staff-accessible (Onboarding, Rooster)
 
 ### Known Issues
 - RLS recursion was fixed in migration 060 but some policies may still need SQL Editor drops (see LESSONS_LEARNED.md)
@@ -38,7 +40,7 @@ Progress: ██░░░░░░░░ ~10%
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Completed 04-02-PLAN.md (Member Management Permission Checks)
+Stopped at: Completed 04-03-PLAN.md (Remaining Pages + Sidebar Audit) - Phase 4 complete
 Resume file: None
 
 ## Deferred Issues
