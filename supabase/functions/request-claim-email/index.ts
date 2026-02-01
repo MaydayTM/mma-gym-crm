@@ -135,26 +135,15 @@ interface RequestClaimRequest {
 const GENERIC_SUCCESS_MESSAGE = 'Als er een account bestaat met deze gegevens, ontvang je binnen enkele minuten een e-mail met activatielink.'
 
 serve(async (req) => {
-  console.log('[request-claim-email] v2 - Request received:', req.method)
-
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    console.log('[request-claim-email] Handling OPTIONS preflight')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('[request-claim-email] Processing POST request')
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
-
-    console.log('[request-claim-email] Env vars present:', {
-      url: !!supabaseUrl,
-      key: !!supabaseServiceKey,
-      resend: !!resendApiKey
-    })
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Supabase environment variables not configured')
@@ -164,12 +153,9 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
-    console.log('[request-claim-email] Supabase client created')
 
     // Parse request
     const body = await req.text()
-    console.log('[request-claim-email] Request body:', body)
-
     const { identifier }: RequestClaimRequest = JSON.parse(body)
 
     if (!identifier || identifier.trim().length === 0) {
@@ -187,32 +173,27 @@ serve(async (req) => {
     if (findError) {
       console.error('Error finding member:', findError)
       return new Response(
-        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'find_error', error: findError.message } }),
+        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
     // No member found - return generic message (don't reveal non-existence)
     if (!result || result.length === 0) {
-      console.log('No member found for identifier:', identifier)
       return new Response(
-        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'not_found', identifier } }),
+        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
     const memberInfo = result[0]
-    console.log('[request-claim-email] Member info:', memberInfo)
 
     // Member can't claim (already has account)
     if (!memberInfo.can_claim) {
-      console.log('Member cannot claim:', memberInfo.reason)
       return new Response(
         JSON.stringify({
           success: true,
-          message: GENERIC_SUCCESS_MESSAGE,
-          hint: memberInfo.reason,
-          debug: { step: 'cant_claim', reason: memberInfo.reason }
+          message: GENERIC_SUCCESS_MESSAGE
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
@@ -228,12 +209,10 @@ serve(async (req) => {
     if (memberError || !member) {
       console.error('Error fetching member:', memberError)
       return new Response(
-        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'member_fetch_error', error: memberError?.message } }),
+        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
-
-    console.log('[request-claim-email] Found member:', member.email)
 
     // Create claim token
     const { data: tokenResult, error: tokenError } = await supabase.rpc('create_claim_token', {
@@ -245,7 +224,7 @@ serve(async (req) => {
     if (tokenError || !tokenResult) {
       console.error('Token creation error:', tokenError)
       return new Response(
-        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'token_error', error: tokenError?.message } }),
+        JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
@@ -266,9 +245,6 @@ serve(async (req) => {
     })
 
     // Send email via Resend
-    console.log('[request-claim-email] Sending email to:', member.email)
-    console.log('[request-claim-email] Resend key present:', !!resendApiKey, 'length:', resendApiKey?.length)
-
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -283,34 +259,27 @@ serve(async (req) => {
       }),
     })
 
-    const responseText = await emailResponse.text()
-    console.log('[request-claim-email] Resend response status:', emailResponse.status)
-    console.log('[request-claim-email] Resend response:', responseText)
-
     if (!emailResponse.ok) {
-      console.error('Resend error:', responseText)
-      // Return debug info temporarily
+      const responseText = await emailResponse.text()
+      console.error('Resend error:', emailResponse.status, responseText)
       return new Response(
         JSON.stringify({
-          success: false,
-          message: GENERIC_SUCCESS_MESSAGE,
-          debug: { status: emailResponse.status, error: responseText }
+          success: true,
+          message: GENERIC_SUCCESS_MESSAGE
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
-    console.log('Claim email sent to:', member.email)
-
     // Always return generic success
     return new Response(
-      JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE, debug: { emailSent: true } }),
+      JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
     console.error('Error in request-claim-email:', error)
     return new Response(
-      JSON.stringify({ success: false, message: GENERIC_SUCCESS_MESSAGE, debug: { step: 'catch', error: String(error) } }),
+      JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   }
