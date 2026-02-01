@@ -1,4 +1,7 @@
 // supabase/functions/mollie-webhook/index.ts
+// NOTE: Mollie webhooks don't use signatures for verification. Instead, we only
+// receive a payment ID and fetch the actual payment status from Mollie's API.
+// This prevents webhook spoofing since the payment data comes directly from Mollie.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 
@@ -60,6 +63,13 @@ serve(async (req) => {
     if (payment.status === 'paid') {
       console.log('Payment successful, creating member and subscription...')
 
+      // Idempotency check: if payment is already completed, return 200 immediately
+      // This prevents duplicate subscriptions if Mollie retries the webhook
+      if (session.payment_status === 'completed') {
+        console.log('Payment already processed (idempotent), skipping creation')
+        return new Response('OK', { status: 200 })
+      }
+
       // Check if member already exists
       const { data: existingMember } = await supabase
         .from('members')
@@ -72,6 +82,18 @@ serve(async (req) => {
       if (existingMember) {
         memberId = existingMember.id
         console.log('Using existing member:', memberId)
+
+        // Update member status to active if they were cancelled or lead
+        const { error: statusError } = await supabase
+          .from('members')
+          .update({ status: 'active' })
+          .eq('id', memberId)
+          .in('status', ['cancelled', 'lead'])
+
+        if (statusError) {
+          console.error('Failed to update member status:', statusError)
+          // Don't fail the operation for this
+        }
       } else {
         // Create new member
         const { data: newMember, error: memberError } = await supabase
@@ -130,6 +152,25 @@ serve(async (req) => {
       }
 
       console.log('Created subscription:', subscription.id)
+
+      // Create revenue record for tracking (matching useAssignSubscription pattern)
+      const { error: revenueError } = await supabase
+        .from('revenue')
+        .insert({
+          member_id: memberId,
+          amount: session.final_total,
+          currency: 'EUR',
+          category: 'subscription',
+          description: `Abonnement via Mollie checkout`,
+          paid_at: new Date().toISOString(),
+          period_start: startDate.toISOString().split('T')[0],
+          period_end: endDate.toISOString().split('T')[0]
+        })
+
+      if (revenueError) {
+        console.error('Error creating revenue record:', revenueError)
+        // Don't fail the operation for this
+      }
 
       // Handle insurance addon if selected
       if (session.selected_addons?.includes('insurance') && session.addon_total > 0) {

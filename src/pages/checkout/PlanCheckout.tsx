@@ -540,6 +540,7 @@ export function PlanCheckout() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
                     className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-neutral-50 placeholder-neutral-500 focus:outline-none focus:border-amber-300/50 transition"
                     placeholder="jouw@email.be"
                   />

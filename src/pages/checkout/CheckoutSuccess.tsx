@@ -90,7 +90,8 @@ export function CheckoutSuccess() {
     )
   }
 
-  if (session.payment_status !== 'completed' && session.payment_status !== null) {
+  // Handle pending or non-completed payment status
+  if (session.payment_status !== 'completed') {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
         <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-8 max-w-md text-center">
