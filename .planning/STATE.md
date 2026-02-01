@@ -3,11 +3,11 @@
 ## Current Position
 
 Phase: 4 of 10 (Roles, Permissions & Access Audit)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-01 - Milestone v2.0 Beta Launch created
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-02-01 - Completed 04-01-PLAN.md
 
-Progress: ░░░░░░░░░░ 0%
+Progress: █░░░░░░░░░ ~5%
 
 ## Accumulated Context
 
@@ -18,6 +18,8 @@ Progress: ░░░░░░░░░░ 0%
 - Edge Functions pinned to supabase-js v2.39.3
 - Owner tenant (Reconnect) bypasses all module checks
 - Account claim tokens stored as SHA256 hash, 48h expiry
+- Route guards use permission checks (canManageLeads, etc.) not direct role checks for flexibility
+- Inline "Geen toegang" message instead of redirect for blocked routes
 
 ### Known Issues
 - RLS recursion was fixed in migration 060 but some policies may still need SQL Editor drops (see LESSONS_LEARNED.md)
@@ -34,7 +36,7 @@ Progress: ░░░░░░░░░░ 0%
 ## Session Continuity
 
 Last session: 2026-02-01
-Stopped at: Milestone v2.0 initialization
+Stopped at: Completed 04-01-PLAN.md (RoleGuard & Route Access Control)
 Resume file: None
 
 ## Deferred Issues
