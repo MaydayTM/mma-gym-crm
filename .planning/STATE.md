@@ -2,12 +2,12 @@
 
 ## Current Position
 
-Phase: 7 of 10 (Door Access & QR Integration)
-Plan: 3 of 3 in current phase
-Status: Phase complete (software); hardware testing deferred (ISS-001, ISS-002)
-Last activity: 2026-02-02 - Completed Phase 7 (all 3 plans, hardware checkpoints deferred)
+Phase: 8 of 10 (Full Functionality Audit & E2E Testing)
+Plan: 5 of 5 in current phase
+Status: Phase complete — 115 E2E tests across 12 spec files
+Last activity: 2026-02-02 - Completed Phase 8 (all 5 plans)
 
-Progress: ███████░░░ ~57%
+Progress: ████████░░ ~71%
 
 ## Accumulated Context
 
@@ -38,11 +38,12 @@ Progress: ███████░░░ ~57%
 - QR tokens stored as SHA256 hash in DB, plaintext JWT returned to frontend (Phase 7)
 - door-token requires Bearer auth; door-validate requires apikey header (Phase 7)
 - Wiegand QR detection by bit count: >100 bits = QR/ASCII, 26 bits = standard card (Phase 7)
+- Playwright E2E: Chromium-only, graceful skip without .env.test, Vite auto-start (Phase 8)
+- Tests use timestamp-based unique data and Supabase admin client for cleanup (Phase 8)
 
 ### Known Issues
 - RLS recursion was fixed in migration 060 but some policies may still need SQL Editor drops (see LESSONS_LEARNED.md)
 - 3 Settings sections not built: gym profile, notifications, branding
-- No automated E2E tests exist yet
 - Migration sync mismatch: remote DB has migrations not in local repo (see .planning/ISSUES.md)
 - RESEND_WEBHOOK_SECRET not set in Supabase secrets (webhook verification gracefully degrades)
 - Stale session/JWT observed: admin role briefly showed as "member" (re-login fixed it)
@@ -61,7 +62,7 @@ Progress: ███████░░░ ~57%
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed Phase 7 (Door Access & QR Integration) - all 3 plans done, hardware checkpoints deferred
+Stopped at: Completed Phase 8 (Full Functionality Audit & E2E Testing) - all 5 plans done, 115 tests across 12 spec files
 Resume file: None
 
 ## Deferred Issues

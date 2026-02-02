@@ -97,11 +97,11 @@ Plans:
 **Plans**: 5
 
 Plans:
-- [ ] 08-01: Playwright setup & auth flow E2E tests
-- [ ] 08-02: Member & Lead E2E tests
-- [ ] 08-03: Subscription & Checkout E2E tests
-- [ ] 08-04: Schedule, Reservations & Operations E2E tests
-- [ ] 08-05: Admin pages, Dashboard & full verification
+- [x] 08-01: Playwright setup & auth flow E2E tests
+- [x] 08-02: Member & Lead E2E tests
+- [x] 08-03: Subscription & Checkout E2E tests
+- [x] 08-04: Schedule, Reservations & Operations E2E tests
+- [x] 08-05: Admin pages, Dashboard & full verification
 
 #### Phase 9: Bug Fixes & Polish
 **Goal**: Address all issues found in phases 4-8. UI polish, error handling improvements, edge case fixes, and UX improvements based on audit findings.
@@ -133,6 +133,6 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10
 | 5. Subscriptions & Billing Audit | v2.0 | 3/3 | Complete | 2026-02-01 |
 | 6. Email & Account Claim Testing | v2.0 | 3/3 | Complete | 2026-02-02 |
 | 7. Door Access & QR Integration | v2.0 | 3/3 | Complete (software) | 2026-02-02 |
-| 8. Functionality Audit & E2E Testing | v2.0 | 0/? | Not started | - |
+| 8. Functionality Audit & E2E Testing | v2.0 | 5/5 | Complete | 2026-02-02 |
 | 9. Bug Fixes & Polish | v2.0 | 0/? | Not started | - |
 | 10. Beta Deployment & Monitoring | v2.0 | 0/? | Not started | - |
