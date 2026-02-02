@@ -15,6 +15,7 @@ const char* WIFI_PASSWORD = "MMAalst0924!";
 
 // ============ API CONFIG ============
 const char* API_URL = "https://wiuzjpoizxeycrshsuqn.supabase.co/functions/v1/door-validate";
+const char* SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpdXpqcG9penhleWNyc2hzdXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMwNjAwMzcsImV4cCI6MjA0ODYzNjAzN30.uCMejZLNTLd4E-yQMtvW8hOydEOJmNFPCrOtbZPQGU0";
 
 // ============ PIN CONFIG ============
 #define D0_PIN 25      // Wiegand Data 0 (Green wire)
@@ -27,18 +28,30 @@ volatile unsigned long cardCode = 0;
 volatile int bitCount = 0;
 volatile unsigned long lastBitTime = 0;
 
-// Buffer for ASCII QR data
-char qrBuffer[512];
-int qrBufferIndex = 0;
+// Buffer for long QR data (JWT tokens)
+// JWT tokens are ~200+ characters, each character = 8 bits via Wiegand
+volatile uint8_t bitBuffer[2048];  // Buffer for up to 2048 bits
+volatile int currentBit = 0;
 
 void IRAM_ATTR d0_ISR() {
   unsigned long now = millis();
   if (now - lastBitTime > 50) {
+    // Reset on new transmission
     cardCode = 0;
     bitCount = 0;
+    currentBit = 0;
   }
+
+  // Store bit in buffer
+  if (currentBit < 2048) {
+    int byteIndex = currentBit / 8;
+    int bitIndex = 7 - (currentBit % 8);  // MSB first
+    bitBuffer[byteIndex] &= ~(1 << bitIndex);  // Set bit to 0
+    currentBit++;
+  }
+
+  // Also update cardCode for 26-bit card compatibility
   cardCode <<= 1;
-  // D0 pulse = 0 bit
   bitCount++;
   lastBitTime = now;
 }
@@ -46,11 +59,23 @@ void IRAM_ATTR d0_ISR() {
 void IRAM_ATTR d1_ISR() {
   unsigned long now = millis();
   if (now - lastBitTime > 50) {
+    // Reset on new transmission
     cardCode = 0;
     bitCount = 0;
+    currentBit = 0;
   }
+
+  // Store bit in buffer
+  if (currentBit < 2048) {
+    int byteIndex = currentBit / 8;
+    int bitIndex = 7 - (currentBit % 8);  // MSB first
+    bitBuffer[byteIndex] |= (1 << bitIndex);  // Set bit to 1
+    currentBit++;
+  }
+
+  // Also update cardCode for 26-bit card compatibility
   cardCode <<= 1;
-  cardCode |= 1;  // D1 pulse = 1 bit
+  cardCode |= 1;
   bitCount++;
   lastBitTime = now;
 }
@@ -148,6 +173,7 @@ bool validateQR(String qrCode) {
   HTTPClient http;
   http.begin(API_URL);
   http.addHeader("Content-Type", "application/json");
+  http.addHeader("apikey", SUPABASE_ANON_KEY);  // Required by door-validate Edge Function
   http.setTimeout(5000);
 
   // Build JSON payload
@@ -162,18 +188,20 @@ bool validateQR(String qrCode) {
   int httpCode = http.POST(payload);
 
   bool allowed = false;
+  String reason = "";
 
   if (httpCode == 200) {
     String response = http.getString();
     Serial.print("[API] Response: ");
     Serial.println(response);
 
-    StaticJsonDocument<256> resDoc;
+    StaticJsonDocument<512> resDoc;
     DeserializationError error = deserializeJson(resDoc, response);
 
     if (!error) {
       allowed = resDoc["allowed"] | false;
       const char* memberName = resDoc["member_name"] | "";
+      reason = resDoc["reason"] | "";
 
       if (allowed && strlen(memberName) > 0) {
         Serial.println();
@@ -182,11 +210,26 @@ bool validateQR(String qrCode) {
         Serial.println(memberName);
         Serial.println("================================");
         Serial.println();
+      } else {
+        Serial.println();
+        Serial.println("!!! ACCESS DENIED !!!");
+        if (reason.length() > 0) {
+          Serial.print("Reason: ");
+          Serial.println(reason);
+        }
+        Serial.println();
       }
+    } else {
+      Serial.println("[API] JSON Parse Error");
     }
   } else {
     Serial.print("[API] HTTP Error: ");
     Serial.println(httpCode);
+    if (httpCode > 0) {
+      String response = http.getString();
+      Serial.print("[API] Error response: ");
+      Serial.println(response);
+    }
   }
 
   http.end();
@@ -203,11 +246,15 @@ void openDoor() {
   Serial.println();
 }
 
-void denyAccess() {
+void denyAccess(String reason) {
   Serial.println();
   Serial.println("!!! ACCESS DENIED !!!");
+  if (reason.length() > 0) {
+    Serial.print("Reason: ");
+    Serial.println(reason);
+  }
   Serial.println();
-  // TODO: Optioneel: rode LED knipperen of buzzer
+  // TODO: Add red LED flash or buzzer sound for feedback
 }
 
 void loop() {
@@ -215,30 +262,81 @@ void loop() {
   if (bitCount > 0 && (millis() - lastBitTime > 100)) {
 
     Serial.println();
-    Serial.println("********** QR SCAN RECEIVED **********");
-    Serial.print("Bits: ");
+    Serial.println("********** SCAN RECEIVED **********");
+    Serial.print("Bits received: ");
     Serial.println(bitCount);
-    Serial.print("Raw code: ");
-    Serial.println(cardCode);
+
+    String qrCode = "";
 
     // ===========================================
-    // MODE SELECT: Comment/uncomment as needed
+    // DATA TYPE DETECTION
     // ===========================================
 
-    // --- TEST MODE: Always open door ---
-    openDoor();
+    if (bitCount == 26) {
+      // Standard 26-bit Wiegand card
+      Serial.println("[TYPE] 26-bit Wiegand Card");
+      Serial.print("[DATA] Card code: ");
+      Serial.println(cardCode);
+      qrCode = String(cardCode);
 
-    // --- PRODUCTION MODE: Validate via API ---
-    // String qrCode = String(cardCode);  // Of converteer naar JWT string
-    // if (validateQR(qrCode)) {
-    //   openDoor();
-    // } else {
-    //   denyAccess();
-    // }
+    } else if (bitCount > 100) {
+      // Long data = QR code with JWT token
+      // Reconstruct ASCII string from bit buffer
+      Serial.println("[TYPE] QR Code (Long Data)");
+      Serial.print("[DATA] Reconstructing JWT from ");
+      Serial.print(bitCount);
+      Serial.println(" bits...");
+
+      int numBytes = (bitCount + 7) / 8;  // Round up
+      char reconstructed[512];
+      int charIndex = 0;
+
+      for (int i = 0; i < numBytes && charIndex < 511; i++) {
+        char c = (char)bitBuffer[i];
+        // Only add printable ASCII characters (JWT tokens are base64 + dots)
+        if (c >= 32 && c <= 126) {
+          reconstructed[charIndex++] = c;
+        }
+      }
+      reconstructed[charIndex] = '\0';
+
+      qrCode = String(reconstructed);
+      Serial.print("[DATA] JWT Token: ");
+      Serial.println(qrCode.substring(0, 50) + "...");
+
+    } else {
+      // Unknown format
+      Serial.println("[TYPE] Unknown format");
+      Serial.print("[DATA] Bits: ");
+      Serial.print(bitCount);
+      Serial.print(", Raw code: ");
+      Serial.println(cardCode);
+      qrCode = String(cardCode);  // Fallback to numeric
+    }
+
+    // ===========================================
+    // PRODUCTION MODE: Validate via API
+    // ===========================================
+
+    if (qrCode.length() > 0) {
+      Serial.println();
+      Serial.println("[VALIDATION] Calling door-validate API...");
+
+      if (validateQR(qrCode)) {
+        openDoor();
+      } else {
+        denyAccess("");
+      }
+    } else {
+      Serial.println("[ERROR] No valid data to validate");
+      denyAccess("Invalid scan data");
+    }
 
     // Reset for next scan
     cardCode = 0;
     bitCount = 0;
+    currentBit = 0;
+    memset((void*)bitBuffer, 0, sizeof(bitBuffer));
   }
 
   // Background WiFi maintenance
