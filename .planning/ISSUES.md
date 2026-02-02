@@ -48,3 +48,13 @@
 **Description**: Copy contents of `supabase/sql/fix_door_access_team_bypass.sql` into Supabase SQL Editor and execute. Adds team role bypass to the database function.
 
 ---
+
+### ISS-004: DoorTest page E2E testing deferred
+**Date**: 2026-02-02
+**Phase**: 8 (Functionality Audit & E2E Testing)
+**Severity**: Low (admin-only page, depends on hardware)
+**Description**: DoorTest page (`/door-test`) excluded from Phase 8 E2E tests. Testing requires physical ESP32 hardware (ISS-001/002). Add E2E tests for DoorTest page after hardware is available and flashed.
+
+**Depends on**: ISS-001, ISS-002
+
+---

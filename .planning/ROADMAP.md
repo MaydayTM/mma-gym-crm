@@ -94,10 +94,14 @@ Plans:
 **Goal**: Page-by-page functionality testing of all 24 pages. Automated Playwright tests for critical user flows (login, member CRUD, lead pipeline, scheduling, check-in, reports).
 **Depends on**: Phases 4-7
 **Research**: Unlikely (internal testing)
-**Plans**: TBD
+**Plans**: 5
 
 Plans:
-- [ ] 08-01: TBD
+- [ ] 08-01: Playwright setup & auth flow E2E tests
+- [ ] 08-02: Member & Lead E2E tests
+- [ ] 08-03: Subscription & Checkout E2E tests
+- [ ] 08-04: Schedule, Reservations & Operations E2E tests
+- [ ] 08-05: Admin pages, Dashboard & full verification
 
 #### Phase 9: Bug Fixes & Polish
 **Goal**: Address all issues found in phases 4-8. UI polish, error handling improvements, edge case fixes, and UX improvements based on audit findings.
