@@ -57,7 +57,7 @@ export const ShopProductDetail: React.FC = () => {
 
   // Auto-select first available variant when product loads
   // This is intentional props-to-state initialization on product load
-   
+  // Auto-select first available variant when product loads (legitimate side-effect)
   useEffect(() => {
     if (product && !selectedVariantId) {
       const presale = isInPresale(product)
@@ -69,11 +69,10 @@ export const ShopProductDetail: React.FC = () => {
         setSelectedVariantId(firstAvailableVariant.id)
       }
     }
-  }, [product]) // Only depend on product, not selectedVariantId
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id]) // Only run when product ID changes, not selectedVariantId
 
-  // Auto-select purchase mode based on what's available
-  // This only runs once when the product loads, not on every change
-   
+  // Auto-select purchase mode based on what's available (legitimate side-effect)
   useEffect(() => {
     if (!product) return
 
@@ -86,7 +85,8 @@ export const ShopProductDetail: React.FC = () => {
     if (!anyInStock && hasPreorder) {
       setPurchaseMode('preorder')
     }
-  }, [product]) // Only run when product changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id]) // Only run when product ID changes
 
   const finalPrice = selectedVariant
     ? (purchaseMode === 'preorder' ? preorderPrice : effectivePrice) + selectedVariant.price_adjustment

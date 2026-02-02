@@ -108,7 +108,9 @@ export function useUnclaimedMembers(filter: 'all' | 'no_invite' | 'pending' = 'a
       // Map members and check for pending tokens
       const result: UnclaimedMember[] = members.map(member => {
         // Find active (unclaimed, unexpired) token
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tokens = (member as any).account_claim_tokens || []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pendingToken = tokens.find((t: any) =>
           !t.claimed_at && new Date(t.expires_at) > new Date()
         )

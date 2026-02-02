@@ -203,6 +203,8 @@ export function ShopCartProvider({ children }: ShopCartProviderProps) {
   )
 }
 
+// Custom hook exports from context files are a standard React pattern
+// eslint-disable-next-line react-refresh/only-export-components
 export function useShopCart(): ShopCartContextValue {
   const context = useContext(ShopCartContext)
   if (!context) {

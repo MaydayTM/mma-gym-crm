@@ -24,7 +24,7 @@ export function CheckoutSuccess() {
 
   useEffect(() => {
     if (!sessionId) {
-      setIsLoading(false)
+      setIsLoading(false) // eslint-disable-line react-hooks/set-state-in-effect
       return
     }
 

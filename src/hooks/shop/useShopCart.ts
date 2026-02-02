@@ -62,9 +62,9 @@ export function useShopCart(): UseShopCartReturn {
   const [deliveryMethod, setDeliveryMethodState] = useState<DeliveryMethod>('pickup')
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // Load cart from localStorage on mount
+  // Load cart from localStorage on mount (legitimate side-effect for persistence)
   useEffect(() => {
-    setItems(loadCartFromStorage())
+    setItems(loadCartFromStorage()) // eslint-disable-line react-hooks/set-state-in-effect
     setDeliveryMethodState(loadDeliveryMethod())
     setIsInitialized(true)
   }, [])

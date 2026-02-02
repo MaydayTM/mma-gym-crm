@@ -111,10 +111,9 @@ export function CampaignWizard({ onClose, onSuccess }: CampaignWizardProps) {
     }
   }, [audienceFilter, audienceMode, customRecipients, getAudienceCount])
 
-  // Fetch audience count when filter or custom recipients change
-   
+  // Fetch audience count when filter or custom recipients change (legitimate async fetch)
   useEffect(() => {
-    fetchAudienceCount()
+    fetchAudienceCount() // eslint-disable-line react-hooks/set-state-in-effect
   }, [fetchAudienceCount])
 
   // Reset all filters

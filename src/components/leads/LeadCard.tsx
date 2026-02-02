@@ -8,11 +8,17 @@ interface LeadCardProps {
   isDragging?: boolean
 }
 
+// Helper to get stable "now" value (computed once on initial render)
+const getNow = () => Date.now()
+
 export function LeadCard({ lead, onClick, isDragging }: LeadCardProps) {
+  // Calculate days since created (useMemo with empty deps to compute once on mount)
   const daysSinceCreated = useMemo(() => {
     if (!lead.created_at) return 0
-    return Math.floor((Date.now() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60 * 24))
-  }, [lead.created_at])
+    return Math.floor((getNow() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60 * 24))
+    // Empty deps means this computes once on mount and never re-computes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div

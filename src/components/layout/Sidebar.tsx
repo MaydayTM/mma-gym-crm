@@ -192,7 +192,7 @@ export function Sidebar() {
   }
 
   // Auto-open group when navigating to a route within it
-   
+  // Auto-expand group containing active route (legitimate side-effect for UX)
   useEffect(() => {
     const allGroups = [...navigationGroups, modulesGroup, beheerGroup]
     for (const group of allGroups) {
@@ -204,7 +204,8 @@ export function Sidebar() {
         break
       }
     }
-  }, [location.pathname])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]) // Only re-run when path changes, not when openGroups changes
 
   // Helper to check if user has permission for an item
   const hasPermission = (item: NavItem): boolean => {

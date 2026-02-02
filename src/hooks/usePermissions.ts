@@ -107,7 +107,6 @@ export function usePermissions(): Permissions {
   const { member, isAuthenticated } = useAuth()
 
   const currentRole = (member?.role as Role) || null
-  const roleLevel = currentRole ? ROLE_HIERARCHY[currentRole] : 0
 
   const permissions = useMemo<Permissions>(() => {
     // Basis rol checks
@@ -177,7 +176,7 @@ export function usePermissions(): Permissions {
       canAssignRole,
       canModifyMember,
     }
-  }, [currentRole, isAuthenticated, roleLevel])
+  }, [currentRole, isAuthenticated])
 
   return permissions
 }

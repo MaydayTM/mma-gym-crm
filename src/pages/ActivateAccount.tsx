@@ -34,7 +34,8 @@ export function ActivateAccount() {
     }
 
     verifyToken()
-  }, [token])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]) // verifyToken is stable, only re-run when token changes
 
   const verifyToken = async () => {
     try {
