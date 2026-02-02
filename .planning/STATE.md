@@ -2,12 +2,12 @@
 
 ## Current Position
 
-Phase: 6 of 10 (Email & Account Claim Testing)
+Phase: 7 of 10 (Door Access & QR Integration)
 Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-02 - Completed Phase 6 (all 3 plans)
+Status: Phase complete (software); hardware testing deferred (ISS-001, ISS-002)
+Last activity: 2026-02-02 - Completed Phase 7 (all 3 plans, hardware checkpoints deferred)
 
-Progress: ██████░░░░ ~43%
+Progress: ███████░░░ ~57%
 
 ## Accumulated Context
 
@@ -35,18 +35,24 @@ Progress: ██████░░░░ ~43%
 - Try-create pattern for email existence check (avoids listUsers scalability issue)
 - Error reason mapping: Edge Function error_reason → Dutch UI messages with fallback
 - E2E claim flow testing deferred to Phase 8 (code audit approved)
+- QR tokens stored as SHA256 hash in DB, plaintext JWT returned to frontend (Phase 7)
+- door-token requires Bearer auth; door-validate requires apikey header (Phase 7)
+- Wiegand QR detection by bit count: >100 bits = QR/ASCII, 26 bits = standard card (Phase 7)
 
 ### Known Issues
 - RLS recursion was fixed in migration 060 but some policies may still need SQL Editor drops (see LESSONS_LEARNED.md)
 - 3 Settings sections not built: gym profile, notifications, branding
 - No automated E2E tests exist yet
 - Migration sync mismatch: remote DB has migrations not in local repo (see .planning/ISSUES.md)
-- Database function check_member_door_access missing team role bypass (not used in production, Edge Function is correct)
 - RESEND_WEBHOOK_SECRET not set in Supabase secrets (webhook verification gracefully degrades)
 - Stale session/JWT observed: admin role briefly showed as "member" (re-login fixed it)
+- ESP32 needs flashing with production firmware (ISS-001)
+- End-to-end hardware door testing pending (ISS-002)
+- check_member_door_access SQL fix needs manual application via SQL Editor (ISS-003)
 
 ### Blockers/Concerns Carried Forward
 - Migration history sync issue should be investigated before next database schema changes
+- ESP32 hardware testing requires physical access to device
 
 ### Roadmap Evolution
 - v1.0 Member Onboarding: Claim account flow built, mobile & multi-tenant deferred
@@ -55,7 +61,7 @@ Progress: ██████░░░░ ~43%
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed Phase 6 (Email & Account Claim Testing) - all 3 plans done
+Stopped at: Completed Phase 7 (Door Access & QR Integration) - all 3 plans done, hardware checkpoints deferred
 Resume file: None
 
 ## Deferred Issues
@@ -63,4 +69,6 @@ Resume file: None
 - Multi-tenant (Phase 3) - deferred to post-beta
 - Stripe integration - deferred (Mollie is primary)
 - Fighter Profile Generator - waiting on external repo
-- check_member_door_access DB function team bypass fix (logged in .planning/ISSUES.md)
+- ISS-001: Flash ESP32 with production firmware (need physical access)
+- ISS-002: End-to-end hardware door access testing (depends on ISS-001)
+- ISS-003: Apply check_member_door_access SQL fix via SQL Editor

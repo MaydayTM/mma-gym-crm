@@ -83,10 +83,12 @@ Plans:
 **Depends on**: Phase 5 (subscription gating)
 **Research**: Likely (ESP32 firmware, WiFi connectivity, Wiegand protocol)
 **Research topics**: ESP32 firmware setup and flashing, WiFi configuration for gym environment, Wiegand reader integration, fallback when offline
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 07-01: TBD
+- [x] 07-01: Edge Function security audit & deployment (auth, hash storage, apikey)
+- [x] 07-02: DB function fix, frontend auth headers, DoorTest admin guard
+- [x] 07-03: ESP32 production firmware (code done, hardware flashing deferred — ISS-001/002)
 
 #### Phase 8: Full Functionality Audit & E2E Testing
 **Goal**: Page-by-page functionality testing of all 24 pages. Automated Playwright tests for critical user flows (login, member CRUD, lead pipeline, scheduling, check-in, reports).
@@ -126,7 +128,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10
 | 4. Roles & Permissions Audit | v2.0 | 3/3 | Complete | 2026-02-01 |
 | 5. Subscriptions & Billing Audit | v2.0 | 3/3 | Complete | 2026-02-01 |
 | 6. Email & Account Claim Testing | v2.0 | 3/3 | Complete | 2026-02-02 |
-| 7. Door Access & QR Integration | v2.0 | 0/? | Not started | - |
+| 7. Door Access & QR Integration | v2.0 | 3/3 | Complete (software) | 2026-02-02 |
 | 8. Functionality Audit & E2E Testing | v2.0 | 0/? | Not started | - |
 | 9. Bug Fixes & Polish | v2.0 | 0/? | Not started | - |
 | 10. Beta Deployment & Monitoring | v2.0 | 0/? | Not started | - |
