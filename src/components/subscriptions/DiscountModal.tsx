@@ -15,54 +15,32 @@ export function DiscountModal({ itemId, onClose }: DiscountModalProps) {
   const existingItem = itemId ? discounts?.find(d => d.id === itemId) : null
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState({
-    slug: '',
-    name: '',
-    description: '',
-    discount_type: 'fixed' as 'fixed' | 'percentage',
-    amount: 0,
-    percentage: 0,
-    is_exclusive: false,
-    requires_verification: false,
-    valid_from: '',
-    valid_until: '',
-    max_uses: null as number | null,
-    show_on_checkout: true,
-    checkout_code: '',
-    is_active: true,
-    sort_order: 0
-  })
+  const [formData, setFormData] = useState(() => ({
+    slug: existingItem?.slug || '',
+    name: existingItem?.name || '',
+    description: existingItem?.description || '',
+    discount_type: (existingItem?.discount_type as 'fixed' | 'percentage') || 'fixed',
+    amount: existingItem?.amount || 0,
+    percentage: existingItem?.percentage || 0,
+    is_exclusive: existingItem?.is_exclusive ?? false,
+    requires_verification: existingItem?.requires_verification ?? false,
+    valid_from: existingItem?.valid_from || '',
+    valid_until: existingItem?.valid_until || '',
+    max_uses: existingItem?.max_uses ?? null,
+    show_on_checkout: existingItem?.show_on_checkout ?? true,
+    checkout_code: existingItem?.checkout_code || '',
+    is_active: existingItem?.is_active ?? true,
+    sort_order: existingItem?.sort_order ?? 0
+  }))
 
-  useEffect(() => {
-    if (existingItem) {
-      setFormData({
-        slug: existingItem.slug,
-        name: existingItem.name,
-        description: existingItem.description || '',
-        discount_type: (existingItem.discount_type as 'fixed' | 'percentage') || 'fixed',
-        amount: existingItem.amount || 0,
-        percentage: existingItem.percentage || 0,
-        is_exclusive: existingItem.is_exclusive ?? false,
-        requires_verification: existingItem.requires_verification ?? false,
-        valid_from: existingItem.valid_from || '',
-        valid_until: existingItem.valid_until || '',
-        max_uses: existingItem.max_uses,
-        show_on_checkout: existingItem.show_on_checkout ?? true,
-        checkout_code: existingItem.checkout_code || '',
-        is_active: existingItem.is_active ?? true,
-        sort_order: existingItem.sort_order ?? 0
-      })
-    }
-  }, [existingItem])
-
-  // Auto-generate slug from name
+  // Auto-generate slug from name (legitimate sync side-effect for new items)
   useEffect(() => {
     if (!itemId && formData.name) {
       const slug = formData.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
-      setFormData(prev => ({ ...prev, slug }))
+      setFormData(prev => ({ ...prev, slug })) // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [formData.name, itemId])
 

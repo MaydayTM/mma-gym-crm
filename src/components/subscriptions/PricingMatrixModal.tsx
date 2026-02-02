@@ -17,39 +17,23 @@ export function PricingMatrixModal({ itemId, onClose }: PricingMatrixModalProps)
   const existingItem = itemId ? pricing?.find(p => p.id === itemId) : null
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState({
-    age_group_id: '',
-    plan_type_id: '',
-    duration_months: 1,
-    price: 0,
-    price_per_month: 0,
-    savings: 0,
-    includes_insurance: false,
-    show_on_checkout: true,
-    highlight_text: ''
-  })
+  const [formData, setFormData] = useState(() => ({
+    age_group_id: existingItem?.age_group_id || '',
+    plan_type_id: existingItem?.plan_type_id || '',
+    duration_months: existingItem?.duration_months || 1,
+    price: existingItem?.price || 0,
+    price_per_month: existingItem?.price_per_month || 0,
+    savings: existingItem?.savings || 0,
+    includes_insurance: existingItem?.includes_insurance || false,
+    show_on_checkout: existingItem?.show_on_checkout !== false,
+    highlight_text: existingItem?.highlight_text || ''
+  }))
 
-  useEffect(() => {
-    if (existingItem) {
-      setFormData({
-        age_group_id: existingItem.age_group_id,
-        plan_type_id: existingItem.plan_type_id,
-        duration_months: existingItem.duration_months,
-        price: existingItem.price,
-        price_per_month: existingItem.price_per_month || 0,
-        savings: existingItem.savings || 0,
-        includes_insurance: existingItem.includes_insurance || false,
-        show_on_checkout: existingItem.show_on_checkout !== false,
-        highlight_text: existingItem.highlight_text || ''
-      })
-    }
-  }, [existingItem])
-
-  // Auto-calculate price per month when price or duration changes
+  // Auto-calculate price per month when price or duration changes (legitimate sync side-effect)
   useEffect(() => {
     if (formData.price > 0 && formData.duration_months > 0) {
       const perMonth = formData.price / formData.duration_months
-      setFormData(prev => ({ ...prev, price_per_month: Math.round(perMonth * 100) / 100 }))
+      setFormData(prev => ({ ...prev, price_per_month: Math.round(perMonth * 100) / 100 })) // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [formData.price, formData.duration_months])
 

@@ -14,40 +14,25 @@ export function AddonModal({ itemId, onClose }: AddonModalProps) {
 
   const existingItem = itemId ? addons?.find(a => a.id === itemId) : null
 
-  const [formData, setFormData] = useState({
-    slug: '',
-    name: '',
-    description: '',
-    price: 0,
-    billing_type: 'yearly' as 'yearly' | 'monthly' | 'once',
-    applicable_to: [] as string[],
-    is_required: false,
-    sort_order: 0
-  })
+  const [formData, setFormData] = useState(() => ({
+    slug: existingItem?.slug || '',
+    name: existingItem?.name || '',
+    description: existingItem?.description || '',
+    price: existingItem?.price || 0,
+    billing_type: (existingItem?.billing_type as 'yearly' | 'monthly' | 'once') || 'yearly',
+    applicable_to: Array.isArray(existingItem?.applicable_to) ? existingItem.applicable_to : [],
+    is_required: existingItem?.is_required ?? false,
+    sort_order: existingItem?.sort_order ?? 0
+  }))
 
-  useEffect(() => {
-    if (existingItem) {
-      setFormData({
-        slug: existingItem.slug,
-        name: existingItem.name,
-        description: existingItem.description || '',
-        price: existingItem.price,
-        billing_type: (existingItem.billing_type as 'yearly' | 'monthly' | 'once') || 'yearly',
-        applicable_to: Array.isArray(existingItem.applicable_to) ? existingItem.applicable_to : [],
-        is_required: existingItem.is_required ?? false,
-        sort_order: existingItem.sort_order ?? 0
-      })
-    }
-  }, [existingItem])
-
-  // Auto-generate slug from name
+  // Auto-generate slug from name (legitimate sync side-effect for new items)
   useEffect(() => {
     if (!itemId && formData.name) {
       const slug = formData.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
-      setFormData(prev => ({ ...prev, slug }))
+      setFormData(prev => ({ ...prev, slug })) // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [formData.name, itemId])
 

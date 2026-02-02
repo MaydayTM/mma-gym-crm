@@ -14,40 +14,25 @@ export function AgeGroupModal({ itemId, onClose }: AgeGroupModalProps) {
 
   const existingItem = itemId ? ageGroups?.find(ag => ag.id === itemId) : null
 
-  const [formData, setFormData] = useState({
-    slug: '',
-    name: '',
-    subtitle: '',
-    min_age: null as number | null,
-    max_age: null as number | null,
-    starting_price: 0,
-    sort_order: 0,
-    is_active: true
-  })
+  const [formData, setFormData] = useState(() => ({
+    slug: existingItem?.slug || '',
+    name: existingItem?.name || '',
+    subtitle: existingItem?.subtitle || '',
+    min_age: existingItem?.min_age ?? null,
+    max_age: existingItem?.max_age ?? null,
+    starting_price: existingItem?.starting_price || 0,
+    sort_order: existingItem?.sort_order ?? 0,
+    is_active: existingItem?.is_active ?? true
+  }))
 
-  useEffect(() => {
-    if (existingItem) {
-      setFormData({
-        slug: existingItem.slug,
-        name: existingItem.name,
-        subtitle: existingItem.subtitle || '',
-        min_age: existingItem.min_age,
-        max_age: existingItem.max_age,
-        starting_price: existingItem.starting_price || 0,
-        sort_order: existingItem.sort_order ?? 0,
-        is_active: existingItem.is_active ?? true
-      })
-    }
-  }, [existingItem])
-
-  // Auto-generate slug from name
+  // Auto-generate slug from name (legitimate sync side-effect for new items)
   useEffect(() => {
     if (!itemId && formData.name) {
       const slug = formData.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
-      setFormData(prev => ({ ...prev, slug }))
+      setFormData(prev => ({ ...prev, slug })) // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [formData.name, itemId])
 

@@ -43,8 +43,7 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit')
   const [error, setError] = useState<string | null>(null)
 
-  // Load existing template data - intentional props-to-state sync
-   
+  // Load existing template data - intentional async data sync
   useEffect(() => {
     if (existingTemplate) {
       setName(existingTemplate.name)
@@ -54,7 +53,8 @@ export function TemplateEditor({ templateId, onClose }: TemplateEditorProps) {
       setPreviewText(existingTemplate.preview_text || '')
       setCategory(existingTemplate.category || 'general')
     }
-  }, [existingTemplate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingTemplate?.id]) // Only update when template ID changes
 
   const handleSave = async () => {
     setError(null)

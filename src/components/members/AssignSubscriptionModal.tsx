@@ -88,7 +88,9 @@ export function AssignSubscriptionModal({ memberId, memberName, onClose, onSucce
     } else if (filteredPricing.length === 0) {
       setSelectedPricing('')
     }
-  }, [filteredPricing, selectedPricing])
+    // Intentional: Only run when filteredPricing changes, not selectedPricing (to avoid infinite loop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredPricing])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

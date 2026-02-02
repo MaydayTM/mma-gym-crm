@@ -14,42 +14,26 @@ export function OneTimeProductModal({ itemId, onClose }: OneTimeProductModalProp
 
   const existingItem = itemId ? products?.find(p => p.id === itemId) : null
 
-  const [formData, setFormData] = useState({
-    slug: '',
-    name: '',
-    description: '',
-    product_type: 'daypass' as 'daypass' | 'punch_card',
-    price: 0,
-    sessions: 1,
-    validity_days: 1,
-    show_on_checkout: true,
-    sort_order: 0
-  })
+  const [formData, setFormData] = useState(() => ({
+    slug: existingItem?.slug || '',
+    name: existingItem?.name || '',
+    description: existingItem?.description || '',
+    product_type: (existingItem?.product_type as 'daypass' | 'punch_card') || 'daypass',
+    price: existingItem?.price || 0,
+    sessions: existingItem?.sessions || 1,
+    validity_days: existingItem?.validity_days || 1,
+    show_on_checkout: existingItem?.show_on_checkout !== false,
+    sort_order: existingItem?.sort_order ?? 0
+  }))
 
-  useEffect(() => {
-    if (existingItem) {
-      setFormData({
-        slug: existingItem.slug,
-        name: existingItem.name,
-        description: existingItem.description || '',
-        product_type: (existingItem.product_type as 'daypass' | 'punch_card') || 'daypass',
-        price: existingItem.price,
-        sessions: existingItem.sessions || 1,
-        validity_days: existingItem.validity_days,
-        show_on_checkout: existingItem.show_on_checkout !== false,
-        sort_order: existingItem.sort_order ?? 0
-      })
-    }
-  }, [existingItem])
-
-  // Auto-generate slug from name
+  // Auto-generate slug from name (legitimate sync side-effect for new items)
   useEffect(() => {
     if (!itemId && formData.name) {
       const slug = formData.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
-      setFormData(prev => ({ ...prev, slug }))
+      setFormData(prev => ({ ...prev, slug })) // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [formData.name, itemId])
 

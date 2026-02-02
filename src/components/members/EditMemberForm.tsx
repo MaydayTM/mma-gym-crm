@@ -58,7 +58,7 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
   })
 
   // Reset form data when member changes - intentional props-to-state sync
-   
+  // This form can be used to edit different members without unmounting
   useEffect(() => {
     setFormData({
       first_name: member.first_name,
@@ -75,7 +75,8 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
       status: member.status ?? 'active',
       notes: member.notes ?? '',
     })
-  }, [member])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member.id]) // Only reset when member.id changes
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

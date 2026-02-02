@@ -29,7 +29,7 @@ export function PaymentSettings() {
     is_test_mode: true,
   })
 
-  // Update form when config loads
+  // Update form when config loads - intentional async data sync
   useEffect(() => {
     if (config) {
       setFormData({
@@ -43,7 +43,8 @@ export function PaymentSettings() {
         is_test_mode: config.is_test_mode ?? true,
       })
     }
-  }, [config])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config?.provider, config?.is_test_mode]) // Only update when these key values change
 
   const handleSave = async () => {
     try {

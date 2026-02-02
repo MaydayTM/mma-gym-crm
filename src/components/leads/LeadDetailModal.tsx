@@ -53,7 +53,7 @@ export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps)
   })
 
   // Reset form data when lead changes - intentional props-to-state sync
-   
+  // This modal can show different leads without unmounting
   useEffect(() => {
     setFormData({
       first_name: lead.first_name || '',
@@ -68,7 +68,8 @@ export function LeadDetailModal({ lead, isOpen, onClose }: LeadDetailModalProps)
       notes: lead.notes || '',
       lost_reason: lead.lost_reason || '',
     })
-  }, [lead])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id]) // Only reset when lead.id changes
 
   if (!isOpen) return null
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { usePlanTypes, useCreatePlanType, useUpdatePlanType } from '../../hooks/useSubscriptionAdmin'
 
@@ -15,29 +15,15 @@ export function PlanTypeModal({ itemId, onClose }: PlanTypeModalProps) {
   const existingItem = itemId ? planTypes?.find(pt => pt.id === itemId) : null
   const isEditing = !!existingItem
 
-  const [formData, setFormData] = useState({
-    name: '',
-    slug: '',
-    description: '',
-    highlight_text: '',
-    sort_order: 0,
-    is_active: true,
-    features: [] as string[]
-  })
-
-  useEffect(() => {
-    if (existingItem) {
-      setFormData({
-        name: existingItem.name || '',
-        slug: existingItem.slug || '',
-        description: existingItem.description || '',
-        highlight_text: existingItem.highlight_text || '',
-        sort_order: existingItem.sort_order || 0,
-        is_active: existingItem.is_active ?? true,
-        features: Array.isArray(existingItem.features) ? existingItem.features as string[] : []
-      })
-    }
-  }, [existingItem])
+  const [formData, setFormData] = useState(() => ({
+    name: existingItem?.name || '',
+    slug: existingItem?.slug || '',
+    description: existingItem?.description || '',
+    highlight_text: existingItem?.highlight_text || '',
+    sort_order: existingItem?.sort_order || 0,
+    is_active: existingItem?.is_active ?? true,
+    features: Array.isArray(existingItem?.features) ? existingItem.features as string[] : []
+  }))
 
   const generateSlug = (name: string) => {
     return name
