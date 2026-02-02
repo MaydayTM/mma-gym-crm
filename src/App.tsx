@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import * as Sentry from '@sentry/react'
 import { AuthProvider } from './contexts/AuthContext'
 import { ShopCartProvider } from './contexts/ShopCartContext'
 import { ProtectedRoute, RoleGuard } from './components/auth'
@@ -64,6 +65,26 @@ const ShopLoadingFallback = () => (
     </div>
   </div>
 )
+
+// Error fallback for Sentry error boundary
+function ErrorFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-zinc-950 text-white p-8">
+      <div className="text-center max-w-md">
+        <h1 className="text-2xl font-bold mb-4">Er is iets misgegaan</h1>
+        <p className="text-zinc-400 mb-6">
+          De applicatie heeft een onverwachte fout ondervonden. Het team is op de hoogte gesteld.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
+        >
+          Pagina herladen
+        </button>
+      </div>
+    </div>
+  )
+}
 
 // Check if we're on the shop subdomain
 const isShopSubdomain = window.location.hostname.startsWith('shop.') ||
@@ -246,11 +267,13 @@ function CRMApp() {
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          {isShopSubdomain ? <ShopApp /> : <CRMApp />}
-        </BrowserRouter>
-      </QueryClientProvider>
+      <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            {isShopSubdomain ? <ShopApp /> : <CRMApp />}
+          </BrowserRouter>
+        </QueryClientProvider>
+      </Sentry.ErrorBoundary>
     </ErrorBoundary>
   )
 }
