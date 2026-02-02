@@ -25,7 +25,14 @@ serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
   const JWT_SECRET = Deno.env.get('DOOR_JWT_SECRET')
+
+  // Require ANON_KEY in apikey header (prevents random internet scanners)
+  const apiKey = req.headers.get('apikey')
+  if (apiKey !== SUPABASE_ANON_KEY) {
+    return jsonResponse({ allowed: false, reason: 'invalid_token' })
+  }
 
   // Use service role to bypass RLS
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -34,6 +41,10 @@ serve(async (req) => {
   let doorLocation = 'main'
 
   try {
+    // TODO: Add rate limiting - max 10 attempts per minute per door_id
+    // Can use Deno.KV or in-memory Map with timestamp cleanup
+    // Example: const rateLimitKey = `door-validate:${doorLocation}:${clientIP}`
+
     const body = await req.json() as ValidateRequest
     qrToken = body.qr || ''
     doorLocation = body.door_id || 'main'
@@ -66,7 +77,10 @@ serve(async (req) => {
 
     const memberId = payload.member_id
 
-    // Check if token matches stored token
+    // Hash the incoming token to compare with stored hash
+    const tokenHash = await hashToken(qrToken)
+
+    // Check if token matches stored hash
     const { data: member } = await supabase
       .from('members')
       .select('id, first_name, last_name, status, role, qr_token, door_access_enabled')
@@ -78,8 +92,8 @@ serve(async (req) => {
       return jsonResponse({ allowed: false, reason: 'member_not_found' })
     }
 
-    // Check if QR token matches (prevents replay with old tokens)
-    if (member.qr_token !== qrToken) {
+    // Check if QR token hash matches (prevents replay with old tokens)
+    if (member.qr_token !== tokenHash) {
       await logAccess(supabase, memberId, qrToken, false, 'token_mismatch', doorLocation)
       return jsonResponse({ allowed: false, reason: 'token_expired' })
     }
@@ -125,7 +139,7 @@ serve(async (req) => {
         await logAccess(supabase, memberId, qrToken, false, 'no_active_subscription', doorLocation)
         return jsonResponse({
           allowed: false,
-          reason: 'no_subscription',
+          reason: 'no_active_subscription',
           member_name: `${member.first_name} ${member.last_name}`
         })
       }
@@ -188,13 +202,13 @@ async function logAccess(
   }
 }
 
-// Simple hash for token storage
+// Hash token with SHA-256 (must match door-token hash implementation)
 async function hashToken(token: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(token)
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16)
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 // Helper for JSON responses
