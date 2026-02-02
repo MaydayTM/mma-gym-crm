@@ -74,9 +74,9 @@ Plans:
 **Plans**: 3
 
 Plans:
-- [ ] 06-01: Email webhook hardening & debug info cleanup
-- [ ] 06-02: Claim account Edge Functions security audit
-- [ ] 06-03: Frontend claim flow audit & E2E verification
+- [x] 06-01: Email webhook hardening & debug info cleanup
+- [x] 06-02: Claim account Edge Functions security audit
+- [x] 06-03: Frontend claim flow audit & E2E verification
 
 #### Phase 7: Door Access & QR Integration
 **Goal**: Hardware testing of ESP32 door modules, QR token generation/validation, access logging, and subscription-gated entry. Verify the full physical access flow.
@@ -125,7 +125,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10
 |-------|-----------|----------------|--------|-----------|
 | 4. Roles & Permissions Audit | v2.0 | 3/3 | Complete | 2026-02-01 |
 | 5. Subscriptions & Billing Audit | v2.0 | 3/3 | Complete | 2026-02-01 |
-| 6. Email & Account Claim Testing | v2.0 | 0/? | Not started | - |
+| 6. Email & Account Claim Testing | v2.0 | 3/3 | Complete | 2026-02-02 |
 | 7. Door Access & QR Integration | v2.0 | 0/? | Not started | - |
 | 8. Functionality Audit & E2E Testing | v2.0 | 0/? | Not started | - |
 | 9. Bug Fixes & Polish | v2.0 | 0/? | Not started | - |

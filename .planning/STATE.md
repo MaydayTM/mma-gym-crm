@@ -2,12 +2,12 @@
 
 ## Current Position
 
-Phase: 5 of 10 (Subscriptions & Billing Audit)
+Phase: 6 of 10 (Email & Account Claim Testing)
 Plan: 3 of 3 in current phase
 Status: Phase complete
-Last activity: 2026-02-01 - Completed Phase 5 (all 3 plans)
+Last activity: 2026-02-02 - Completed Phase 6 (all 3 plans)
 
-Progress: █████░░░░░ ~30%
+Progress: ██████░░░░ ~43%
 
 ## Accumulated Context
 
@@ -30,6 +30,11 @@ Progress: █████░░░░░ ~30%
 - Revenue records created alongside subscriptions in webhook flow
 - Pricing matrix duplicate detection via catching PostgreSQL 23505 error
 - Cascade delete warnings show count of affected pricing entries
+- Webhook signature verification: svix library with graceful degradation (dev mode)
+- Auth user lookup: always use auth_user_id (not members.id) for auth.uid() queries
+- Try-create pattern for email existence check (avoids listUsers scalability issue)
+- Error reason mapping: Edge Function error_reason → Dutch UI messages with fallback
+- E2E claim flow testing deferred to Phase 8 (code audit approved)
 
 ### Known Issues
 - RLS recursion was fixed in migration 060 but some policies may still need SQL Editor drops (see LESSONS_LEARNED.md)
@@ -37,6 +42,8 @@ Progress: █████░░░░░ ~30%
 - No automated E2E tests exist yet
 - Migration sync mismatch: remote DB has migrations not in local repo (see .planning/ISSUES.md)
 - Database function check_member_door_access missing team role bypass (not used in production, Edge Function is correct)
+- RESEND_WEBHOOK_SECRET not set in Supabase secrets (webhook verification gracefully degrades)
+- Stale session/JWT observed: admin role briefly showed as "member" (re-login fixed it)
 
 ### Blockers/Concerns Carried Forward
 - Migration history sync issue should be investigated before next database schema changes
@@ -47,8 +54,8 @@ Progress: █████░░░░░ ~30%
 
 ## Session Continuity
 
-Last session: 2026-02-01
-Stopped at: Completed Phase 5 (Subscriptions & Billing Audit) - all 3 plans done
+Last session: 2026-02-02
+Stopped at: Completed Phase 6 (Email & Account Claim Testing) - all 3 plans done
 Resume file: None
 
 ## Deferred Issues
