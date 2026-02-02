@@ -104,13 +104,14 @@ Plans:
 - [x] 08-05: Admin pages, Dashboard & full verification
 
 #### Phase 9: Bug Fixes & Polish
-**Goal**: Address all issues found in phases 4-8. UI polish, error handling improvements, edge case fixes, and UX improvements based on audit findings.
+**Goal**: Fix all ESLint errors/warnings, clean up React anti-patterns, and optimize bundle size via code-splitting.
 **Depends on**: Phase 8
 **Research**: Unlikely (internal fixes)
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 09-01: TBD
+- [ ] 09-01: ESLint cleanup — fix 31 errors/warnings (setState-in-effect, missing deps, purity)
+- [ ] 09-02: Bundle optimization — React.lazy() code-splitting to reduce 1.5MB main chunk
 
 #### Phase 10: Beta Deployment & Monitoring
 **Goal**: Production hardening, error tracking setup (Sentry), uptime monitoring, invite first beta testers, and feedback collection mechanism.
