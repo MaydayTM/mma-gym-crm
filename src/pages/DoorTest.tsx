@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { QrCode, Check, X, Loader2, User, CreditCard } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { RoleGuard } from '../components/auth/RoleGuard'
 
 type ValidationResult = {
   allowed: boolean
@@ -148,16 +149,17 @@ export function DoorTest() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-[30px] font-semibold text-neutral-50 tracking-tight">
-          Door Access Test
-        </h1>
-        <p className="text-[14px] text-neutral-400 mt-1">
-          Test of een lid toegang krijgt tot de gym (simuleert ESP32 validatie)
-        </p>
-      </div>
+    <RoleGuard requiredRole="admin">
+      <div className="space-y-6 max-w-2xl mx-auto">
+        {/* Header */}
+        <div>
+          <h1 className="text-[30px] font-semibold text-neutral-50 tracking-tight">
+            Door Access Test
+          </h1>
+          <p className="text-[14px] text-neutral-400 mt-1">
+            Test of een lid toegang krijgt tot de gym (simuleert ESP32 validatie)
+          </p>
+        </div>
 
       {/* Test Form */}
       <div className="bg-gradient-to-br from-white/5 to-white/0 rounded-3xl p-6 border border-white/10">
@@ -304,6 +306,7 @@ export function DoorTest() {
           {"{"}"allowed": true/false{"}"} teruggeeft aan de ESP32.
         </p>
       </div>
-    </div>
+      </div>
+    </RoleGuard>
   )
 }
