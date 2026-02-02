@@ -110,8 +110,8 @@ Plans:
 **Plans**: 2
 
 Plans:
-- [ ] 09-01: ESLint cleanup — fix 31 errors/warnings (setState-in-effect, missing deps, purity)
-- [ ] 09-02: Bundle optimization — React.lazy() code-splitting to reduce 1.5MB main chunk
+- [x] 09-01: ESLint cleanup — fix 31 errors/warnings (setState-in-effect, missing deps, purity)
+- [x] 09-02: Bundle optimization — React.lazy() code-splitting to reduce 1.5MB main chunk
 
 #### Phase 10: Beta Deployment & Monitoring
 **Goal**: Production hardening, error tracking setup (Sentry), uptime monitoring, invite first beta testers, and feedback collection mechanism.
@@ -135,5 +135,5 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10
 | 6. Email & Account Claim Testing | v2.0 | 3/3 | Complete | 2026-02-02 |
 | 7. Door Access & QR Integration | v2.0 | 3/3 | Complete (software) | 2026-02-02 |
 | 8. Functionality Audit & E2E Testing | v2.0 | 5/5 | Complete | 2026-02-02 |
-| 9. Bug Fixes & Polish | v2.0 | 0/? | Not started | - |
+| 9. Bug Fixes & Polish | v2.0 | 2/2 | Complete | 2026-02-02 |
 | 10. Beta Deployment & Monitoring | v2.0 | 0/? | Not started | - |
