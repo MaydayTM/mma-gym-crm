@@ -37,11 +37,20 @@ export function DoorAccessCard({ memberId, memberStatus, doorAccessEnabled = tru
     setError(null)
 
     try {
+      // Get current session token for authentication
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('Niet ingelogd')
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/door-token`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
           body: JSON.stringify({ member_id: memberId })
         }
       )
