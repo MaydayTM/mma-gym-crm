@@ -215,11 +215,6 @@ export function DoorAccessCard({ memberId, memberStatus, doorAccessEnabled = tru
             <p className="text-[12px] text-neutral-500 mt-2 text-center">
               Scan deze QR code bij de deur om binnen te komen
             </p>
-
-            {/* Test instructions */}
-            <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[12px] text-amber-300">
-              <strong>Test modus:</strong> Kopieer de QR token en test met curl of Postman
-            </div>
           </div>
         ) : null}
       </div>
