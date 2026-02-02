@@ -1,45 +1,61 @@
-import React, { Suspense } from 'react'
+import React, { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './contexts/AuthContext'
 import { ShopCartProvider } from './contexts/ShopCartContext'
 import { ProtectedRoute, RoleGuard } from './components/auth'
 import { Layout } from './components/layout'
-import {
-  Dashboard,
-  Members,
-  MemberDetail,
-  Leads,
-  Subscriptions,
-  Schedule,
-  Reservations,
-  CheckIn,
-  Reports,
-  Tasks,
-  Team,
-  Settings,
-  Login,
-  ForgotPassword,
-  ResetPassword,
-  ClaimAccount,
-  ActivateAccount,
-  Shop,
-  Email,
-  GymScreen,
-  DoorTest,
-  KitanaHub,
-} from './pages'
-import { EmailPreview } from './pages/EmailPreview'
-import { SubscriptionsManage } from './pages/SubscriptionsManage'
-import { PlansOverview, PlanCheckout, CheckoutSuccess, CheckoutCancel } from './pages/checkout'
 
-// Lazy load public shop pages for better performance
-const ShopLanding = React.lazy(() => import('./pages/shop/ShopLanding'))
-const ShopProductDetail = React.lazy(() => import('./pages/shop/ShopProductDetail'))
-const ShopCheckout = React.lazy(() => import('./pages/shop/ShopCheckout'))
-const ShopOrderComplete = React.lazy(() => import('./pages/shop/ShopOrderComplete'))
+// Lazy load all page components for route-based code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })))
+const Members = lazy(() => import('./pages/Members').then(m => ({ default: m.Members })))
+const MemberDetail = lazy(() => import('./pages/MemberDetail').then(m => ({ default: m.MemberDetail })))
+const Leads = lazy(() => import('./pages/Leads').then(m => ({ default: m.Leads })))
+const Subscriptions = lazy(() => import('./pages/Subscriptions').then(m => ({ default: m.Subscriptions })))
+const SubscriptionsManage = lazy(() => import('./pages/SubscriptionsManage').then(m => ({ default: m.SubscriptionsManage })))
+const Schedule = lazy(() => import('./pages/Schedule').then(m => ({ default: m.Schedule })))
+const Reservations = lazy(() => import('./pages/Reservations').then(m => ({ default: m.Reservations })))
+const CheckIn = lazy(() => import('./pages/CheckIn').then(m => ({ default: m.CheckIn })))
+const Reports = lazy(() => import('./pages/Reports').then(m => ({ default: m.Reports })))
+const Tasks = lazy(() => import('./pages/Tasks').then(m => ({ default: m.Tasks })))
+const Team = lazy(() => import('./pages/Team').then(m => ({ default: m.Team })))
+const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })))
+const Shop = lazy(() => import('./pages/Shop').then(m => ({ default: m.Shop })))
+const Email = lazy(() => import('./pages/Email').then(m => ({ default: m.Email })))
+const EmailPreview = lazy(() => import('./pages/EmailPreview').then(m => ({ default: m.EmailPreview })))
+const GymScreen = lazy(() => import('./pages/GymScreen').then(m => ({ default: m.GymScreen })))
+const DoorTest = lazy(() => import('./pages/DoorTest').then(m => ({ default: m.DoorTest })))
+const KitanaHub = lazy(() => import('./pages/KitanaHub').then(m => ({ default: m.KitanaHub })))
 
-// Loading fallback for lazy-loaded shop pages
+// Auth pages
+const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })))
+const ResetPassword = lazy(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })))
+const ClaimAccount = lazy(() => import('./pages/ClaimAccount').then(m => ({ default: m.ClaimAccount })))
+const ActivateAccount = lazy(() => import('./pages/ActivateAccount').then(m => ({ default: m.ActivateAccount })))
+
+// Checkout pages
+const PlansOverview = lazy(() => import('./pages/checkout/PlansOverview').then(m => ({ default: m.PlansOverview })))
+const PlanCheckout = lazy(() => import('./pages/checkout/PlanCheckout').then(m => ({ default: m.PlanCheckout })))
+const CheckoutSuccess = lazy(() => import('./pages/checkout/CheckoutSuccess').then(m => ({ default: m.CheckoutSuccess })))
+const CheckoutCancel = lazy(() => import('./pages/checkout/CheckoutCancel').then(m => ({ default: m.CheckoutCancel })))
+
+// Public shop pages
+const ShopLanding = lazy(() => import('./pages/shop/ShopLanding'))
+const ShopProductDetail = lazy(() => import('./pages/shop/ShopProductDetail'))
+const ShopCheckout = lazy(() => import('./pages/shop/ShopCheckout'))
+const ShopOrderComplete = lazy(() => import('./pages/shop/ShopOrderComplete'))
+
+// Loading fallback for lazy-loaded pages
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-zinc-950">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+    </div>
+  )
+}
+
+// Loading fallback for lazy-loaded shop pages (custom branding)
 const ShopLoadingFallback = () => (
   <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
     <div className="text-center">
@@ -132,6 +148,7 @@ function CRMApp() {
   return (
     <ShopCartProvider>
       <AuthProvider>
+        <Suspense fallback={<LoadingFallback />}>
         <Routes>
         {/* Public routes - no auth required */}
         <Route path="/login" element={<Login />} />
@@ -220,6 +237,7 @@ function CRMApp() {
           <Route path="door-test" element={<RoleGuard permission="isAdmin"><DoorTest /></RoleGuard>} />
         </Route>
         </Routes>
+        </Suspense>
       </AuthProvider>
     </ShopCartProvider>
   )
