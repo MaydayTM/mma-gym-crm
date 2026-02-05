@@ -61,7 +61,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { data, error } = result
 
       if (!error && data) {
-        console.log('[Auth] Found member by auth_user_id')
         return data
       }
 
@@ -74,33 +73,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
           .single()
 
         if (!legacyResult.error && legacyResult.data) {
-          console.log('[Auth] Found member by id (legacy)')
           return legacyResult.data
         }
 
-        // Last resort: try by email (for Google OAuth linking)
+        // Last resort: try by email (for auto-linking unlinked members)
+        // Only auto-link if this is the ONLY unlinked member with this email
+        // to prevent accidentally linking to the wrong member record
         if (userEmail) {
           const emailResult = await supabase
             .from('members')
             .select('*')
             .eq('email', userEmail)
             .is('auth_user_id', null)  // Only unlinked members
-            .single()
 
-          if (!emailResult.error && emailResult.data) {
-            console.log('[Auth] Found unlinked member by email, linking now...')
+          if (!emailResult.error && emailResult.data && emailResult.data.length === 1) {
+            const memberToLink = emailResult.data[0]
             // Link the member to this auth user
             const { error: linkError } = await supabase
               .from('members')
               .update({ auth_user_id: userId })
-              .eq('id', emailResult.data.id)
+              .eq('id', memberToLink.id)
 
             if (linkError) {
               console.error('[Auth] Error linking member:', linkError)
             } else {
-              console.log('[Auth] Member linked successfully!')
-              return { ...emailResult.data, auth_user_id: userId }
+              return { ...memberToLink, auth_user_id: userId }
             }
+          } else if (emailResult.data && emailResult.data.length > 1) {
+            console.warn('[Auth] Multiple unlinked members with same email, skipping auto-link')
           }
         }
       }
@@ -125,13 +125,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let isMounted = true
     let authInitialized = false
 
-    console.log('[Auth] Starting initialization...')
-
     // Listen for auth changes - this handles login/logout events
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('[Auth] onAuthStateChange fired:', _event, !!session)
       if (!isMounted) return
 
       // Always update state on auth changes, regardless of timeout
@@ -145,13 +142,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         session,
         isLoading: false,
       }))
-      console.log('[Auth] Auth state set, isAuthenticated:', !!session)
 
       // Fetch member profile in background (non-blocking)
       if (session?.user && isMounted) {
         try {
           const member = await fetchMemberProfile(session.user.id, session.user.email)
-          console.log('[Auth] Member profile fetched:', !!member)
           if (isMounted) {
             setState(prev => ({ ...prev, member }))
           }
@@ -165,10 +160,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Also call getSession as a fallback
     const initAuth = async () => {
-      console.log('[Auth] Calling getSession...')
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
-        console.log('[Auth] getSession result:', !!session, error?.message)
 
         if (error) {
           console.error('[Auth] Error getting session:', error)
@@ -176,14 +169,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         // Only update if onAuthStateChange hasn't fired yet
         if (!isMounted || authInitialized) {
-          console.log('[Auth] Skipping getSession update (already initialized)')
           return
         }
 
         authInitialized = true
 
-        // IMPORTANT: Set loading to false immediately with session info
-        console.log('[Auth] Setting state from getSession, isLoading: false')
         setState(prev => ({
           ...prev,
           user: session?.user ?? null,
@@ -194,7 +184,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Fetch member profile in background (non-blocking)
         if (session?.user && isMounted) {
           const member = await fetchMemberProfile(session.user.id, session.user.email)
-          console.log('[Auth] Member profile fetched from getSession:', !!member)
           if (isMounted) {
             setState(prev => ({ ...prev, member }))
           }
@@ -217,7 +206,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Fallback timeout - only if nothing else worked
     const timeoutId = setTimeout(() => {
-      console.log('[Auth] Timeout check - authInitialized:', authInitialized)
       if (isMounted && !authInitialized) {
         console.warn('[Auth] Timeout reached - forcing state update')
         authInitialized = true

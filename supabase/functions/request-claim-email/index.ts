@@ -140,6 +140,9 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // DEBUG MODE - temporarily expose errors for debugging
+  const DEBUG_MODE = true
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -172,6 +175,12 @@ serve(async (req) => {
 
     if (findError) {
       console.error('Error finding member:', findError)
+      if (DEBUG_MODE) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'find_member_for_claim failed', details: findError }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
       return new Response(
         JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -180,6 +189,13 @@ serve(async (req) => {
 
     // No member found - return generic message (don't reveal non-existence)
     if (!result || result.length === 0) {
+      console.log('No member found for identifier:', identifier)
+      if (DEBUG_MODE) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'No member found', identifier }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        )
+      }
       return new Response(
         JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -188,8 +204,17 @@ serve(async (req) => {
 
     const memberInfo = result[0]
 
+    console.log('Member found:', memberInfo)
+
     // Member can't claim (already has account)
     if (!memberInfo.can_claim) {
+      console.log('Member cannot claim:', memberInfo.reason)
+      if (DEBUG_MODE) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Member cannot claim', reason: memberInfo.reason }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
       return new Response(
         JSON.stringify({
           success: true,
@@ -208,11 +233,19 @@ serve(async (req) => {
 
     if (memberError || !member) {
       console.error('Error fetching member:', memberError)
+      if (DEBUG_MODE) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Error fetching member details', details: memberError }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
       return new Response(
         JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
+
+    console.log('Member details:', member)
 
     // Create claim token
     const { data: tokenResult, error: tokenError } = await supabase.rpc('create_claim_token', {
@@ -223,11 +256,19 @@ serve(async (req) => {
 
     if (tokenError || !tokenResult) {
       console.error('Token creation error:', tokenError)
+      if (DEBUG_MODE) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Token creation failed', details: tokenError }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
       return new Response(
         JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
+
+    console.log('Token created successfully')
 
     const plainToken = tokenResult as string
 
@@ -262,6 +303,12 @@ serve(async (req) => {
     if (!emailResponse.ok) {
       const responseText = await emailResponse.text()
       console.error('Resend error:', emailResponse.status, responseText)
+      if (DEBUG_MODE) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Resend email failed', status: emailResponse.status, details: responseText }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
       return new Response(
         JSON.stringify({
           success: true,
@@ -271,6 +318,8 @@ serve(async (req) => {
       )
     }
 
+    console.log('Email sent successfully to:', member.email)
+
     // Always return generic success
     return new Response(
       JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
@@ -278,6 +327,12 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in request-claim-email:', error)
+    if (DEBUG_MODE) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unexpected error', details: String(error) }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
     return new Response(
       JSON.stringify({ success: true, message: GENERIC_SUCCESS_MESSAGE }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
