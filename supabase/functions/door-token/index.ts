@@ -148,13 +148,14 @@ serve(async (req) => {
   }
 })
 
-// Generate a unique 8-digit numeric code
+// Generate a unique numeric code that fits in 24-bit Wiegand data
+// Range: 1000000-16777215 (7-8 digits, max 24 bits for 26-bit Wiegand)
 async function generateUniqueCode(
   supabase: ReturnType<typeof createClient>
 ): Promise<string> {
   for (let attempt = 0; attempt < 10; attempt++) {
-    // Generate random 8-digit number (10000000-99999999)
-    const code = String(Math.floor(10000000 + Math.random() * 90000000))
+    // Max 24-bit value = 16777215, min 7 digits = 1000000
+    const code = String(Math.floor(1000000 + Math.random() * 15777215))
 
     // Check if code already exists (unlikely but safe)
     const { data } = await supabase

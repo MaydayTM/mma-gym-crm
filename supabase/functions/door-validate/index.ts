@@ -84,12 +84,39 @@ serve(async (req) => {
       return jsonResponse({ allowed: false, reason: 'invalid_token' })
     }
 
-    // Look up the token code in door_tokens table
-    const { data: doorToken } = await supabase
+    // Strip Wiegand 26-bit parity encoding if present
+    // ESP32 Wiegand scanners wrap QR numeric content in 26-bit format:
+    // P1 (1 bit) + Data (24 bits) + P2 (1 bit)
+    // To recover original: (cardCode >> 1) & 0xFFFFFF
+    const rawCode = tokenCode
+    const numericCode = parseInt(tokenCode)
+    let lookupCode = tokenCode
+
+    if (!isNaN(numericCode) && numericCode > 0) {
+      const decodedCode = String((numericCode >>> 1) & 0xFFFFFF)
+      // Use decoded code for lookup (ESP32 sends Wiegand-encoded)
+      lookupCode = decodedCode
+    }
+
+    // Try decoded code first (ESP32 Wiegand), then raw code (web CRM fallback)
+    let doorToken = null
+    const { data: decodedMatch } = await supabase
       .from('door_tokens')
       .select('id, member_id, token_code, expires_at, used_at')
-      .eq('token_code', tokenCode)
+      .eq('token_code', lookupCode)
       .single()
+
+    if (decodedMatch) {
+      doorToken = decodedMatch
+    } else if (lookupCode !== rawCode) {
+      // Fallback: try the raw code as-is (in case it's from web CRM or direct API)
+      const { data: rawMatch } = await supabase
+        .from('door_tokens')
+        .select('id, member_id, token_code, expires_at, used_at')
+        .eq('token_code', rawCode)
+        .single()
+      doorToken = rawMatch
+    }
 
     if (!doorToken) {
       await logAccess(supabase, null, tokenCode, false, 'token_not_found', doorLocation)
