@@ -1978,6 +1978,42 @@ export type Database = {
           },
         ]
       }
+      gym_access_settings: {
+        Row: {
+          access_mode: string
+          created_at: string
+          grace_period_minutes: number
+          id: string
+          minutes_before_class: number
+          open_gym_hours: Json
+          team_roles_bypass: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_mode?: string
+          created_at?: string
+          grace_period_minutes?: number
+          id?: string
+          minutes_before_class?: number
+          open_gym_hours?: Json
+          team_roles_bypass?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Update: {
+          access_mode?: string
+          created_at?: string
+          grace_period_minutes?: number
+          id?: string
+          minutes_before_class?: number
+          open_gym_hours?: Json
+          team_roles_bypass?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gymscreen_settings: {
         Row: {
           api_key: string | null
@@ -3727,6 +3763,42 @@ export type Database = {
           },
         ]
       }
+      sc_program_templates: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          description: string | null
+          duration_weeks: number
+          id: string
+          is_public: boolean
+          name: string
+          track_id: Database["public"]["Enums"]["sc_track_id"]
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          description?: string | null
+          duration_weeks: number
+          id?: string
+          is_public?: boolean
+          name: string
+          track_id: Database["public"]["Enums"]["sc_track_id"]
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          description?: string | null
+          duration_weeks?: number
+          id?: string
+          is_public?: boolean
+          name?: string
+          track_id?: Database["public"]["Enums"]["sc_track_id"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       sc_programs: {
         Row: {
           athlete_id: string
@@ -3922,6 +3994,50 @@ export type Database = {
             columns: ["microcycle_id"]
             isOneToOne: false
             referencedRelation: "sc_microcycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sc_template_mesocycles: {
+        Row: {
+          created_at: string | null
+          duration_weeks: number
+          focus: string | null
+          id: string
+          method_ids: string[]
+          name: string
+          order_index: number
+          template_id: string
+          week_template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_weeks: number
+          focus?: string | null
+          id?: string
+          method_ids?: string[]
+          name: string
+          order_index: number
+          template_id: string
+          week_template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_weeks?: number
+          focus?: string | null
+          id?: string
+          method_ids?: string[]
+          name?: string
+          order_index?: number
+          template_id?: string
+          week_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sc_template_mesocycles_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "sc_program_templates"
             referencedColumns: ["id"]
           },
         ]

@@ -1,7 +1,7 @@
 // supabase/functions/door-validate/index.ts
 // Called by ESP32 to validate QR code and grant/deny door access
+// Supports 3 access modes: subscription_only, reservation_required, open_gym
 // deno-lint-ignore-file no-explicit-any
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
@@ -40,6 +40,15 @@ interface ValidateRequest {
   qr: string
   door_id?: string
 }
+
+interface AccessSettings {
+  access_mode: 'subscription_only' | 'reservation_required' | 'open_gym'
+  minutes_before_class: number
+  grace_period_minutes: number
+  open_gym_hours: { day: number; open: string; close: string }[]
+}
+
+const TEAM_ROLES = ['admin', 'medewerker', 'coordinator', 'coach']
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -95,7 +104,7 @@ serve(async (req) => {
     let payload: { member_id: string; exp: number }
     try {
       payload = await verify(qrToken, key) as { member_id: string; exp: number }
-    } catch (jwtError) {
+    } catch (_jwtError) {
       // Invalid or expired JWT
       await logAccess(supabase, null, qrToken, false, 'invalid_token', doorLocation)
       return jsonResponse({ allowed: false, reason: 'invalid_token' })
@@ -144,47 +153,105 @@ serve(async (req) => {
       })
     }
 
-    // Team roles (admin, medewerker, coordinator, coach) have unlimited access
-    // They don't need an active subscription or reservation
-    const TEAM_ROLES = ['admin', 'medewerker', 'coordinator', 'coach']
+    // Team roles always have access - skip all further checks
     const isTeamMember = TEAM_ROLES.includes(member.role)
+    if (isTeamMember) {
+      await logAccess(supabase, memberId, qrToken, true, null, doorLocation)
+      await updateLastCheckin(supabase, memberId)
+      return jsonResponse({
+        allowed: true,
+        member_name: `${member.first_name} ${member.last_name}`,
+        member_id: memberId
+      })
+    }
 
-    // Only check subscription for non-team members (fighters)
-    if (!isTeamMember) {
-      const { data: subscription } = await supabase
-        .from('member_subscriptions')
-        .select('id, end_date')
-        .eq('member_id', memberId)
-        .eq('status', 'active')
-        .gte('end_date', new Date().toISOString().split('T')[0])
-        .order('end_date', { ascending: false })
-        .limit(1)
-        .single()
+    // Non-team member: check active subscription first (required for all modes)
+    const { data: subscription } = await supabase
+      .from('member_subscriptions')
+      .select('id, end_date')
+      .eq('member_id', memberId)
+      .eq('status', 'active')
+      .gte('end_date', new Date().toISOString().split('T')[0])
+      .order('end_date', { ascending: false })
+      .limit(1)
+      .single()
 
-      if (!subscription) {
-        await logAccess(supabase, memberId, qrToken, false, 'no_active_subscription', doorLocation)
+    if (!subscription) {
+      await logAccess(supabase, memberId, qrToken, false, 'no_active_subscription', doorLocation)
+      return jsonResponse({
+        allowed: false,
+        reason: 'no_active_subscription',
+        member_name: `${member.first_name} ${member.last_name}`
+      })
+    }
+
+    // Load access settings
+    const accessSettings = await getAccessSettings(supabase)
+
+    // Apply access mode rules
+    if (accessSettings.access_mode === 'subscription_only') {
+      // Active subscription is enough - already verified above
+      await logAccess(supabase, memberId, qrToken, true, null, doorLocation)
+      await updateLastCheckin(supabase, memberId)
+      return jsonResponse({
+        allowed: true,
+        member_name: `${member.first_name} ${member.last_name}`,
+        member_id: memberId
+      })
+    }
+
+    if (accessSettings.access_mode === 'reservation_required') {
+      // Check if member has a reservation for a class within the time window
+      const hasReservation = await checkReservationAccess(
+        supabase,
+        memberId,
+        accessSettings.minutes_before_class,
+        accessSettings.grace_period_minutes
+      )
+
+      if (!hasReservation) {
+        await logAccess(supabase, memberId, qrToken, false, 'no_reservation', doorLocation)
         return jsonResponse({
           allowed: false,
-          reason: 'no_active_subscription',
+          reason: 'no_reservation',
           member_name: `${member.first_name} ${member.last_name}`
         })
       }
+
+      await logAccess(supabase, memberId, qrToken, true, null, doorLocation)
+      await updateLastCheckin(supabase, memberId)
+      return jsonResponse({
+        allowed: true,
+        member_name: `${member.first_name} ${member.last_name}`,
+        member_id: memberId
+      })
     }
 
-    // All checks passed - grant access!
-    await logAccess(supabase, memberId, qrToken, true, null, doorLocation)
+    if (accessSettings.access_mode === 'open_gym') {
+      // Check if current time is within open gym hours
+      const isWithinHours = checkOpenGymHours(accessSettings.open_gym_hours)
 
-    // Update last check-in timestamp
-    await supabase
-      .from('members')
-      .update({ last_checkin_at: new Date().toISOString() })
-      .eq('id', memberId)
+      if (!isWithinHours) {
+        await logAccess(supabase, memberId, qrToken, false, 'outside_hours', doorLocation)
+        return jsonResponse({
+          allowed: false,
+          reason: 'outside_hours',
+          member_name: `${member.first_name} ${member.last_name}`
+        })
+      }
 
-    return jsonResponse({
-      allowed: true,
-      member_name: `${member.first_name} ${member.last_name}`,
-      member_id: memberId
-    })
+      await logAccess(supabase, memberId, qrToken, true, null, doorLocation)
+      await updateLastCheckin(supabase, memberId)
+      return jsonResponse({
+        allowed: true,
+        member_name: `${member.first_name} ${member.last_name}`,
+        member_id: memberId
+      })
+    }
+
+    // Fallback: unknown mode, deny
+    await logAccess(supabase, memberId, qrToken, false, 'unknown_mode', doorLocation)
+    return jsonResponse({ allowed: false, reason: 'system_error' })
 
   } catch (error) {
     console.error('Door validate error:', error)
@@ -202,6 +269,121 @@ serve(async (req) => {
     return jsonResponse({ allowed: false, reason: 'system_error' })
   }
 })
+
+// Load access settings from DB (with sensible defaults)
+async function getAccessSettings(
+  supabase: ReturnType<typeof createClient>
+): Promise<AccessSettings> {
+  const { data } = await supabase
+    .from('gym_access_settings')
+    .select('access_mode, minutes_before_class, grace_period_minutes, open_gym_hours')
+    .eq('tenant_id', 'reconnect-academy')
+    .single()
+
+  if (!data) {
+    // Fallback defaults if no settings configured
+    return {
+      access_mode: 'subscription_only',
+      minutes_before_class: 30,
+      grace_period_minutes: 10,
+      open_gym_hours: [],
+    }
+  }
+
+  return {
+    access_mode: data.access_mode as AccessSettings['access_mode'],
+    minutes_before_class: data.minutes_before_class,
+    grace_period_minutes: data.grace_period_minutes,
+    open_gym_hours: (data.open_gym_hours || []) as AccessSettings['open_gym_hours'],
+  }
+}
+
+// Check if member has a reservation for a class happening now (within time window)
+async function checkReservationAccess(
+  supabase: ReturnType<typeof createClient>,
+  memberId: string,
+  minutesBefore: number,
+  gracePeriodMinutes: number
+): Promise<boolean> {
+  const now = new Date()
+  const today = now.toISOString().split('T')[0] // YYYY-MM-DD
+  const currentDayOfWeek = now.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+
+  // Get all reservations for today that are not cancelled
+  const { data: reservations } = await supabase
+    .from('reservations')
+    .select(`
+      id,
+      class_id,
+      status,
+      classes!inner (
+        start_time,
+        end_time,
+        day_of_week
+      )
+    `)
+    .eq('member_id', memberId)
+    .eq('reservation_date', today)
+    .in('status', ['reserved', 'checked_in'])
+
+  if (!reservations || reservations.length === 0) {
+    return false
+  }
+
+  // Check if any reservation's class is within the time window
+  const currentTime = now.getHours() * 60 + now.getMinutes() // minutes since midnight
+
+  for (const res of reservations) {
+    const classData = res.classes as any
+    if (!classData?.start_time) continue
+
+    // Parse class start_time (HH:MM:SS or HH:MM format)
+    const [startH, startM] = classData.start_time.split(':').map(Number)
+    const classStartMin = startH * 60 + startM
+
+    // Time window: (class start - minutesBefore) to (class start + gracePeriod)
+    const windowOpen = classStartMin - minutesBefore
+    const windowClose = classStartMin + gracePeriodMinutes
+
+    if (currentTime >= windowOpen && currentTime <= windowClose) {
+      return true
+    }
+  }
+
+  return false
+}
+
+// Check if current time is within open gym hours
+function checkOpenGymHours(
+  hours: { day: number; open: string; close: string }[]
+): boolean {
+  // Use Europe/Brussels timezone for Belgian gym
+  const now = new Date()
+  const brusselsTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Brussels' }))
+  const currentDay = brusselsTime.getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+  const currentMinutes = brusselsTime.getHours() * 60 + brusselsTime.getMinutes()
+
+  const todayHours = hours.find(h => h.day === currentDay)
+  if (!todayHours) return false
+
+  const [openH, openM] = todayHours.open.split(':').map(Number)
+  const [closeH, closeM] = todayHours.close.split(':').map(Number)
+  const openMin = openH * 60 + openM
+  const closeMin = closeH * 60 + closeM
+
+  return currentMinutes >= openMin && currentMinutes <= closeMin
+}
+
+// Update last check-in timestamp
+async function updateLastCheckin(
+  supabase: ReturnType<typeof createClient>,
+  memberId: string
+) {
+  await supabase
+    .from('members')
+    .update({ last_checkin_at: new Date().toISOString() })
+    .eq('id', memberId)
+}
 
 // Helper to log access attempts
 async function logAccess(

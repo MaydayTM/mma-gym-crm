@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { Settings as SettingsIcon, Building2, Users, Bell, Palette, Shield, CreditCard, Calendar, UserPlus } from 'lucide-react'
+import { Settings as SettingsIcon, Building2, Users, Bell, Palette, Shield, CreditCard, Calendar, UserPlus, DoorOpen } from 'lucide-react'
 import { PaymentSettings } from '../components/settings/PaymentSettings'
 import { ScheduleSettings } from '../components/settings/ScheduleSettings'
 import { RolesSettings } from '../components/settings/RolesSettings'
 import { SecuritySettings } from '../components/settings/SecuritySettings'
 import { OnboardingSettings } from '../components/settings/OnboardingSettings'
+import { AccessSettings } from '../components/settings/AccessSettings'
 import { usePermissions } from '../hooks/usePermissions'
 
-type SettingsTab = 'overview' | 'payments' | 'schedule' | 'profile' | 'users' | 'notifications' | 'branding' | 'security' | 'onboarding'
+type SettingsTab = 'overview' | 'payments' | 'schedule' | 'profile' | 'users' | 'notifications' | 'branding' | 'security' | 'onboarding' | 'access'
 
 const settingsSections = [
   {
@@ -82,6 +83,15 @@ const settingsSections = [
     available: true,
     adminOnly: true,
   },
+  {
+    id: 'access' as SettingsTab,
+    title: 'Deur Toegang',
+    description: 'Toegangsregels voor QR deur scanner',
+    icon: DoorOpen,
+    color: 'sky',
+    available: true,
+    adminOnly: true,
+  },
 ]
 
 const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
@@ -116,6 +126,8 @@ export function Settings() {
         return <RolesSettings />
       case 'security':
         return <SecuritySettings />
+      case 'access':
+        return <AccessSettings />
       case 'overview':
       default:
         return <SettingsOverview onSectionClick={handleSectionClick} />
