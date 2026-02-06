@@ -1,9 +1,9 @@
 // supabase/functions/door-token/index.ts
-// Generates a short-lived JWT QR token for a member to use at the door
+// Generates a short-lived numeric token for door QR access
+// Uses short codes instead of JWT for Wiegand scanner compatibility
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
-import { create } from "https://deno.land/x/djwt@v2.8/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +14,9 @@ interface TokenRequest {
   member_id: string
 }
 
+const TEAM_ROLES = ['admin', 'medewerker', 'coordinator', 'coach']
+const TOKEN_EXPIRY_MINUTES = 5
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -23,11 +26,6 @@ serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const JWT_SECRET = Deno.env.get('DOOR_JWT_SECRET')
-
-    if (!JWT_SECRET) {
-      throw new Error('DOOR_JWT_SECRET not configured')
-    }
 
     // Authentication required - extract Bearer token from Authorization header
     const authHeader = req.headers.get('Authorization')
@@ -91,13 +89,12 @@ serve(async (req) => {
       }, 403)
     }
 
-    // Team roles (admin, medewerker, coordinator, coach) always have access
-    const TEAM_ROLES = ['admin', 'medewerker', 'coordinator', 'coach']
+    // Team roles always have access - skip subscription check
     const isTeamMember = TEAM_ROLES.includes(member.role)
 
     // Only check subscription for non-team members
     if (!isTeamMember) {
-      const { data: subscription, error: subError } = await supabase
+      const { data: subscription } = await supabase
         .from('member_subscriptions')
         .select('id, end_date, status')
         .eq('member_id', member_id)
@@ -107,67 +104,72 @@ serve(async (req) => {
         .limit(1)
         .single()
 
-      if (subError || !subscription) {
+      if (!subscription) {
         return jsonResponse({
           error: isStaff ? 'No active subscription found' : 'Access denied'
         }, 403)
       }
     }
 
-    // Generate JWT token (15 minutes expiry)
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(JWT_SECRET),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign", "verify"]
-    )
+    // Generate a unique short numeric code
+    const tokenCode = await generateUniqueCode(supabase)
 
-    const expiryMinutes = 15
-    const token = await create(
-      { alg: "HS256", typ: "JWT" },
-      {
+    // Delete any existing tokens for this member (one active token per member)
+    await supabase
+      .from('door_tokens')
+      .delete()
+      .eq('member_id', member.id)
+
+    // Store new token with expiry
+    const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MINUTES * 60 * 1000)
+
+    const { error: insertError } = await supabase
+      .from('door_tokens')
+      .insert({
         member_id: member.id,
-        name: `${member.first_name} ${member.last_name}`,
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (expiryMinutes * 60)
-      },
-      key
-    )
+        token_code: tokenCode,
+        expires_at: expiresAt.toISOString(),
+      })
 
-    // Hash the token with SHA-256 before storing (security best practice)
-    const tokenHash = await hashToken(token)
-
-    // Store only the hash in members table (prevents token theft from DB)
-    const { error: updateError } = await supabase
-      .from('members')
-      .update({ qr_token: tokenHash })
-      .eq('id', member_id)
-
-    if (updateError) {
-      console.error('Failed to store token:', updateError)
+    if (insertError) {
+      console.error('Failed to store token:', insertError)
       throw new Error('Failed to store token')
     }
 
     return jsonResponse({
-      qr_token: token,
-      expires_in: expiryMinutes * 60, // seconds
+      qr_token: tokenCode,
+      expires_in: TOKEN_EXPIRY_MINUTES * 60, // seconds
       member_name: `${member.first_name} ${member.last_name}`
     })
 
   } catch (error) {
     console.error('Door token error:', error)
-    return jsonResponse({ error: error.message || 'Internal server error' }, 500)
+    return jsonResponse({ error: (error as Error).message || 'Internal server error' }, 500)
   }
 })
 
-// Helper to hash tokens for secure storage
-async function hashToken(token: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(token)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+// Generate a unique 8-digit numeric code
+async function generateUniqueCode(
+  supabase: ReturnType<typeof createClient>
+): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    // Generate random 8-digit number (10000000-99999999)
+    const code = String(Math.floor(10000000 + Math.random() * 90000000))
+
+    // Check if code already exists (unlikely but safe)
+    const { data } = await supabase
+      .from('door_tokens')
+      .select('id')
+      .eq('token_code', code)
+      .single()
+
+    if (!data) {
+      return code // Code is unique
+    }
+  }
+
+  // Extremely unlikely fallback
+  throw new Error('Could not generate unique code')
 }
 
 // Helper for JSON responses

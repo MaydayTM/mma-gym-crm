@@ -11,7 +11,7 @@ import { useMemberBelts } from '../../hooks/useMemberBelts';
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default function QRCodeScreen() {
-  const { profile, isLoading: authLoading } = useAuth();
+  const { profile, session, isLoading: authLoading } = useAuth();
   const { highestBelt } = useMemberBelts(profile?.id);
   const [qrToken, setQrToken] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -20,9 +20,9 @@ export default function QRCodeScreen() {
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch JWT token from Edge Function
+  // Fetch door access token from Edge Function
   const fetchToken = useCallback(async () => {
-    if (!profile?.id) return;
+    if (!profile?.id || !session?.access_token) return;
 
     setIsRefreshing(true);
     try {
@@ -30,6 +30,7 @@ export default function QRCodeScreen() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ member_id: profile.id }),
       });
@@ -75,7 +76,7 @@ export default function QRCodeScreen() {
     } finally {
       setIsRefreshing(false);
     }
-  }, [profile?.id]);
+  }, [profile?.id, session?.access_token]);
 
   useEffect(() => {
     fetchToken();
