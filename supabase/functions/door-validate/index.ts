@@ -12,6 +12,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Rate limiting: max 10 attempts per minute per door_id
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(doorId: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(doorId)
+
+  // Clean up expired entries periodically
+  if (rateLimitMap.size > 100) {
+    for (const [key, val] of rateLimitMap) {
+      if (val.resetAt < now) rateLimitMap.delete(key)
+    }
+  }
+
+  if (!entry || entry.resetAt < now) {
+    rateLimitMap.set(doorId, { count: 1, resetAt: now + 60_000 })
+    return true
+  }
+
+  entry.count++
+  if (entry.count > 10) return false
+  return true
+}
+
 interface ValidateRequest {
   qr: string
   door_id?: string
@@ -41,13 +65,15 @@ serve(async (req) => {
   let doorLocation = 'main'
 
   try {
-    // TODO: Add rate limiting - max 10 attempts per minute per door_id
-    // Can use Deno.KV or in-memory Map with timestamp cleanup
-    // Example: const rateLimitKey = `door-validate:${doorLocation}:${clientIP}`
-
     const body = await req.json() as ValidateRequest
     qrToken = body.qr || ''
     doorLocation = body.door_id || 'main'
+
+    // Rate limit: max 10 attempts per minute per door_id
+    if (!checkRateLimit(doorLocation)) {
+      await logAccess(supabase, null, qrToken.substring(0, 20), false, 'rate_limited', doorLocation)
+      return jsonResponse({ allowed: false, reason: 'rate_limited' }, 429)
+    }
 
     if (!qrToken) {
       throw new Error('No QR token provided')

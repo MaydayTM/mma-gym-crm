@@ -245,7 +245,6 @@ serve(async (req) => {
     const resendApiKey = Deno.env.get('RESEND_API_KEY')
 
     console.log('API Key exists:', !!anthropicApiKey)
-    console.log('API Key starts with:', anthropicApiKey?.substring(0, 10) + '...')
     console.log('Supabase URL exists:', !!supabaseUrl)
     console.log('Service Key exists:', !!supabaseServiceKey)
 
@@ -273,10 +272,11 @@ serve(async (req) => {
     }
 
     // Get user's member profile for context
+    // NOTE: members.id != auth user id. Use auth_user_id column.
     const { data: userMember } = await supabase
       .from('members')
       .select('role, first_name, last_name')
-      .eq('id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     const isStaff = ['admin', 'medewerker', 'coordinator', 'coach'].includes(userMember?.role || '')
@@ -622,7 +622,6 @@ serve(async (req) => {
 async function classifyQuestion(question: string, apiKey: string): Promise<QueryType> {
   try {
     console.log('Classifying question:', question)
-    console.log('Using API key starting with:', apiKey?.substring(0, 15) + '...')
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

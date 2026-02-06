@@ -52,10 +52,11 @@ serve(async (req) => {
     }
 
     // Get the requesting user's member profile to check role
+    // NOTE: members.id != auth user id. Use auth_user_id column.
     const { data: requestingMember, error: memberError } = await supabaseAdmin
       .from('members')
       .select('role')
-      .eq('id', requestingUser.id)
+      .eq('auth_user_id', requestingUser.id)
       .single()
 
     if (memberError || !requestingMember) {
@@ -82,10 +83,11 @@ serve(async (req) => {
     }
 
     // Get the target user's role
+    // user_id here is the auth user id passed from the frontend
     const { data: targetMember, error: targetError } = await supabaseAdmin
       .from('members')
       .select('role, first_name, last_name')
-      .eq('id', user_id)
+      .eq('auth_user_id', user_id)
       .single()
 
     if (targetError || !targetMember) {

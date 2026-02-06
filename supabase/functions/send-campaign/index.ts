@@ -269,10 +269,11 @@ serve(async (req) => {
     }
 
     // Check if user is staff
+    // NOTE: members.id != auth user id. Use auth_user_id column.
     const { data: userMember } = await supabase
       .from('members')
       .select('role')
-      .eq('id', user.id)
+      .eq('auth_user_id', user.id)
       .single()
 
     if (!['admin', 'medewerker'].includes(userMember?.role || '')) {

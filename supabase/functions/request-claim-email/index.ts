@@ -140,8 +140,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  // DEBUG MODE - temporarily expose errors for debugging
-  const DEBUG_MODE = true
+  // DEBUG MODE - disable in production to prevent information leakage
+  const DEBUG_MODE = Deno.env.get('DEBUG_MODE') === 'true'
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
