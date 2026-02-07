@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Plus, Loader2, Trash2, Filter, ChevronLeft, ChevronRight, Calendar, CheckSquare, Square, X } from 'lucide-react'
+import { useState, useMemo, useRef, useCallback } from 'react'
+import { Plus, Loader2, Trash2, Filter, ChevronLeft, ChevronRight, Calendar, CheckSquare, Square, X, Camera } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { useClasses, useCreateClass, useCreateRecurringClass, useUpdateClass, useDeleteClass, useBulkDeleteClasses } from '../hooks/useClasses'
 import { useDisciplines } from '../hooks/useDisciplines'
@@ -7,6 +7,8 @@ import { useMembers } from '../hooks/useMembers'
 import { useClassTracks } from '../hooks/useClassTracks'
 import { useRooms } from '../hooks/useRooms'
 import { usePermissions } from '../hooks/usePermissions'
+import { supabase } from '../lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 
 const DAYS = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag']
 const DAYS_SHORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
@@ -148,9 +150,44 @@ export function Schedule() {
 
   const { canManageSchedule } = usePermissions()
   const { data: classes, isLoading } = useClasses()
+  const { data: disciplines } = useDisciplines()
   const { data: rooms } = useRooms()
   const { mutate: updateClass } = useUpdateClass()
   const { mutate: bulkDeleteClasses, isPending: isBulkDeleting } = useBulkDeleteClasses()
+  const queryClient = useQueryClient()
+  const disciplineFileRef = useRef<HTMLInputElement>(null)
+  const [uploadingDisciplineId, setUploadingDisciplineId] = useState<string | null>(null)
+
+  const handleDisciplineImageUpload = useCallback(async (disciplineId: string, file: File) => {
+    setUploadingDisciplineId(disciplineId)
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `disciplines/${disciplineId}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(path, file, { cacheControl: '3600', upsert: true })
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage.from('assets').getPublicUrl(path)
+      if (!urlData?.publicUrl) throw new Error('Failed to get public URL')
+
+      // Add cache-bust param so browsers refetch
+      const imageUrl = `${urlData.publicUrl}?t=${Date.now()}`
+      const { error: updateError } = await supabase
+        .from('disciplines')
+        .update({ image_url: imageUrl })
+        .eq('id', disciplineId)
+      if (updateError) throw updateError
+
+      queryClient.invalidateQueries({ queryKey: ['disciplines'] })
+    } catch (err) {
+      console.error('Discipline image upload failed:', err)
+      alert('Upload mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout'))
+    } finally {
+      setUploadingDisciplineId(null)
+    }
+  }, [queryClient])
 
   // Toggle class selection
   const toggleClassSelection = (classId: string) => {
@@ -607,21 +644,47 @@ export function Schedule() {
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-6">
         {/* Discipline legend */}
-        {classes && classes.length > 0 && (
-          <div className="flex flex-wrap gap-4">
-            {Array.from(new Set(classes.map((c) => c.disciplines?.name))).map((name) => {
-              const discipline = classes.find((c) => c.disciplines?.name === name)?.disciplines
-              if (!discipline) return null
-              return (
-                <div key={name} className="flex items-center gap-2">
+        {disciplines && disciplines.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {disciplines.map((discipline) => (
+              <div key={discipline.id} className="flex items-center gap-2 group">
+                {discipline.image_url ? (
+                  <img
+                    src={discipline.image_url}
+                    alt={discipline.name}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                ) : (
                   <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: discipline.color }}
                   />
-                  <span className="text-[12px] text-neutral-400">{name}</span>
-                </div>
-              )
-            })}
+                )}
+                <span className="text-[12px] text-neutral-400">{discipline.name}</span>
+                {canManageSchedule && (
+                  <button
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-neutral-700"
+                    title="Afbeelding uploaden"
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = 'image/jpeg,image/png,image/webp'
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0]
+                        if (file) handleDisciplineImageUpload(discipline.id, file)
+                      }
+                      input.click()
+                    }}
+                  >
+                    {uploadingDisciplineId === discipline.id ? (
+                      <Loader2 className="w-3 h-3 text-neutral-400 animate-spin" />
+                    ) : (
+                      <Camera className="w-3 h-3 text-neutral-400" />
+                    )}
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         )}
 

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
+export type ClassCategory = 'group_session' | 'personal_session' | 'course';
+
 interface ClassSession {
   id: string;
   name: string;
@@ -10,11 +12,13 @@ interface ClassSession {
   max_capacity: number | null;
   room: string | null;
   is_active: boolean | null;
+  category: ClassCategory | null;
   // Joined data
   discipline?: {
     id: string;
     name: string;
     slug: string;
+    image_url: string | null;
   };
   coach?: {
     id: string;
@@ -26,6 +30,7 @@ interface ClassSession {
 
 interface UseClassesOptions {
   dayOfWeek?: number; // 0=Sunday, 1=Monday, etc.
+  category?: ClassCategory;
 }
 
 export function useClasses(options: UseClassesOptions = {}) {
@@ -42,7 +47,7 @@ export function useClasses(options: UseClassesOptions = {}) {
         .from('classes')
         .select(`
           *,
-          discipline:disciplines(id, name, slug),
+          discipline:disciplines(id, name, slug, image_url),
           coach:members!classes_coach_id_fkey(id, first_name, last_name, profile_picture_url)
         `)
         .eq('is_active', true)
@@ -51,6 +56,11 @@ export function useClasses(options: UseClassesOptions = {}) {
       // Filter by day of week if specified
       if (options.dayOfWeek !== undefined) {
         query = query.eq('day_of_week', options.dayOfWeek);
+      }
+
+      // Filter by category if specified
+      if (options.category) {
+        query = query.eq('category', options.category);
       }
 
       const { data, error: fetchError } = await query;
@@ -68,7 +78,7 @@ export function useClasses(options: UseClassesOptions = {}) {
 
   useEffect(() => {
     fetchClasses();
-  }, [options.dayOfWeek]);
+  }, [options.dayOfWeek, options.category]);
 
   return {
     classes,

@@ -1,10 +1,28 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
-import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Image, Dimensions } from 'react-native';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useClasses, formatClassTime } from '../../hooks/useClasses';
+import { useClasses, formatClassTime, ClassCategory } from '../../hooks/useClasses';
 import { useReservations } from '../../hooks/useReservations';
 
-const DAYS = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const DAY_BUTTON_WIDTH = 48;
+const DAY_BUTTON_MARGIN = 4;
+const DAY_TOTAL_WIDTH = DAY_BUTTON_WIDTH + DAY_BUTTON_MARGIN * 2;
+
+const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+  'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December',
+];
+
+const DAY_LABELS = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+
+const CATEGORY_TABS: { key: ClassCategory | 'all'; label: string }[] = [
+  { key: 'all', label: 'Alle' },
+  { key: 'group_session', label: 'Groepslessen' },
+  { key: 'personal_session', label: 'Personal Training' },
+  { key: 'course', label: 'Cursussen' },
+];
 
 const disciplineIcons: Record<string, string> = {
   bjj: 'body',
@@ -12,19 +30,24 @@ const disciplineIcons: Record<string, string> = {
   kickboxing: 'flash',
   wrestling: 'fitness',
   judo: 'body',
-  luta_livre: 'body',
+  'luta-livre': 'body',
+  'kids-bjj': 'happy',
+  'muay-thai': 'flash',
+  boksen: 'hand-left',
   default: 'barbell',
 };
 
-function getWeekDates(): Date[] {
+function getDates(weekOffset: number): Date[] {
   const today = new Date();
   const dayOfWeek = today.getDay();
-  // Start from Monday (day 1), unless today is Sunday (day 0)
+  // Monday of current week
   const monday = new Date(today);
   monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  // Shift by weekOffset * 7
+  monday.setDate(monday.getDate() + weekOffset * 7);
 
   const dates: Date[] = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 14; i++) {
     const date = new Date(monday);
     date.setDate(monday.getDate() + i);
     dates.push(date);
@@ -33,22 +56,43 @@ function getWeekDates(): Date[] {
 }
 
 export default function ScheduleScreen() {
-  const weekDates = getWeekDates();
   const today = new Date();
-  const todayIndex = weekDates.findIndex(d =>
-    d.toDateString() === today.toDateString()
-  );
-
-  const [selectedDay, setSelectedDay] = useState(todayIndex >= 0 ? todayIndex : 0);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<ClassCategory | 'all'>('all');
   const [reservedClasses, setReservedClasses] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
+  const dayScrollRef = useRef<ScrollView>(null);
 
-  const selectedDate = weekDates[selectedDay];
-  // Convert to day_of_week (0=Sunday, 1=Monday, etc.)
+  const dates = useMemo(() => getDates(weekOffset), [weekOffset]);
+
+  // Find today's index in the dates array
+  const todayIndex = dates.findIndex(d => d.toDateString() === today.toDateString());
+  const [selectedDayIndex, setSelectedDayIndex] = useState(todayIndex >= 0 ? todayIndex : 0);
+
+  // Reset to first day when week changes (unless today is visible)
+  useEffect(() => {
+    const idx = dates.findIndex(d => d.toDateString() === today.toDateString());
+    setSelectedDayIndex(idx >= 0 ? idx : 0);
+  }, [weekOffset]);
+
+  // Auto-scroll to selected day
+  useEffect(() => {
+    if (dayScrollRef.current && selectedDayIndex > 0) {
+      const scrollX = Math.max(0, selectedDayIndex * DAY_TOTAL_WIDTH - (SCREEN_WIDTH - DAY_TOTAL_WIDTH) / 2);
+      dayScrollRef.current.scrollTo({ x: scrollX, animated: true });
+    }
+  }, [selectedDayIndex, weekOffset]);
+
+  const selectedDate = dates[selectedDayIndex];
   const dayOfWeek = selectedDate.getDay();
 
-  const { classes, isLoading, error, refetch } = useClasses({ dayOfWeek });
+  // Determine the month/year header from selected date
+  const headerMonth = MONTH_NAMES[selectedDate.getMonth()];
+  const headerYear = selectedDate.getFullYear();
+
+  const categoryFilter = selectedCategory === 'all' ? undefined : selectedCategory;
+  const { classes, isLoading, error, refetch } = useClasses({ dayOfWeek, category: categoryFilter });
   const { makeReservation, cancelReservation, getMyReservation, isLoading: reservationLoading } = useReservations();
-  const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -71,6 +115,8 @@ export default function ScheduleScreen() {
 
     if (classes.length > 0) {
       checkReservations();
+    } else {
+      setReservedClasses(new Set());
     }
   }, [classes]);
 
@@ -114,49 +160,90 @@ export default function ScheduleScreen() {
 
   const getIconName = (disciplineSlug?: string): string => {
     if (!disciplineSlug) return disciplineIcons.default;
-    const key = disciplineSlug.toLowerCase().replace(/[^a-z_]/g, '');
-    return disciplineIcons[key] || disciplineIcons.default;
+    return disciplineIcons[disciplineSlug] || disciplineIcons.default;
   };
 
-  // Get day label for display (Ma, Di, etc.) - weekDates starts from Monday
-  const getDayLabel = (index: number): string => {
-    // weekDates[0] = Monday, weekDates[6] = Sunday
-    const dayMapping = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
-    return dayMapping[index];
+  const navigateWeek = (direction: -1 | 1) => {
+    setWeekOffset(prev => prev + direction);
+  };
+
+  const goToToday = () => {
+    setWeekOffset(0);
   };
 
   return (
-    <View style={styles.container}>
-      {/* Day selector */}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Month header with navigation */}
+      <View style={styles.monthHeader}>
+        <TouchableOpacity style={styles.navArrow} onPress={() => navigateWeek(-1)}>
+          <Ionicons name="chevron-back" size={22} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={goToToday}>
+          <Text style={styles.monthTitle}>{headerMonth} {headerYear}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navArrow} onPress={() => navigateWeek(1)}>
+          <Ionicons name="chevron-forward" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* 14-day selector */}
       <ScrollView
+        ref={dayScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.daySelector}
         contentContainerStyle={styles.daySelectorContent}
       >
-        {weekDates.map((date, index) => {
+        {dates.map((date, index) => {
           const isToday = date.toDateString() === today.toDateString();
+          const isSelected = selectedDayIndex === index;
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
           return (
             <TouchableOpacity
               key={index}
               style={[
                 styles.dayButton,
-                selectedDay === index && styles.dayButtonActive,
-                isToday && selectedDay !== index && styles.dayButtonToday,
+                isSelected && styles.dayButtonActive,
+                isToday && !isSelected && styles.dayButtonToday,
               ]}
-              onPress={() => setSelectedDay(index)}
+              onPress={() => setSelectedDayIndex(index)}
             >
               <Text style={[
                 styles.dayText,
-                selectedDay === index && styles.dayTextActive,
+                isSelected && styles.dayTextActive,
+                isWeekend && !isSelected && styles.dayTextWeekend,
               ]}>
-                {getDayLabel(index)}
+                {DAY_LABELS[date.getDay()]}
               </Text>
               <Text style={[
                 styles.dayNumber,
-                selectedDay === index && styles.dayNumberActive,
+                isSelected && styles.dayNumberActive,
               ]}>
                 {date.getDate()}
+              </Text>
+              {isToday && !isSelected && <View style={styles.todayDot} />}
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {/* Category tabs */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryBar}
+        contentContainerStyle={styles.categoryBarContent}
+      >
+        {CATEGORY_TABS.map((tab) => {
+          const isActive = selectedCategory === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.categoryTab, isActive && styles.categoryTabActive]}
+              onPress={() => setSelectedCategory(tab.key)}
+            >
+              <Text style={[styles.categoryTabText, isActive && styles.categoryTabTextActive]}>
+                {tab.label}
               </Text>
             </TouchableOpacity>
           );
@@ -179,36 +266,78 @@ export default function ScheduleScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="calendar-outline" size={60} color="#333" />
           <Text style={styles.emptyText}>Geen lessen op deze dag</Text>
+          {selectedCategory !== 'all' && (
+            <TouchableOpacity style={styles.retryButton} onPress={() => setSelectedCategory('all')}>
+              <Text style={styles.retryText}>Toon alle categorieën</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <ScrollView
           style={styles.classList}
+          contentContainerStyle={styles.classListContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D4AF37" />
           }
         >
           {classes.map((cls) => {
             const isReserved = reservedClasses.has(cls.id);
+            const hasImage = !!cls.discipline?.image_url;
             return (
               <View key={cls.id} style={styles.classCard}>
-                <View style={styles.classIcon}>
-                  <Ionicons
-                    name={getIconName(cls.discipline?.slug) as any}
-                    size={24}
-                    color="#D4AF37"
-                  />
+                {/* Discipline image or icon fallback */}
+                <View style={styles.classImageContainer}>
+                  {hasImage ? (
+                    <Image
+                      source={{ uri: cls.discipline!.image_url! }}
+                      style={styles.classImage}
+                    />
+                  ) : (
+                    <View style={styles.classIconFallback}>
+                      <Ionicons
+                        name={getIconName(cls.discipline?.slug) as any}
+                        size={28}
+                        color="#D4AF37"
+                      />
+                    </View>
+                  )}
                 </View>
+
+                {/* Class info */}
                 <View style={styles.classInfo}>
-                  <Text style={styles.className}>{cls.name}</Text>
+                  <Text style={styles.className} numberOfLines={1}>{cls.name}</Text>
                   <Text style={styles.classTime}>
-                    {formatClassTime(cls.start_time)} - {formatClassTime(cls.end_time)}
+                    <Ionicons name="time-outline" size={13} color="#D4AF37" />
+                    {'  '}{formatClassTime(cls.start_time)} - {formatClassTime(cls.end_time)}
                   </Text>
                   {cls.coach && (
-                    <Text style={styles.classCoach}>
-                      Coach: {cls.coach.first_name} {cls.coach.last_name}
+                    <View style={styles.coachRow}>
+                      {cls.coach.profile_picture_url ? (
+                        <Image
+                          source={{ uri: cls.coach.profile_picture_url }}
+                          style={styles.coachAvatar}
+                        />
+                      ) : (
+                        <View style={styles.coachAvatarFallback}>
+                          <Text style={styles.coachInitial}>
+                            {cls.coach.first_name?.[0] || '?'}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.classCoach}>
+                        {cls.coach.first_name} {cls.coach.last_name}
+                      </Text>
+                    </View>
+                  )}
+                  {cls.max_capacity && (
+                    <Text style={styles.spotsText}>
+                      <Ionicons name="people-outline" size={12} color="#666" />
+                      {'  '}Max {cls.max_capacity} plaatsen
                     </Text>
                   )}
                 </View>
+
+                {/* Reserve button */}
                 <TouchableOpacity
                   style={[
                     styles.reserveButton,
@@ -219,8 +348,7 @@ export default function ScheduleScreen() {
                 >
                   {isReserved ? (
                     <>
-                      <Ionicons name="checkmark" size={16} color="#000" />
-                      <Text style={styles.reserveTextActive}>Gereserveerd</Text>
+                      <Ionicons name="checkmark-circle" size={18} color="#000" />
                     </>
                   ) : (
                     <Text style={styles.reserveText}>Reserveer</Text>
@@ -229,9 +357,11 @@ export default function ScheduleScreen() {
               </View>
             );
           })}
+          {/* Bottom spacing */}
+          <View style={{ height: 20 }} />
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -240,24 +370,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+
+  // Month header
+  monthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  navArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  monthTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+
+  // Day selector
   daySelector: {
-    maxHeight: 90,
+    maxHeight: 85,
     borderBottomWidth: 1,
-    borderBottomColor: '#222',
+    borderBottomColor: '#1a1a1a',
   },
   daySelectorContent: {
     paddingHorizontal: 10,
-    paddingVertical: 15,
-    gap: 8,
+    paddingVertical: 8,
+    gap: 0,
   },
   dayButton: {
-    width: 50,
-    height: 60,
-    borderRadius: 12,
+    width: DAY_BUTTON_WIDTH,
+    height: 66,
+    borderRadius: 14,
     backgroundColor: '#111',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: DAY_BUTTON_MARGIN,
   },
   dayButtonActive: {
     backgroundColor: '#D4AF37',
@@ -268,11 +422,15 @@ const styles = StyleSheet.create({
   },
   dayText: {
     color: '#666',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
+    textTransform: 'uppercase',
   },
   dayTextActive: {
     color: '#000',
+  },
+  dayTextWeekend: {
+    color: '#555',
   },
   dayNumber: {
     color: '#fff',
@@ -283,6 +441,46 @@ const styles = StyleSheet.create({
   dayNumberActive: {
     color: '#000',
   },
+  todayDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#D4AF37',
+    marginTop: 3,
+  },
+
+  // Category tabs
+  categoryBar: {
+    maxHeight: 50,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  categoryBarContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+    flexDirection: 'row',
+  },
+  categoryTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#1a1a1a',
+  },
+  categoryTabActive: {
+    backgroundColor: '#D4AF37',
+  },
+  categoryTabText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  categoryTabTextActive: {
+    color: '#000',
+    fontWeight: '700',
+  },
+
+  // Loading / empty states
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -300,73 +498,122 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     marginTop: 15,
-    backgroundColor: '#222',
+    backgroundColor: '#1a1a1a',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
   },
   retryText: {
     color: '#fff',
+    fontSize: 14,
   },
+
+  // Class list
   classList: {
     flex: 1,
+  },
+  classListContent: {
     padding: 15,
   },
+
+  // Class card
   classCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#111',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
   },
-  classIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  classImageContainer: {
+    marginRight: 14,
+  },
+  classImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 14,
     backgroundColor: '#222',
+  },
+  classIconFallback: {
+    width: 70,
+    height: 70,
+    borderRadius: 14,
+    backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   classInfo: {
     flex: 1,
+    gap: 3,
   },
   className: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   classTime: {
-    color: '#888',
+    color: '#D4AF37',
     fontSize: 14,
+    fontWeight: '600',
     marginTop: 2,
   },
+  coachRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+    gap: 6,
+  },
+  coachAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#333',
+  },
+  coachAvatarFallback: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  coachInitial: {
+    color: '#aaa',
+    fontSize: 10,
+    fontWeight: '700',
+  },
   classCoach: {
+    color: '#888',
+    fontSize: 13,
+  },
+  spotsText: {
     color: '#666',
     fontSize: 12,
     marginTop: 2,
   },
+
+  // Reserve button
   reserveButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#222',
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     borderRadius: 20,
-    gap: 4,
+    marginLeft: 8,
   },
   reserveButtonActive: {
     backgroundColor: '#D4AF37',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   reserveText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  reserveTextActive: {
-    color: '#000',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

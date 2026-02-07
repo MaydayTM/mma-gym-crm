@@ -1,4 +1,3 @@
-export type Json =
   | string
   | number
   | boolean
@@ -817,6 +816,7 @@ export type Database = {
       }
       classes: {
         Row: {
+          category: string | null
           coach_id: string | null
           created_at: string | null
           day_of_week: number
@@ -836,6 +836,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          category?: string | null
           coach_id?: string | null
           created_at?: string | null
           day_of_week: number
@@ -855,6 +856,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          category?: string | null
           coach_id?: string | null
           created_at?: string | null
           day_of_week?: number
@@ -1226,6 +1228,7 @@ export type Database = {
           created_at: string | null
           has_belt_system: boolean | null
           id: string
+          image_url: string | null
           is_active: boolean | null
           name: string
           slug: string
@@ -1237,6 +1240,7 @@ export type Database = {
           created_at?: string | null
           has_belt_system?: boolean | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           name: string
           slug: string
@@ -1248,6 +1252,7 @@ export type Database = {
           created_at?: string | null
           has_belt_system?: boolean | null
           id?: string
+          image_url?: string | null
           is_active?: boolean | null
           name?: string
           slug?: string
@@ -1430,6 +1435,62 @@ export type Database = {
           },
           {
             foreignKeyName: "door_access_logs_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      door_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          member_id: string
+          token_code: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          member_id: string
+          token_code: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          member_id?: string
+          token_code?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "door_tokens_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_today"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_tokens_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "gymscreen_birthdays_upcoming"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_tokens_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_retention_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "door_tokens_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
@@ -5388,6 +5449,7 @@ export type Database = {
         }[]
       }
       cleanup_expired_claim_tokens: { Args: never; Returns: number }
+      cleanup_expired_door_tokens: { Args: never; Returns: undefined }
       create_claim_token: {
         Args: { p_email: string; p_expires_hours?: number; p_member_id: string }
         Returns: string
