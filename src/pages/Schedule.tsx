@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Plus, Loader2, Trash2, Filter, ChevronLeft, ChevronRight, Calendar, CheckSquare, Square, X, Camera } from 'lucide-react'
 import { Modal } from '../components/ui'
 import { useClasses, useCreateClass, useCreateRecurringClass, useUpdateClass, useDeleteClass, useBulkDeleteClasses } from '../hooks/useClasses'
@@ -155,7 +155,6 @@ export function Schedule() {
   const { mutate: updateClass } = useUpdateClass()
   const { mutate: bulkDeleteClasses, isPending: isBulkDeleting } = useBulkDeleteClasses()
   const queryClient = useQueryClient()
-  const disciplineFileRef = useRef<HTMLInputElement>(null)
   const [uploadingDisciplineId, setUploadingDisciplineId] = useState<string | null>(null)
 
   const handleDisciplineImageUpload = useCallback(async (disciplineId: string, file: File) => {
@@ -657,7 +656,7 @@ export function Schedule() {
                 ) : (
                   <div
                     className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: discipline.color }}
+                    style={{ backgroundColor: discipline.color || '#6B7280' }}
                   />
                 )}
                 <span className="text-[12px] text-neutral-400">{discipline.name}</span>
