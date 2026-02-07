@@ -1,24 +1,57 @@
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { supabase } from '../lib/supabase';
+
+const AUTH_TIMEOUT_MS = 5000;
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
+    let settled = false;
+
+    const settle = (authenticated: boolean) => {
+      if (settled) return;
+      settled = true;
+      setIsAuthenticated(authenticated);
       setIsLoading(false);
-    });
+    };
+
+    // Timeout: if getSession() hangs, send to login after 5s
+    const timeout = setTimeout(() => {
+      console.warn('[Auth] getSession() timed out after', AUTH_TIMEOUT_MS, 'ms');
+      settle(false);
+    }, AUTH_TIMEOUT_MS);
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout);
+        settle(!!session);
+      })
+      .catch((err) => {
+        console.error('[Auth] getSession() error:', err);
+        clearTimeout(timeout);
+        settle(false);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
+      if (!settled) {
+        // If onAuthStateChange fires before getSession resolves, use it
+        clearTimeout(timeout);
+        settle(!!session);
+      } else {
+        // Normal auth state updates after initial load
+        setIsAuthenticated(!!session);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {

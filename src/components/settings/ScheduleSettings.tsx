@@ -1,6 +1,9 @@
-import { useState } from 'react'
-import { Calendar, Plus, Pencil, Trash2, Loader2, GripVertical } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Calendar, Plus, Pencil, Trash2, Loader2, GripVertical, Upload, ImageIcon } from 'lucide-react'
 import { useClassTracks, useCreateClassTrack, useUpdateClassTrack, useDeleteClassTrack } from '../../hooks/useClassTracks'
+import { useDisciplines } from '../../hooks/useDisciplines'
+import { supabase } from '../../lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 import { Modal } from '../ui'
 
 export function ScheduleSettings() {
@@ -9,6 +12,39 @@ export function ScheduleSettings() {
 
   const { data: tracks, isLoading } = useClassTracks(false) // Include inactive tracks
   const { mutate: deleteTrack, isPending: isDeleting } = useDeleteClassTrack()
+  const { data: disciplines } = useDisciplines()
+  const queryClient = useQueryClient()
+  const [uploadingDisciplineId, setUploadingDisciplineId] = useState<string | null>(null)
+
+  const handleDisciplineImageUpload = useCallback(async (disciplineId: string, file: File) => {
+    setUploadingDisciplineId(disciplineId)
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `disciplines/${disciplineId}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(path, file, { cacheControl: '3600', upsert: true })
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage.from('assets').getPublicUrl(path)
+      if (!urlData?.publicUrl) throw new Error('Failed to get public URL')
+
+      const imageUrl = `${urlData.publicUrl}?t=${Date.now()}`
+      const { error: updateError } = await supabase
+        .from('disciplines')
+        .update({ image_url: imageUrl })
+        .eq('id', disciplineId)
+      if (updateError) throw updateError
+
+      queryClient.invalidateQueries({ queryKey: ['disciplines'] })
+    } catch (err) {
+      console.error('Discipline image upload failed:', err)
+      alert('Upload mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout'))
+    } finally {
+      setUploadingDisciplineId(null)
+    }
+  }, [queryClient])
 
   const handleDelete = (id: string, name: string) => {
     if (confirm(`Weet je zeker dat je "${name}" wilt verwijderen? Lessen met deze track behouden hun track, maar deze wordt niet meer getoond.`)) {
@@ -116,6 +152,90 @@ export function ScheduleSettings() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Disciplines Card */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-medium text-white flex items-center gap-2">
+              <ImageIcon size={16} className="text-sky-400" />
+              Disciplines
+            </h3>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              Beheer afbeeldingen voor disciplines in de app en het rooster
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            {disciplines && disciplines.length > 0 ? (
+              disciplines.map((discipline) => (
+                <div
+                  key={discipline.id}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-neutral-900 border border-neutral-800"
+                >
+                  {/* Thumbnail or color dot */}
+                  {discipline.image_url ? (
+                    <img
+                      src={discipline.image_url}
+                      alt={discipline.name}
+                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div
+                      className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${discipline.color || '#6B7280'}20` }}
+                    >
+                      <div
+                        className="w-5 h-5 rounded-full"
+                        style={{ backgroundColor: discipline.color || '#6B7280' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Name */}
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium text-white">{discipline.name}</span>
+                    {discipline.image_url && (
+                      <p className="text-[11px] text-neutral-500 truncate">Afbeelding ingesteld</p>
+                    )}
+                  </div>
+
+                  {/* Upload button */}
+                  <button
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = 'image/jpeg,image/png,image/webp'
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0]
+                        if (file) handleDisciplineImageUpload(discipline.id, file)
+                      }
+                      input.click()
+                    }}
+                    disabled={uploadingDisciplineId === discipline.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 rounded-lg transition disabled:opacity-50 flex-shrink-0"
+                  >
+                    {uploadingDisciplineId === discipline.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Upload size={14} />
+                    )}
+                    {discipline.image_url ? 'Wijzigen' : 'Upload'}
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-neutral-500 text-sm">
+                Geen disciplines gevonden.
+              </div>
+            )}
+          </div>
+
+          <p className="text-[11px] text-neutral-500">
+            Aanbevolen: 400x400px, vierkant, JPG of PNG
+          </p>
         </div>
       </div>
 

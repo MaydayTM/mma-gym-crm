@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useClasses, formatClassTime, ClassCategory } from '../../hooks/useClasses';
+import { useClasses, formatClassTime } from '../../hooks/useClasses';
 import { useReservations } from '../../hooks/useReservations';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -16,13 +16,6 @@ const MONTH_NAMES = [
 ];
 
 const DAY_LABELS = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
-
-const CATEGORY_TABS: { key: ClassCategory | 'all'; label: string }[] = [
-  { key: 'all', label: 'Alle' },
-  { key: 'group_session', label: 'Groepslessen' },
-  { key: 'personal_session', label: 'Personal Training' },
-  { key: 'course', label: 'Cursussen' },
-];
 
 const disciplineIcons: Record<string, string> = {
   bjj: 'body',
@@ -58,7 +51,6 @@ function getDates(weekOffset: number): Date[] {
 export default function ScheduleScreen() {
   const today = new Date();
   const [weekOffset, setWeekOffset] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState<ClassCategory | 'all'>('all');
   const [reservedClasses, setReservedClasses] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const dayScrollRef = useRef<ScrollView>(null);
@@ -90,8 +82,7 @@ export default function ScheduleScreen() {
   const headerMonth = MONTH_NAMES[selectedDate.getMonth()];
   const headerYear = selectedDate.getFullYear();
 
-  const categoryFilter = selectedCategory === 'all' ? undefined : selectedCategory;
-  const { classes, isLoading, error, refetch } = useClasses({ dayOfWeek, category: categoryFilter });
+  const { classes, isLoading, error, refetch } = useClasses({ dayOfWeek, selectedDate });
   const { makeReservation, cancelReservation, getMyReservation, isLoading: reservationLoading } = useReservations();
 
   const onRefresh = useCallback(async () => {
@@ -227,29 +218,6 @@ export default function ScheduleScreen() {
         })}
       </ScrollView>
 
-      {/* Category tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryBar}
-        contentContainerStyle={styles.categoryBarContent}
-      >
-        {CATEGORY_TABS.map((tab) => {
-          const isActive = selectedCategory === tab.key;
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.categoryTab, isActive && styles.categoryTabActive]}
-              onPress={() => setSelectedCategory(tab.key)}
-            >
-              <Text style={[styles.categoryTabText, isActive && styles.categoryTabTextActive]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
       {/* Classes list */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
@@ -266,11 +234,6 @@ export default function ScheduleScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="calendar-outline" size={60} color="#333" />
           <Text style={styles.emptyText}>Geen lessen op deze dag</Text>
-          {selectedCategory !== 'all' && (
-            <TouchableOpacity style={styles.retryButton} onPress={() => setSelectedCategory('all')}>
-              <Text style={styles.retryText}>Toon alle categorieën</Text>
-            </TouchableOpacity>
-          )}
         </View>
       ) : (
         <ScrollView
@@ -447,37 +410,6 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
     backgroundColor: '#D4AF37',
     marginTop: 3,
-  },
-
-  // Category tabs
-  categoryBar: {
-    maxHeight: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
-  },
-  categoryBarContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
-    flexDirection: 'row',
-  },
-  categoryTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#1a1a1a',
-  },
-  categoryTabActive: {
-    backgroundColor: '#D4AF37',
-  },
-  categoryTabText: {
-    color: '#888',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  categoryTabTextActive: {
-    color: '#000',
-    fontWeight: '700',
   },
 
   // Loading / empty states

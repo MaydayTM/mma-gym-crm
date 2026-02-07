@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-export type ClassCategory = 'group_session' | 'personal_session' | 'course';
-
 interface ClassSession {
   id: string;
   name: string;
@@ -12,7 +10,9 @@ interface ClassSession {
   max_capacity: number | null;
   room: string | null;
   is_active: boolean | null;
-  category: ClassCategory | null;
+  start_date: string | null;
+  recurrence_end_date: string | null;
+  is_recurring: boolean | null;
   // Joined data
   discipline?: {
     id: string;
@@ -30,7 +30,33 @@ interface ClassSession {
 
 interface UseClassesOptions {
   dayOfWeek?: number; // 0=Sunday, 1=Monday, etc.
-  category?: ClassCategory;
+  selectedDate?: Date; // The actual selected date for start_date/recurrence_end_date filtering
+}
+
+// Check if a class is active on a given date (same logic as CRM Schedule page)
+function isClassActiveOnDate(cls: ClassSession, date: Date): boolean {
+  const dateStr = date.toISOString().split('T')[0];
+
+  // Must have a start_date
+  if (!cls.start_date) return false;
+
+  // Must have started
+  if (cls.start_date > dateStr) return false;
+
+  // Check recurrence_end_date
+  if (!cls.recurrence_end_date) {
+    if (!cls.is_recurring) {
+      // One-off class: only show on start_date
+      return cls.start_date === dateStr;
+    }
+    // Recurring without end date = data issue, don't show
+    return false;
+  }
+
+  // Must not have ended
+  if (cls.recurrence_end_date < dateStr) return false;
+
+  return true;
 }
 
 export function useClasses(options: UseClassesOptions = {}) {
@@ -58,16 +84,17 @@ export function useClasses(options: UseClassesOptions = {}) {
         query = query.eq('day_of_week', options.dayOfWeek);
       }
 
-      // Filter by category if specified
-      if (options.category) {
-        query = query.eq('category', options.category);
-      }
-
       const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
 
-      setClasses(data || []);
+      // Client-side date filtering (same as CRM) to check start_date/recurrence_end_date
+      let filtered = data || [];
+      if (options.selectedDate) {
+        filtered = filtered.filter(cls => isClassActiveOnDate(cls, options.selectedDate!));
+      }
+
+      setClasses(filtered);
     } catch (err) {
       console.error('Error fetching classes:', err);
       setError(err as Error);
@@ -76,9 +103,12 @@ export function useClasses(options: UseClassesOptions = {}) {
     }
   };
 
+  // Serialize selectedDate to string for dependency comparison
+  const dateStr = options.selectedDate?.toISOString().split('T')[0];
+
   useEffect(() => {
     fetchClasses();
-  }, [options.dayOfWeek, options.category]);
+  }, [options.dayOfWeek, dateStr]);
 
   return {
     classes,
@@ -88,17 +118,15 @@ export function useClasses(options: UseClassesOptions = {}) {
   };
 }
 
-// Get classes for a specific date (uses day_of_week)
+// Get classes for a specific date (uses day_of_week + date filtering)
 export function useClassesForDay(date: Date) {
-  // JavaScript: 0=Sunday, 1=Monday, etc. - same as database
   const dayOfWeek = date.getDay();
-  return useClasses({ dayOfWeek });
+  return useClasses({ dayOfWeek, selectedDate: date });
 }
 
 // Format time string (HH:MM:SS) to display format (HH:MM)
 export function formatClassTime(timeString: string): string {
   if (!timeString) return '';
-  // timeString is in format "HH:MM:SS" or "HH:MM"
   const parts = timeString.split(':');
   return `${parts[0]}:${parts[1]}`;
 }

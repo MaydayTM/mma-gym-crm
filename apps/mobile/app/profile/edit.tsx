@@ -81,7 +81,8 @@ export default function EditProfileScreen() {
     setUploadingPhoto(true);
 
     try {
-      const ext = uri.split('.').pop() || 'jpg';
+      const ext = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
       const fileName = `${profile.id}/avatar.${ext}`;
 
       const response = await fetch(uri);
@@ -93,7 +94,7 @@ export default function EditProfileScreen() {
       const { error: uploadError } = await supabase.storage
         .from('profile-pictures')
         .upload(fileName, arrayBuffer, {
-          contentType: `image/${ext}`,
+          contentType: mimeType,
           upsert: true,
         });
 
