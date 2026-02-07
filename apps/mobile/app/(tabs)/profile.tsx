@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
@@ -40,6 +40,20 @@ export default function ProfileScreen() {
             await signOut();
             router.replace('/auth/login');
           },
+        },
+      ]
+    );
+  };
+
+  const handleChangePassword = () => {
+    Alert.alert(
+      'Wachtwoord wijzigen',
+      'Je wordt doorgestuurd naar de website om je wachtwoord te wijzigen.',
+      [
+        { text: 'Annuleer', style: 'cancel' },
+        {
+          text: 'Doorgaan',
+          onPress: () => Linking.openURL('https://crm.mmagym.be/forgot-password'),
         },
       ]
     );
@@ -133,24 +147,28 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Instellingen</Text>
         <View style={styles.menuList}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/profile/edit')}
+          >
             <Ionicons name="person-outline" size={22} color="#fff" />
             <Text style={styles.menuText}>Account bewerken</Text>
             <Ionicons name="chevron-forward" size={20} color="#666" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleChangePassword}
+          >
             <Ionicons name="lock-closed-outline" size={22} color="#fff" />
             <Text style={styles.menuText}>Wachtwoord wijzigen</Text>
-            <Ionicons name="chevron-forward" size={20} color="#666" />
+            <Ionicons name="open-outline" size={16} color="#555" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/profile/membership')}
+          >
             <Ionicons name="card-outline" size={22} color="#fff" />
             <Text style={styles.menuText}>Lidmaatschap</Text>
-            <Ionicons name="chevron-forward" size={20} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="notifications-outline" size={22} color="#fff" />
-            <Text style={styles.menuText}>Notificaties</Text>
             <Ionicons name="chevron-forward" size={20} color="#666" />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.menuItem, styles.menuItemDanger]} onPress={handleLogout}>

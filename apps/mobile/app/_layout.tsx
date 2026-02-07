@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
@@ -9,13 +9,11 @@ export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
       setIsLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
     });
@@ -23,10 +21,17 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) {
+      router.replace('/auth/login');
+    }
+  }, [isLoading, isAuthenticated]);
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-        <ActivityIndicator size="large" color="#fff" />
+        <ActivityIndicator size="large" color="#D4AF37" />
       </View>
     );
   }
@@ -41,11 +46,22 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: '#000' },
         }}
       >
-        {isAuthenticated ? (
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        ) : (
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-        )}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="profile/edit"
+          options={{
+            title: 'Profiel bewerken',
+            headerBackTitle: 'Terug',
+          }}
+        />
+        <Stack.Screen
+          name="profile/membership"
+          options={{
+            title: 'Lidmaatschap',
+            headerBackTitle: 'Terug',
+          }}
+        />
       </Stack>
     </>
   );

@@ -7,18 +7,20 @@ import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { BeltAvatar } from '../../components/BeltAvatar';
 import { useMemberBelts } from '../../hooks/useMemberBelts';
+import { useClassesForDay, formatClassTime } from '../../hooks/useClasses';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 
 export default function QRCodeScreen() {
   const { profile, session, isLoading: authLoading } = useAuth();
   const { highestBelt } = useMemberBelts(profile?.id);
+  const { classes: todayClasses } = useClassesForDay(new Date());
   const [qrToken, setQrToken] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [accessStatus, setAccessStatus] = useState<'checking' | 'allowed' | 'denied'>('checking');
   const [denialReason, setDenialReason] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
-  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch door access token from Edge Function
   const fetchToken = useCallback(async () => {
@@ -40,14 +42,16 @@ export default function QRCodeScreen() {
       if (!response.ok) {
         // Handle specific error cases
         setAccessStatus('denied');
-        if (data.error?.includes('subscription')) {
+        const err = data.error || '';
+        console.log('[QR] Door token error:', err);
+        if (err.includes('subscription')) {
           setDenialReason('no_active_subscription');
-        } else if (data.error?.includes('disabled')) {
+        } else if (err.includes('disabled')) {
           setDenialReason('access_disabled');
-        } else if (data.error?.includes('not active')) {
+        } else if (err.includes('not active')) {
           setDenialReason('member_inactive');
         } else {
-          setDenialReason(data.error || 'unknown_error');
+          setDenialReason(err || 'unknown_error');
         }
         return;
       }
@@ -106,7 +110,7 @@ export default function QRCodeScreen() {
       case 'network_error':
         return 'Geen internetverbinding';
       default:
-        return 'Geen toegang';
+        return reason || 'Geen toegang';
     }
   };
 
@@ -175,9 +179,9 @@ export default function QRCodeScreen() {
             <Text style={styles.deniedText}>{getDenialMessage(denialReason)}</Text>
             <TouchableOpacity
               style={styles.subscriptionButton}
-              onPress={() => {/* TODO: Link naar lidmaatschap */}}
+              onPress={() => router.push('/profile/membership')}
             >
-              <Text style={styles.subscriptionButtonText}>Bekijk abonnementen</Text>
+              <Text style={styles.subscriptionButtonText}>Bekijk lidmaatschap</Text>
             </TouchableOpacity>
           </View>
         ) : qrToken ? (
@@ -187,6 +191,7 @@ export default function QRCodeScreen() {
               size={220}
               backgroundColor="#fff"
               color="#000"
+              ecl="H"
             />
             <Text style={styles.memberName}>
               {profile.first_name} {profile.last_name}
@@ -228,17 +233,55 @@ export default function QRCodeScreen() {
       {/* Next class preview */}
       <View style={styles.nextClass}>
         <View style={styles.divider} />
-        <View style={styles.classInfo}>
-          <Text style={styles.classLabel}>Volgende les</Text>
-          <Text style={styles.className}>Bekijk het rooster</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.classLink}
-          onPress={() => router.push('/(tabs)/schedule')}
-        >
-          <Text style={styles.classLinkText}>Bekijk rooster</Text>
-          <Ionicons name="chevron-forward" size={16} color="#D4AF37" />
-        </TouchableOpacity>
+        {(() => {
+          const now = new Date();
+          const currentMinutes = now.getHours() * 60 + now.getMinutes();
+          const nextClass = todayClasses.find(c => {
+            const [h, m] = c.start_time.split(':').map(Number);
+            return h * 60 + m > currentMinutes;
+          });
+
+          if (nextClass) {
+            const disciplineName = Array.isArray(nextClass.discipline)
+              ? nextClass.discipline[0]?.name
+              : nextClass.discipline?.name;
+            return (
+              <>
+                <View style={styles.classInfo}>
+                  <Text style={styles.classLabel}>Volgende les vandaag</Text>
+                  <Text style={styles.className}>
+                    {nextClass.name || disciplineName || 'Les'}
+                  </Text>
+                  <Text style={styles.classTime}>
+                    {formatClassTime(nextClass.start_time)} - {formatClassTime(nextClass.end_time)}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.classLink}
+                  onPress={() => router.push('/(tabs)/schedule')}
+                >
+                  <Text style={styles.classLinkText}>Bekijk rooster</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#D4AF37" />
+                </TouchableOpacity>
+              </>
+            );
+          }
+
+          return (
+            <>
+              <View style={styles.classInfo}>
+                <Text style={styles.classLabel}>Geen lessen meer vandaag</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.classLink}
+                onPress={() => router.push('/(tabs)/schedule')}
+              >
+                <Text style={styles.classLinkText}>Bekijk rooster</Text>
+                <Ionicons name="chevron-forward" size={16} color="#D4AF37" />
+              </TouchableOpacity>
+            </>
+          );
+        })()}
       </View>
     </View>
   );
@@ -394,6 +437,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+    marginTop: 4,
+  },
+  classTime: {
+    color: '#D4AF37',
+    fontSize: 14,
     marginTop: 4,
   },
   classLink: {

@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useClasses, formatClassTime } from '../../hooks/useClasses';
 import { useReservations } from '../../hooks/useReservations';
@@ -48,6 +48,13 @@ export default function ScheduleScreen() {
 
   const { classes, isLoading, error, refetch } = useClasses({ dayOfWeek });
   const { makeReservation, cancelReservation, getMyReservation, isLoading: reservationLoading } = useReservations();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   // Check which classes user has reserved
   useEffect(() => {
@@ -174,7 +181,12 @@ export default function ScheduleScreen() {
           <Text style={styles.emptyText}>Geen lessen op deze dag</Text>
         </View>
       ) : (
-        <ScrollView style={styles.classList}>
+        <ScrollView
+          style={styles.classList}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D4AF37" />
+          }
+        >
           {classes.map((cls) => {
             const isReserved = reservedClasses.has(cls.id);
             return (

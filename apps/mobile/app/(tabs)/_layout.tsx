@@ -5,7 +5,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#D4AF37', // Gold accent
+        tabBarActiveTintColor: '#D4AF37',
         tabBarInactiveTintColor: '#666',
         tabBarStyle: {
           backgroundColor: '#111',
@@ -14,10 +14,7 @@ export default function TabLayout() {
           paddingBottom: 25,
           paddingTop: 10,
         },
-        headerStyle: {
-          backgroundColor: '#000',
-        },
-        headerTintColor: '#fff',
+        headerShown: false,
       }}
     >
       <Tabs.Screen
@@ -30,29 +27,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="feed"
-        options={{
-          title: 'FightFlow',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="play-circle-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="index"
         options={{
           title: 'QR Code',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <Ionicons name="qr-code" size={28} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Zoek',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
           ),
         }}
       />
@@ -65,6 +44,9 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Hidden from tab bar - these screens still exist but aren't tabs */}
+      <Tabs.Screen name="feed" options={{ href: null }} />
+      <Tabs.Screen name="search" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -15,7 +15,10 @@ export default {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.fightflow.app"
+      bundleIdentifier: "com.fightflow.app",
+      infoPlist: {
+        NSPhotoLibraryUsageDescription: "Kies een profielfoto uit je fotobibliotheek.",
+      }
     },
     android: {
       adaptiveIcon: {
@@ -30,7 +33,13 @@ export default {
       bundler: "metro"
     },
     plugins: [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kies een profielfoto uit je fotobibliotheek."
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true
