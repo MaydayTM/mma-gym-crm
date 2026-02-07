@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, Loader2 } from 'lucide-react'
-import { usePlanTypes, useCreatePlanType, useUpdatePlanType } from '../../hooks/useSubscriptionAdmin'
+import { usePlanTypes, useCreatePlanType, useUpdatePlanType, useSetPlanTypeDisciplines } from '../../hooks/useSubscriptionAdmin'
+import { useDisciplines } from '../../hooks/useDisciplines'
 
 interface PlanTypeModalProps {
   itemId: string | null
@@ -9,11 +10,17 @@ interface PlanTypeModalProps {
 
 export function PlanTypeModal({ itemId, onClose }: PlanTypeModalProps) {
   const { data: planTypes } = usePlanTypes()
+  const { data: disciplines } = useDisciplines()
   const createPlanType = useCreatePlanType()
   const updatePlanType = useUpdatePlanType()
+  const setPlanTypeDisciplines = useSetPlanTypeDisciplines()
 
   const existingItem = itemId ? planTypes?.find(pt => pt.id === itemId) : null
   const isEditing = !!existingItem
+
+  // Get currently linked discipline IDs
+  const linkedDisciplineIds = existingItem?.plan_type_disciplines
+    ?.map(ptd => ptd.discipline_id) || []
 
   const [formData, setFormData] = useState(() => ({
     name: existingItem?.name || '',
@@ -24,6 +31,32 @@ export function PlanTypeModal({ itemId, onClose }: PlanTypeModalProps) {
     is_active: existingItem?.is_active ?? true,
     features: Array.isArray(existingItem?.features) ? existingItem.features as string[] : []
   }))
+
+  const [selectedDisciplines, setSelectedDisciplines] = useState<Set<string>>(
+    () => new Set(linkedDisciplineIds)
+  )
+
+  const toggleDiscipline = (id: string) => {
+    setSelectedDisciplines(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const selectAllDisciplines = () => {
+    if (disciplines) {
+      setSelectedDisciplines(new Set(disciplines.map(d => d.id)))
+    }
+  }
+
+  const clearAllDisciplines = () => {
+    setSelectedDisciplines(new Set())
+  }
 
   const generateSlug = (name: string) => {
     return name
@@ -44,21 +77,32 @@ export function PlanTypeModal({ itemId, onClose }: PlanTypeModalProps) {
     e.preventDefault()
 
     try {
+      let planTypeId = itemId
       if (isEditing && itemId) {
         await updatePlanType.mutateAsync({
           id: itemId,
           ...formData
         })
       } else {
-        await createPlanType.mutateAsync(formData)
+        const created = await createPlanType.mutateAsync(formData)
+        planTypeId = created.id
       }
+
+      // Save discipline links
+      if (planTypeId) {
+        await setPlanTypeDisciplines.mutateAsync({
+          planTypeId,
+          disciplineIds: Array.from(selectedDisciplines),
+        })
+      }
+
       onClose()
     } catch (error) {
       console.error('Error saving plan type:', error)
     }
   }
 
-  const isSubmitting = createPlanType.isPending || updatePlanType.isPending
+  const isSubmitting = createPlanType.isPending || updatePlanType.isPending || setPlanTypeDisciplines.isPending
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -165,6 +209,63 @@ export function PlanTypeModal({ itemId, onClose }: PlanTypeModalProps) {
                 <option value="inactive">Inactief</option>
               </select>
             </div>
+          </div>
+
+          {/* Disciplines */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-[13px] text-neutral-400">
+                Toegang tot disciplines
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={selectAllDisciplines}
+                  className="text-[11px] text-amber-300 hover:text-amber-200 transition"
+                >
+                  Alles
+                </button>
+                <span className="text-neutral-600 text-[11px]">|</span>
+                <button
+                  type="button"
+                  onClick={clearAllDisciplines}
+                  className="text-[11px] text-neutral-500 hover:text-neutral-300 transition"
+                >
+                  Geen
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {disciplines?.map((d) => (
+                <label
+                  key={d.id}
+                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                    selectedDisciplines.has(d.id)
+                      ? 'border-amber-400/50 bg-amber-400/5'
+                      : 'border-white/10 bg-white/5 hover:border-white/20'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedDisciplines.has(d.id)}
+                    onChange={() => toggleDiscipline(d.id)}
+                    className="w-4 h-4 rounded border-neutral-600 bg-neutral-800 text-amber-300 focus:ring-amber-300/50 focus:ring-offset-0"
+                  />
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: d.color || '#3B82F6' }}
+                    />
+                    <span className="text-[13px] text-neutral-200">{d.name}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {selectedDisciplines.size === 0 && (
+              <p className="text-[11px] text-neutral-500 mt-2">
+                Geen disciplines geselecteerd — lid kiest zelf bij inschrijving
+              </p>
+            )}
           </div>
 
           {/* Actions */}

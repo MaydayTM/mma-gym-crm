@@ -3016,6 +3016,42 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_type_disciplines: {
+        Row: {
+          created_at: string | null
+          discipline_id: string
+          id: string
+          plan_type_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          discipline_id: string
+          id?: string
+          plan_type_id: string
+        }
+        Update: {
+          created_at?: string | null
+          discipline_id?: string
+          id?: string
+          plan_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_type_disciplines_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_type_disciplines_plan_type_id_fkey"
+            columns: ["plan_type_id"]
+            isOneToOne: false
+            referencedRelation: "plan_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_types: {
         Row: {
           created_at: string | null

@@ -94,6 +94,30 @@ export function PlanTypesTab() {
                 </div>
               )}
 
+              {/* Linked disciplines */}
+              {planType.plan_type_disciplines && planType.plan_type_disciplines.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {planType.plan_type_disciplines.map((ptd) => (
+                    <span
+                      key={ptd.discipline_id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium"
+                      style={{
+                        backgroundColor: `${ptd.disciplines?.color || '#3B82F6'}15`,
+                        color: ptd.disciplines?.color || '#3B82F6',
+                      }}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: ptd.disciplines?.color || '#3B82F6' }}
+                      />
+                      {ptd.disciplines?.name}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-neutral-600 mb-3">Lid kiest zelf een discipline</p>
+              )}
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-neutral-500">Status</span>

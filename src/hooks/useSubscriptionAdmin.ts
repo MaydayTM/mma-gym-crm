@@ -26,6 +26,10 @@ export interface PlanType {
   highlight_text: string | null
   sort_order: number | null
   is_active: boolean | null
+  plan_type_disciplines?: {
+    discipline_id: string
+    disciplines: { id: string; name: string; slug: string; color: string | null } | null
+  }[]
 }
 
 export interface PricingMatrix {
@@ -203,7 +207,13 @@ export function usePlanTypes() {
     queryFn: async (): Promise<PlanType[]> => {
       const { data, error } = await supabase
         .from('plan_types')
-        .select('*')
+        .select(`
+          *,
+          plan_type_disciplines (
+            discipline_id,
+            disciplines:discipline_id (id, name, slug, color)
+          )
+        `)
         .order('sort_order')
 
       if (error) throw error
@@ -286,6 +296,43 @@ export function useDeletePlanType() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plan-types'] })
       queryClient.invalidateQueries({ queryKey: ['pricing-matrix'] })
+    }
+  })
+}
+
+// ============================================
+// Plan Type Disciplines
+// ============================================
+
+export function useSetPlanTypeDisciplines() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ planTypeId, disciplineIds }: { planTypeId: string; disciplineIds: string[] }) => {
+      // Delete all existing links for this plan type
+      const { error: deleteError } = await supabase
+        .from('plan_type_disciplines')
+        .delete()
+        .eq('plan_type_id', planTypeId)
+
+      if (deleteError) throw deleteError
+
+      // Insert new links
+      if (disciplineIds.length > 0) {
+        const rows = disciplineIds.map((disciplineId) => ({
+          plan_type_id: planTypeId,
+          discipline_id: disciplineId,
+        }))
+
+        const { error: insertError } = await supabase
+          .from('plan_type_disciplines')
+          .insert(rows)
+
+        if (insertError) throw insertError
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plan-types'] })
     }
   })
 }
