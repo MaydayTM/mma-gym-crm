@@ -69,15 +69,15 @@ export function useAssignSubscription() {
         }
       }
 
-      // 3. Update member status to 'active' if they were a lead or cancelled
+      // 3. Update member status to 'active' and enable door access
       const { error: memberError } = await supabase
         .from('members')
         .update({
           status: 'active',
+          door_access_enabled: true,
           updated_at: new Date().toISOString()
         })
         .eq('id', data.memberId)
-        .in('status', ['lead', 'cancelled'])
 
       if (memberError) {
         console.error('Error updating member status:', memberError)

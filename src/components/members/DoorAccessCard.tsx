@@ -198,8 +198,8 @@ export function DoorAccessCard({ memberId, memberStatus, doorAccessEnabled = tru
               <QRCodeSVG
                 value={qrToken}
                 size={200}
-                level="M"
-                includeMargin={false}
+                level="H"
+                includeMargin={true}
               />
             </div>
 
@@ -214,6 +214,9 @@ export function DoorAccessCard({ memberId, memberStatus, doorAccessEnabled = tru
 
             <p className="text-[12px] text-neutral-500 mt-2 text-center">
               Scan deze QR code bij de deur om binnen te komen
+            </p>
+            <p className="text-[11px] text-neutral-600 mt-1 font-mono select-all">
+              Token: {qrToken}
             </p>
           </div>
         ) : null}

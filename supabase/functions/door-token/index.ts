@@ -76,16 +76,16 @@ serve(async (req) => {
       return jsonResponse({ error: 'Access denied' }, 403)
     }
 
-    // Return generic error for unauthorized users, specific errors for staff
+    // Return specific errors so users know what's wrong
     if (member.status !== 'active') {
       return jsonResponse({
-        error: isStaff ? 'Member account is not active' : 'Access denied'
+        error: 'Member account is not active'
       }, 403)
     }
 
-    if (!member.door_access_enabled) {
+    if (member.door_access_enabled === false) {
       return jsonResponse({
-        error: isStaff ? 'Door access is disabled for this member' : 'Access denied'
+        error: 'Door access is disabled for this member'
       }, 403)
     }
 
@@ -106,7 +106,7 @@ serve(async (req) => {
 
       if (!subscription) {
         return jsonResponse({
-          error: isStaff ? 'No active subscription found' : 'Access denied'
+          error: 'No active subscription found'
         }, 403)
       }
     }
@@ -114,11 +114,9 @@ serve(async (req) => {
     // Generate a unique short numeric code
     const tokenCode = await generateUniqueCode(supabase)
 
-    // Delete any existing tokens for this member (one active token per member)
-    await supabase
-      .from('door_tokens')
-      .delete()
-      .eq('member_id', member.id)
+    // Don't delete old tokens - let them expire naturally (5 min)
+    // Deleting causes issues when multiple devices show the QR simultaneously
+    // Expired tokens are cleaned up by cleanup_expired_door_tokens()
 
     // Store new token with expiry
     const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MINUTES * 60 * 1000)
