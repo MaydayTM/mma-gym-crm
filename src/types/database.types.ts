@@ -817,7 +817,7 @@ export type Database = {
       }
       classes: {
         Row: {
-          category: string | null
+          category: string
           coach_id: string | null
           created_at: string | null
           day_of_week: number
@@ -837,7 +837,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          category?: string | null
+          category?: string
           coach_id?: string | null
           created_at?: string | null
           day_of_week: number
@@ -857,7 +857,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          category?: string | null
+          category?: string
           coach_id?: string | null
           created_at?: string | null
           day_of_week?: number

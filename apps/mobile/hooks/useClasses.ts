@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 interface ClassSession {
   id: string;
   name: string;
+  category: string;
   day_of_week: number; // 0=Sunday, 1=Monday, etc.
   start_time: string; // HH:MM:SS format
   end_time: string;

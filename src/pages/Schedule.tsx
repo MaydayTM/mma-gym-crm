@@ -77,6 +77,15 @@ function formatDateRange(viewMode: ViewMode, date: Date): string {
   }
 }
 
+type ClassCategory = 'group_class' | 'event' | 'private_session' | 'course'
+
+const CATEGORY_LABELS: Record<ClassCategory, string> = {
+  group_class: 'Groepsles',
+  event: 'Evenement',
+  private_session: 'Privéles',
+  course: 'Cursus',
+}
+
 type ClassWithRelations = {
   id: string
   name: string
@@ -89,6 +98,7 @@ type ClassWithRelations = {
   end_time: string
   max_capacity: number | null
   room: string | null
+  category: string
   start_date: string | null
   recurrence_end_date: string | null
   is_recurring: boolean | null
@@ -140,6 +150,7 @@ export function Schedule() {
   const [isNewClassModalOpen, setIsNewClassModalOpen] = useState(false)
   const [editingClass, setEditingClass] = useState<ClassWithRelations | null>(null)
   const [filterRoom, setFilterRoom] = useState<string | null>(null)
+  const [filterCategory, setFilterCategory] = useState<ClassCategory | null>(null)
   const [dragOverZone, setDragOverZone] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -226,10 +237,23 @@ export function Schedule() {
     })
   }
 
-  // Filter classes by room if filter is active
-  const filteredClasses = filterRoom
-    ? classes?.filter((c) => c.room_id === filterRoom)
-    : classes
+  // Filter classes by room and category
+  const filteredClasses = classes?.filter((c) => {
+    if (filterRoom && c.room_id !== filterRoom) return false
+    if (filterCategory && (c as ClassWithRelations).category !== filterCategory) return false
+    return true
+  })
+
+  // Get unique categories that have classes (for dynamic filter tabs)
+  const availableCategories = useMemo(() => {
+    if (!classes) return []
+    const cats = new Set<ClassCategory>()
+    classes.forEach((c) => {
+      const cat = (c as ClassWithRelations).category as ClassCategory
+      if (cat) cats.add(cat)
+    })
+    return Array.from(cats).sort()
+  }, [classes])
 
   // Group classes by day, room, and check if active on the given date
   const getClassesForDayAndRoom = (date: Date, roomId: string | null) => {
@@ -295,6 +319,35 @@ export function Schedule() {
             ) : (
               // Normal mode controls
               <>
+                {/* Category Filter Tabs */}
+                {availableCategories.length > 1 && (
+                  <div className="flex items-center gap-1 bg-neutral-900 rounded-full p-1 border border-neutral-800">
+                    <button
+                      onClick={() => setFilterCategory(null)}
+                      className={`px-4 py-1.5 text-[13px] font-medium rounded-full transition ${
+                        filterCategory === null
+                          ? 'bg-amber-400 text-neutral-900'
+                          : 'text-neutral-400 hover:text-neutral-200'
+                      }`}
+                    >
+                      Alles
+                    </button>
+                    {availableCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setFilterCategory(cat)}
+                        className={`px-4 py-1.5 text-[13px] font-medium rounded-full transition ${
+                          filterCategory === cat
+                            ? 'bg-amber-400 text-neutral-900'
+                            : 'text-neutral-400 hover:text-neutral-200'
+                        }`}
+                      >
+                        {CATEGORY_LABELS[cat]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Room Filter */}
                 <div className="flex items-center gap-2 bg-neutral-900 rounded-full px-4 py-2 border border-neutral-800">
                   <Filter size={16} className="text-neutral-500" />
@@ -830,8 +883,47 @@ function DraggableClassCard({
   )
 }
 
+// Check for room time conflicts
+function checkRoomConflict(
+  allClasses: ClassWithRelations[] | undefined,
+  roomId: string | null,
+  dayOfWeek: number,
+  startTime: string,
+  endTime: string,
+  startDate: string,
+  recurrenceEndDate: string | null,
+  excludeClassId?: string
+): string | null {
+  if (!roomId || !allClasses) return null
+
+  const conflicting = allClasses.find((c) => {
+    if (excludeClassId && c.id === excludeClassId) return false
+    if (c.room_id !== roomId) return false
+    if (c.day_of_week !== dayOfWeek) return false
+
+    // Time overlap check (start < other.end AND end > other.start)
+    if (startTime >= c.end_time || endTime <= c.start_time) return false
+
+    // Date range overlap check
+    const cStart = c.start_date || '2000-01-01'
+    const cEnd = c.recurrence_end_date || '2099-12-31'
+    const newStart = startDate || '2000-01-01'
+    const newEnd = recurrenceEndDate || startDate || '2099-12-31'
+    if (newStart > cEnd || newEnd < cStart) return false
+
+    return true
+  })
+
+  if (conflicting) {
+    const roomName = conflicting.room_rel?.name || 'deze zaal'
+    return `Conflict: "${conflicting.name}" is al ingepland in ${roomName} op ${DAYS[dayOfWeek]} ${conflicting.start_time.slice(0, 5)}-${conflicting.end_time.slice(0, 5)}`
+  }
+  return null
+}
+
 function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [name, setName] = useState('')
+  const [category, setCategory] = useState<ClassCategory>('group_class')
   const [disciplineId, setDisciplineId] = useState('')
   const [coachId, setCoachId] = useState('')
   const [trackId, setTrackId] = useState('')
@@ -844,6 +936,7 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
 
+  const { data: allClasses } = useClasses()
   const { data: disciplines } = useDisciplines()
   const { data: coaches } = useMembers({ role: 'coach' })
   const { data: tracks } = useClassTracks()
@@ -852,6 +945,17 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
   const { mutate: createRecurringClass, isPending: isCreatingRecurring } = useCreateRecurringClass()
 
   const isPending = isCreating || isCreatingRecurring
+
+  // Room conflict detection
+  const roomConflict = checkRoomConflict(
+    allClasses as ClassWithRelations[],
+    roomId || null,
+    dayOfWeek,
+    startTime,
+    endTime,
+    startDate,
+    isRecurring ? recurrenceEndDate : startDate
+  )
 
   // Bereken minimum en default einddatum (3 maanden vanaf nu)
   const today = new Date()
@@ -863,6 +967,7 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 
     const classData = {
       name,
+      category,
       discipline_id: disciplineId,
       coach_id: coachId || null,
       track_id: trackId || null,
@@ -877,6 +982,7 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 
     const resetForm = () => {
       setName('')
+      setCategory('group_class')
       setDisciplineId('')
       setCoachId('')
       setTrackId('')
@@ -925,18 +1031,36 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nieuwe Les" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
-            Naam *
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            placeholder="BJJ Fundamentals"
-            className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+              Naam *
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="BJJ Fundamentals"
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
+            />
+          </div>
+          <div>
+            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+              Categorie *
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as ClassCategory)}
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+            >
+              {(Object.keys(CATEGORY_LABELS) as ClassCategory[]).map((cat) => (
+                <option key={cat} value={cat}>
+                  {CATEGORY_LABELS[cat]}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -1150,6 +1274,12 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           )}
         </div>
 
+        {roomConflict && (
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+            <p className="text-[13px] text-rose-400">{roomConflict}</p>
+          </div>
+        )}
+
         <div className="flex justify-end gap-3 pt-4">
           <button
             type="button"
@@ -1161,7 +1291,7 @@ function NewClassModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           </button>
           <button
             type="submit"
-            disabled={isPending || !name || !disciplineId || (isRecurring && !recurrenceEndDate)}
+            disabled={isPending || !name || !disciplineId || (isRecurring && !recurrenceEndDate) || !!roomConflict}
             className="inline-flex items-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium hover:bg-amber-200 transition disabled:opacity-50"
           >
             {isPending && <Loader2 size={18} className="animate-spin" />}
@@ -1184,6 +1314,7 @@ function EditClassModal({
   onClose: () => void
 }) {
   const [name, setName] = useState(classData.name)
+  const [category, setCategory] = useState<ClassCategory>((classData.category as ClassCategory) || 'group_class')
   const [disciplineId, setDisciplineId] = useState(classData.discipline_id)
   const [coachId, setCoachId] = useState(classData.coach_id || '')
   const [trackId, setTrackId] = useState(classData.track_id || '')
@@ -1199,12 +1330,25 @@ function EditClassModal({
   const [isRecurring, setIsRecurring] = useState(classData.is_recurring || false)
   const [recurrenceEndDate, setRecurrenceEndDate] = useState(classData.recurrence_end_date || '')
 
+  const { data: allClasses } = useClasses()
   const { data: disciplines } = useDisciplines()
   const { data: coaches } = useMembers({ role: 'coach' })
   const { data: tracks } = useClassTracks()
   const { data: rooms } = useRooms()
   const { mutate: updateClass, isPending: isUpdating } = useUpdateClass()
   const { mutate: deleteClass, isPending: isDeleting } = useDeleteClass()
+
+  // Room conflict detection (exclude current class)
+  const roomConflict = checkRoomConflict(
+    allClasses as ClassWithRelations[],
+    roomId || null,
+    dayOfWeek,
+    startTime,
+    endTime,
+    startDate,
+    isRecurring ? recurrenceEndDate : startDate,
+    classData.id
+  )
 
   // Bereken minimum einddatum (vandaag)
   const today = new Date().toISOString().split('T')[0]
@@ -1223,6 +1367,7 @@ function EditClassModal({
       {
         id: classData.id,
         name,
+        category,
         discipline_id: disciplineId,
         coach_id: coachId || null,
         track_id: trackId || null,
@@ -1286,18 +1431,36 @@ function EditClassModal({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
-              Naam *
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="BJJ Fundamentals"
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+                Naam *
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="BJJ Fundamentals"
+                className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-amber-300/70"
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] text-neutral-500 uppercase tracking-wide mb-2">
+                Categorie *
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as ClassCategory)}
+                className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+              >
+                {(Object.keys(CATEGORY_LABELS) as ClassCategory[]).map((cat) => (
+                  <option key={cat} value={cat}>
+                    {CATEGORY_LABELS[cat]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -1519,6 +1682,12 @@ function EditClassModal({
             )}
           </div>
 
+          {roomConflict && (
+            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+              <p className="text-[13px] text-rose-400">{roomConflict}</p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between pt-4 border-t border-neutral-800">
             <button
               type="button"
@@ -1540,7 +1709,7 @@ function EditClassModal({
               </button>
               <button
                 type="submit"
-                disabled={isPending || !name || !disciplineId}
+                disabled={isPending || !name || !disciplineId || !!roomConflict}
                 className="inline-flex items-center gap-2 rounded-full bg-amber-300 text-neutral-950 px-6 py-3 text-[15px] font-medium hover:bg-amber-200 transition disabled:opacity-50"
               >
                 {isUpdating && <Loader2 size={18} className="animate-spin" />}

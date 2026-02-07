@@ -17,6 +17,15 @@ const MONTH_NAMES = [
 
 const DAY_LABELS = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
 
+type ClassCategory = 'group_class' | 'event' | 'private_session' | 'course';
+
+const CATEGORY_LABELS: Record<ClassCategory, string> = {
+  group_class: 'Groepsles',
+  event: 'Evenement',
+  private_session: 'Privéles',
+  course: 'Cursus',
+};
+
 const disciplineIcons: Record<string, string> = {
   bjj: 'body',
   mma: 'hand-left',
@@ -51,6 +60,7 @@ function getDates(weekOffset: number): Date[] {
 export default function ScheduleScreen() {
   const today = new Date();
   const [weekOffset, setWeekOffset] = useState(0);
+  const [filterCategory, setFilterCategory] = useState<ClassCategory | null>(null);
   const [reservedClasses, setReservedClasses] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const dayScrollRef = useRef<ScrollView>(null);
@@ -82,8 +92,23 @@ export default function ScheduleScreen() {
   const headerMonth = MONTH_NAMES[selectedDate.getMonth()];
   const headerYear = selectedDate.getFullYear();
 
-  const { classes, isLoading, error, refetch } = useClasses({ dayOfWeek, selectedDate });
+  const { classes: allClasses, isLoading, error, refetch } = useClasses({ dayOfWeek, selectedDate });
   const { makeReservation, cancelReservation, getMyReservation, isLoading: reservationLoading } = useReservations();
+
+  // Get unique categories from classes (data-driven tabs)
+  const availableCategories = useMemo(() => {
+    const cats = new Set<ClassCategory>();
+    allClasses.forEach((c: any) => {
+      if (c.category) cats.add(c.category);
+    });
+    return Array.from(cats).sort();
+  }, [allClasses]);
+
+  // Filter by category
+  const classes = useMemo(() => {
+    if (!filterCategory) return allClasses;
+    return allClasses.filter((c: any) => c.category === filterCategory);
+  }, [allClasses, filterCategory]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -217,6 +242,48 @@ export default function ScheduleScreen() {
           );
         })}
       </ScrollView>
+
+      {/* Category filter tabs (data-driven, only show when multiple categories exist) */}
+      {availableCategories.length > 1 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryFilter}
+          contentContainerStyle={styles.categoryFilterContent}
+        >
+          <TouchableOpacity
+            style={[
+              styles.categoryTab,
+              filterCategory === null && styles.categoryTabActive,
+            ]}
+            onPress={() => setFilterCategory(null)}
+          >
+            <Text style={[
+              styles.categoryTabText,
+              filterCategory === null && styles.categoryTabTextActive,
+            ]}>
+              Alles
+            </Text>
+          </TouchableOpacity>
+          {availableCategories.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.categoryTab,
+                filterCategory === cat && styles.categoryTabActive,
+              ]}
+              onPress={() => setFilterCategory(cat)}
+            >
+              <Text style={[
+                styles.categoryTabText,
+                filterCategory === cat && styles.categoryTabTextActive,
+              ]}>
+                {CATEGORY_LABELS[cat]}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       {/* Classes list */}
       {isLoading ? (
@@ -410,6 +477,36 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
     backgroundColor: '#D4AF37',
     marginTop: 3,
+  },
+
+  // Category filter
+  categoryFilter: {
+    maxHeight: 44,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  categoryFilterContent: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    gap: 8,
+    flexDirection: 'row' as const,
+  },
+  categoryTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#1a1a1a',
+  },
+  categoryTabActive: {
+    backgroundColor: '#D4AF37',
+  },
+  categoryTabText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600' as const,
+  },
+  categoryTabTextActive: {
+    color: '#000',
   },
 
   // Loading / empty states
