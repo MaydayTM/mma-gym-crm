@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, Image, Dimensions } from 'react-native';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useClasses, formatClassTime } from '../../hooks/useClasses';
@@ -110,31 +110,36 @@ export default function ScheduleScreen() {
     return allClasses.filter((c: any) => c.category === filterCategory);
   }, [allClasses, filterCategory]);
 
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-  }, [refetch]);
+  };
 
-  // Check which classes user has reserved
+  // Check which classes user has reserved (use stable string key to avoid re-render loops)
+  const classIds = useMemo(() => classes.map(c => c.id).join(','), [classes]);
   useEffect(() => {
+    if (classes.length === 0) {
+      setReservedClasses(new Set());
+      return;
+    }
+    let cancelled = false;
     const checkReservations = async () => {
       const reserved = new Set<string>();
       for (const cls of classes) {
+        if (cancelled) return;
         const reservation = await getMyReservation(cls.id);
         if (reservation) {
           reserved.add(cls.id);
         }
       }
-      setReservedClasses(reserved);
+      if (!cancelled) {
+        setReservedClasses(reserved);
+      }
     };
-
-    if (classes.length > 0) {
-      checkReservations();
-    } else {
-      setReservedClasses(new Set());
-    }
-  }, [classes]);
+    checkReservations();
+    return () => { cancelled = true; };
+  }, [classIds]);
 
   const handleReservation = async (classId: string) => {
     const isReserved = reservedClasses.has(classId);

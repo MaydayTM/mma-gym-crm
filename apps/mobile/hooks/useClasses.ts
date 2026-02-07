@@ -65,7 +65,7 @@ export function useClasses(options: UseClassesOptions = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchClasses = async () => {
+  const fetchClasses = async (cancelled?: () => boolean) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -87,6 +87,7 @@ export function useClasses(options: UseClassesOptions = {}) {
 
       const { data, error: fetchError } = await query;
 
+      if (cancelled?.()) return;
       if (fetchError) throw fetchError;
 
       // Client-side date filtering (same as CRM) to check start_date/recurrence_end_date
@@ -97,10 +98,13 @@ export function useClasses(options: UseClassesOptions = {}) {
 
       setClasses(filtered);
     } catch (err) {
+      if (cancelled?.()) return;
       console.error('Error fetching classes:', err);
       setError(err as Error);
     } finally {
-      setIsLoading(false);
+      if (!cancelled?.()) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -108,14 +112,16 @@ export function useClasses(options: UseClassesOptions = {}) {
   const dateStr = options.selectedDate?.toISOString().split('T')[0];
 
   useEffect(() => {
-    fetchClasses();
+    let isCancelled = false;
+    fetchClasses(() => isCancelled);
+    return () => { isCancelled = true; };
   }, [options.dayOfWeek, dateStr]);
 
   return {
     classes,
     isLoading,
     error,
-    refetch: fetchClasses,
+    refetch: () => fetchClasses(),
   };
 }
 
