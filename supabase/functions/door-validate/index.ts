@@ -215,7 +215,7 @@ serve(async (req) => {
     // Non-team: check subscription
     const { data: subscription } = await supabase
       .from('member_subscriptions')
-      .select('id, end_date')
+      .select('id, end_date, plan_type_id, selected_discipline_id')
       .eq('member_id', memberId)
       .eq('status', 'active')
       .gte('end_date', new Date().toISOString().split('T')[0])
@@ -247,17 +247,17 @@ serve(async (req) => {
     }
 
     if (accessSettings.access_mode === 'reservation_required') {
-      const hasReservation = await checkReservationAccess(
-        supabase, memberId,
+      const reservationResult = await checkReservationAccessWithDiscipline(
+        supabase, memberId, subscription,
         accessSettings.minutes_before_class,
         accessSettings.grace_period_minutes
       )
 
-      if (!hasReservation) {
-        await logAccess(supabase, memberId, tokenCode, false, 'no_reservation', doorLocation)
+      if (!reservationResult.allowed) {
+        await logAccess(supabase, memberId, tokenCode, false, reservationResult.reason || 'no_reservation', doorLocation)
         return jsonResponse({
           allowed: false,
-          reason: 'no_reservation',
+          reason: reservationResult.reason || 'no_reservation',
           member_name: `${member.first_name} ${member.last_name}`
         })
       }
@@ -385,6 +385,84 @@ async function checkReservationAccess(
   }
 
   return false
+}
+
+// Check reservation access WITH discipline validation
+async function checkReservationAccessWithDiscipline(
+  supabase: ReturnType<typeof createClient>,
+  memberId: string,
+  subscription: { plan_type_id: string | null; selected_discipline_id: string | null },
+  minutesBefore: number,
+  gracePeriodMinutes: number
+): Promise<{ allowed: boolean; reason?: string }> {
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
+
+  const { data: reservations } = await supabase
+    .from('reservations')
+    .select(`id, class_id, status, classes!inner (start_time, end_time, day_of_week, discipline_id)`)
+    .eq('member_id', memberId)
+    .eq('reservation_date', today)
+    .in('status', ['reserved', 'checked_in'])
+
+  if (!reservations || reservations.length === 0) {
+    return { allowed: false, reason: 'no_reservation' }
+  }
+
+  const currentTime = now.getHours() * 60 + now.getMinutes()
+
+  for (const res of reservations) {
+    const classData = res.classes as any
+    if (!classData?.start_time) continue
+
+    const [startH, startM] = classData.start_time.split(':').map(Number)
+    const classStartMin = startH * 60 + startM
+
+    const windowOpen = classStartMin - minutesBefore
+    const windowClose = classStartMin + gracePeriodMinutes
+
+    if (currentTime >= windowOpen && currentTime <= windowClose) {
+      // Time window matches - now check discipline access
+      const classDisciplineId = classData.discipline_id
+      if (!classDisciplineId) return { allowed: true }
+
+      // Direct discipline match (Basic plan with selected discipline)
+      if (subscription.selected_discipline_id) {
+        if (subscription.selected_discipline_id === classDisciplineId) {
+          return { allowed: true }
+        }
+        return { allowed: false, reason: 'discipline_not_covered' }
+      }
+
+      // Check plan_type_disciplines
+      if (subscription.plan_type_id) {
+        const { data: link } = await supabase
+          .from('plan_type_disciplines')
+          .select('id')
+          .eq('plan_type_id', subscription.plan_type_id)
+          .eq('discipline_id', classDisciplineId)
+          .limit(1)
+          .single()
+
+        if (link) return { allowed: true }
+
+        // If plan has no discipline links at all, allow (open access plan)
+        const { count } = await supabase
+          .from('plan_type_disciplines')
+          .select('id', { count: 'exact', head: true })
+          .eq('plan_type_id', subscription.plan_type_id)
+
+        if (count === 0) return { allowed: true }
+
+        return { allowed: false, reason: 'discipline_not_covered' }
+      }
+
+      // No plan type = legacy subscription, allow
+      return { allowed: true }
+    }
+  }
+
+  return { allowed: false, reason: 'no_reservation' }
 }
 
 // Check if current time is within open gym hours

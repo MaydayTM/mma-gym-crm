@@ -326,6 +326,7 @@ function ClassDetailModal({
 }) {
   const [showAddMember, setShowAddMember] = useState(false)
   const [selectedMemberId, setSelectedMemberId] = useState('')
+  const [reservationError, setReservationError] = useState<string | null>(null)
 
   const { data: reservations, isLoading } = useClassReservations(classId, date)
   const { data: members } = useMembers({ status: 'active' })
@@ -340,6 +341,7 @@ function ClassDetailModal({
 
   const handleAddMember = () => {
     if (!selectedMemberId) return
+    setReservationError(null)
 
     createReservation(
       {
@@ -351,6 +353,9 @@ function ClassDetailModal({
         onSuccess: () => {
           setSelectedMemberId('')
           setShowAddMember(false)
+        },
+        onError: (error) => {
+          setReservationError(error.message)
         },
       }
     )
@@ -407,32 +412,39 @@ function ClassDetailModal({
         {!isFull && (
           <div>
             {showAddMember ? (
-              <div className="flex gap-3">
-                <select
-                  value={selectedMemberId}
-                  onChange={(e) => setSelectedMemberId(e.target.value)}
-                  className="flex-1 bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
-                >
-                  <option value="">Selecteer lid...</option>
-                  {availableMembers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.first_name} {m.last_name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAddMember}
-                  disabled={!selectedMemberId || isCreating}
-                  className="px-4 py-2 bg-amber-300 text-neutral-950 rounded-xl font-medium hover:bg-amber-200 transition disabled:opacity-50"
-                >
-                  {isCreating ? <Loader2 size={18} className="animate-spin" /> : 'Toevoegen'}
-                </button>
-                <button
-                  onClick={() => setShowAddMember(false)}
-                  className="px-4 py-2 text-neutral-400 hover:text-neutral-200 transition"
-                >
-                  Annuleren
-                </button>
+              <div className="space-y-2">
+                <div className="flex gap-3">
+                  <select
+                    value={selectedMemberId}
+                    onChange={(e) => setSelectedMemberId(e.target.value)}
+                    className="flex-1 bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-[14px] text-neutral-100 focus:outline-none focus:border-amber-300/70"
+                  >
+                    <option value="">Selecteer lid...</option>
+                    {availableMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.first_name} {m.last_name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleAddMember}
+                    disabled={!selectedMemberId || isCreating}
+                    className="px-4 py-2 bg-amber-300 text-neutral-950 rounded-xl font-medium hover:bg-amber-200 transition disabled:opacity-50"
+                  >
+                    {isCreating ? <Loader2 size={18} className="animate-spin" /> : 'Toevoegen'}
+                  </button>
+                  <button
+                    onClick={() => { setShowAddMember(false); setReservationError(null) }}
+                    className="px-4 py-2 text-neutral-400 hover:text-neutral-200 transition"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+                {reservationError && (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+                    <p className="text-[13px] text-rose-400">{reservationError}</p>
+                  </div>
+                )}
               </div>
             ) : (
               <button

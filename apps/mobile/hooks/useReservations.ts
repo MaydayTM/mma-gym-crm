@@ -34,6 +34,66 @@ export function useReservations() {
     return data as Reservation | null;
   };
 
+  // Check if member's subscription covers a class's discipline
+  const checkDisciplineAccess = async (classId: string): Promise<{ allowed: boolean; reason?: string }> => {
+    if (!profile?.id) return { allowed: false, reason: 'Niet ingelogd' };
+
+    // Get class discipline
+    const { data: cls } = await supabase
+      .from('classes')
+      .select('discipline_id, disciplines:discipline_id (name)')
+      .eq('id', classId)
+      .single();
+
+    if (!cls?.discipline_id) return { allowed: true };
+
+    // Get member's active subscription
+    const today = new Date().toISOString().split('T')[0];
+    const { data: subscription } = await supabase
+      .from('member_subscriptions')
+      .select('plan_type_id, selected_discipline_id')
+      .eq('member_id', profile.id)
+      .eq('status', 'active')
+      .gte('end_date', today)
+      .order('end_date', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!subscription) return { allowed: false, reason: 'Geen actief abonnement' };
+
+    // Direct discipline match (Basic plan)
+    if (subscription.selected_discipline_id) {
+      if (subscription.selected_discipline_id === cls.discipline_id) return { allowed: true };
+      const name = (cls.disciplines as any)?.name || 'deze discipline';
+      return { allowed: false, reason: `Je abonnement geeft geen toegang tot ${name}` };
+    }
+
+    // Check plan_type_disciplines
+    if (subscription.plan_type_id) {
+      const { data: link } = await supabase
+        .from('plan_type_disciplines')
+        .select('id')
+        .eq('plan_type_id', subscription.plan_type_id)
+        .eq('discipline_id', cls.discipline_id)
+        .limit(1)
+        .single();
+
+      if (link) return { allowed: true };
+
+      const { count } = await supabase
+        .from('plan_type_disciplines')
+        .select('id', { count: 'exact', head: true })
+        .eq('plan_type_id', subscription.plan_type_id);
+
+      if (count === 0) return { allowed: true };
+
+      const name = (cls.disciplines as any)?.name || 'deze discipline';
+      return { allowed: false, reason: `Je abonnement geeft geen toegang tot ${name}` };
+    }
+
+    return { allowed: true };
+  };
+
   // Make a reservation
   const makeReservation = async (classId: string, reservationDate: Date): Promise<{ success: boolean; error?: string }> => {
     if (!profile?.id) {
@@ -47,6 +107,12 @@ export function useReservations() {
       const existing = await getMyReservation(classId);
       if (existing) {
         return { success: false, error: 'Je hebt al een reservering voor deze les' };
+      }
+
+      // Check discipline access
+      const access = await checkDisciplineAccess(classId);
+      if (!access.allowed) {
+        return { success: false, error: access.reason || 'Geen toegang tot deze les' };
       }
 
       // Format date as YYYY-MM-DD for the database

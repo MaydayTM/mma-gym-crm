@@ -63,11 +63,101 @@ export function useReservations(memberId?: string, date?: string) {
   })
 }
 
+// Check if a member's subscription covers a class's discipline
+export async function checkDisciplineAccess(
+  memberId: string,
+  classId: string
+): Promise<{ allowed: boolean; reason?: string }> {
+  // 1. Get class discipline
+  const { data: cls } = await supabase
+    .from('classes')
+    .select('discipline_id, disciplines:discipline_id (name)')
+    .eq('id', classId)
+    .single()
+
+  if (!cls?.discipline_id) {
+    return { allowed: true } // No discipline = open access
+  }
+
+  // 2. Get member's active subscription
+  const today = new Date().toISOString().split('T')[0]
+  const { data: subscription } = await supabase
+    .from('member_subscriptions')
+    .select('plan_type_id, selected_discipline_id')
+    .eq('member_id', memberId)
+    .eq('status', 'active')
+    .gte('end_date', today)
+    .order('end_date', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (!subscription) {
+    return { allowed: false, reason: 'Geen actief abonnement' }
+  }
+
+  // 3. If member has a selected discipline (Basic plan), check direct match
+  if (subscription.selected_discipline_id) {
+    if (subscription.selected_discipline_id === cls.discipline_id) {
+      return { allowed: true }
+    }
+    const disciplineName = (cls.disciplines as { name: string } | null)?.name || 'deze discipline'
+    return {
+      allowed: false,
+      reason: `Je abonnement geeft geen toegang tot ${disciplineName}`
+    }
+  }
+
+  // 4. Check plan_type_disciplines table
+  if (subscription.plan_type_id) {
+    const { data: link } = await supabase
+      .from('plan_type_disciplines')
+      .select('id')
+      .eq('plan_type_id', subscription.plan_type_id)
+      .eq('discipline_id', cls.discipline_id)
+      .limit(1)
+      .single()
+
+    if (link) {
+      return { allowed: true }
+    }
+
+    // Check if plan has ANY disciplines linked (if none, it's a "choose your own" plan)
+    const { count } = await supabase
+      .from('plan_type_disciplines')
+      .select('id', { count: 'exact', head: true })
+      .eq('plan_type_id', subscription.plan_type_id)
+
+    if (count === 0) {
+      // No disciplines linked to plan = open access (or member needs to pick one)
+      return { allowed: true }
+    }
+
+    const disciplineName = (cls.disciplines as { name: string } | null)?.name || 'deze discipline'
+    return {
+      allowed: false,
+      reason: `Je abonnement geeft geen toegang tot ${disciplineName}`
+    }
+  }
+
+  // No plan type = legacy subscription, allow
+  return { allowed: true }
+}
+
 export function useCreateReservation() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (reservation: ReservationInsert) => {
+      // Validate discipline access before inserting
+      const access = await checkDisciplineAccess(
+        reservation.member_id!,
+        reservation.class_id!
+      )
+
+      if (!access.allowed) {
+        throw new Error(access.reason || 'Geen toegang tot deze les')
+      }
+
       const { data, error } = await supabase
         .from('reservations')
         .insert(reservation)
